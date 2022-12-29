@@ -5,6 +5,8 @@
  * don't manage 81+ chars line
  *
  * TODO
+ * getting to struct, separing chars
+ * switch interface to ~normal line
  * move screen when moving cursor
  * macro for incr/decr buffer indexes
  * line number management, get back when reload/save
@@ -14,6 +16,7 @@
  * check for screen height >= 2, width >= MAX_CHARS, else must fail beautifully in all cases
  *
  * write a version with C ptr management
+ *  UTF-8 support
  *  only save real line length -> automatic support for 80+ chars lines
  *  manage copy/paste, variables
  *
@@ -34,82 +37,58 @@
  */
 
 
-/* INCLUDES */
-
-#include <stdio.h>
-/* termbox */
+/* FLAGS */
 #define TB_IMPL
+#define MOUSE_SUPPORT               1
+
+/* INCLUDES */
+#include <stdio.h>
 #include "termbox.h"
 
-
 /* CONSTANTS */
+#define MAX_CHARS                   81
+#define SCROLL_LINE_NUMBER          3
 
-#define BUFFER_SIZE (1 << 8)            /* will be 1 << 11 */
-#define MAX_CHARS 81
-#define MOUSE_SUPPORT 1
-#define SCROLL_LINE_NUMBER 3
-
-#define UNSAVED_CHANGES 1
-
-
-/* TYPES */
-
-struct line {
-    int was_modified;
-    int prev;
-    int next;
-    int chars[MAX_CHARS];
-};
+/* ERROR CODES */
+#define ERR_TERM_NOT_WIDE_ENOUGH    1
+#define ERR_MISSING_FILE_NAME       2
+#define ERR_MALLOC                  3
+#define ERR_TOO_LONG_LINE           4
 
 
 /* VARIABLES */
-
 int screen_height, screen_width;
-int x, y;                               /* cursor position */
-
-FILE *src_file = NULL;                  /* input file */
-FILE *dest_file = NULL;                 /* output file */
-
-struct line buf[BUFFER_SIZE];           /* line buffer */
-char interface_line[MAX_CHARS];         /* message */
-
-int buffer_first_line = 0;
-int buffer_last_line = 0;
-int logical_first_line = 0;
-int logical_last_line = 0;
-int first_line_on_screen = 0;
-int cursor_line = 0;
-
-int number_of_forgotten_lines = 0;
-int number_of_eaten_lines = 0;
-int reached_EOF = 0;
-int empty_buffer = 1;
-int HAS_BEEN_CHANGES = 0;
+int empty = 1;
+char interface_line[MAX_CHARS];
 
 
 /* FUNCTIONS */
 
-/* file management */
-void load_file(char *src_file_name, char *dest_file_name, int nb_to_forget);
-void write_file(char *src_file_name, char *dest_file_name, int APPLY_CHANGES);
-
-/* buffer management */
-int buffer_is_full(void);               /* TODO: replaced by a macro ? */
-void move_line(int src, int dest);
-void suppress_line(int line);
-int pop_line(char *dest_file_name);
-int eat_line(char *dest_file_name);
-void set_message(char *str);
-
 int set_y(int value);
 int move_screen(int nlines);
+
+/* memory management */
+int *new_line(int line_byte_length);
+int *length_line(int *ptr);
+int *was_modified(int *ptr);
+int *prev(int *ptr);
+int *next(int *ptr);
+int *chars(int *ptr);
+void free_everything(int *first_line, int *last_line,
+    int *first_screen_line, int *cursor_line);
+void set_message(char *str);
+
+/* file management */
+int load_file(char *src_file_name, int *first_line, int *last_line,
+    int *first_screen_line, int *cursor_line);
+int write_file(char *dest_file_name, int *first_line);
 
 /* graphical */
 void print_cursor(void);
 void hide_cursor(void);
-void print_line(int line_index, int screen_line);
+void print_line(int *ptr, int screen_line);
 void print_interface(void);
-void print_screen(void);
+void print_screen(int *first_screen_line, int *last_line, int x, int y);
 
 
 
@@ -118,7 +97,14 @@ void print_screen(void);
 int
 main(int argc, char *argv[])
 {
+    int HAS_BEEN_CHANGES = 0;
+    int x, y;                               /* cursor position */
+    int first_line = 0;
+    int last_line = 0;
+    int first_screen_line = 0;
+    int cursor_line = 0;
     struct tb_event ev;
+
     int i;
     int c;
 
@@ -127,31 +113,29 @@ main(int argc, char *argv[])
     screen_height = tb_height();
     screen_width = tb_width();
     if (screen_width < MAX_CHARS) {
-        /* TODO: error, fail with error message */
-        printf("terminal is not wide enough: %d\n", screen_width);
-        return 1;
+        fprintf(stderr, "terminal is not wide enough: %d\n", screen_width);
+        return ERR_TERM_NOT_WIDE_ENOUGH;
     }
     if (MOUSE_SUPPORT)
         tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
 
     /* -- PARSING ARGUMENTS */
     if (argc == 1) {
-        fprintf(stderr, "Missing argument.");
-        return 1;
+        fprintf(stderr, "Missing file name.");
+        return ERR_MISSING_FILE_NAME;
     } else {
         /* TODO: manage options */
     }
 
     /* -- INIT BUFFER */
-    load_file(argv[argc - 1], "output", 0);
+    load_file(argv[argc - 1], &first_line, &last_line,
+        &first_screen_line, &cursor_line);
+    HAS_BEEN_CHANGES = 0;
     set_message("Welcome to vsed!");
 
-     /* -- INIT INTERFACE */
-    print_screen();
-
     /* MAIN LOOP */
-    while (1)
-    {
+    while (1) {
+        print_screen(&first_screen_line, &last_line, x, y);
         tb_present();
         tb_poll_event(&ev);
         if (ev.type == TB_EVENT_KEY) {
@@ -161,7 +145,7 @@ main(int argc, char *argv[])
                 TB_MOD_CTRL and TB_MOD_SHIFT are only set as
                 modifiers to TB_KEY_ARROW_*. */
             if (c = ev.ch) {
-                /* TODO; ev.ch, ev.mod usable */
+                /* TODO; c = ev.ch, ev.mod usable */
                 if (c == 'q') {
                     /* QUIT */
                     /* TODO: check for need to save ? */
@@ -169,33 +153,28 @@ main(int argc, char *argv[])
                 }
                 interface_line[0] = c;
                 interface_line[1] = '\0';
-                print_interface();
-                if (c == 'd')
+                /*if (c == 'd')
                     move_screen(1);
                 if (c == 'u')
-                    move_screen(-1);
-                if (c == 'w') {
-                    write_file(argv[argc - 1], "output", 1);
-                    load_file(argv[argc - 1], "output", 0);
-                    set_message("File saved!");
-                    print_screen();
+                    move_screen(-1);*/
+                if (c == 'r') { /* reload */
+                    free_everything(&first_line, &last_line,
+                        &first_screen_line, &cursor_line);
+                    load_file(argv[argc - 1], &first_line, &last_line,
+                        &first_screen_line, &cursor_line);
+                    HAS_BEEN_CHANGES = 0;
+                    set_message("File reloaded.");
+                }
+                if (c == 'w') { /* save */
+                    write_file(argv[argc - 1], &first_line);
+                    HAS_BEEN_CHANGES = 0;
+                    set_message("File saved.");
                 }
                 if (c == 't') { /* TESTING */
-                    buf[buffer_last_line].prev = cursor_line;
-                    buf[buffer_last_line].next = buf[cursor_line].next;
-                    buf[buf[cursor_line].next].prev = buffer_last_line;
-                    buf[cursor_line].next = buffer_last_line;
-                    buf[buffer_last_line].was_modified = 1;
-                    for (i = 0; i < 10; i++)
-                        buf[buffer_last_line].chars[i] = 'r';
-                    buf[buffer_last_line].chars[i] = '\n';
-                    buffer_last_line = (buffer_last_line + 1)%BUFFER_SIZE;
-                    print_screen();
-                    HAS_BEEN_CHANGES = 1;
                 }
             } else {
                 /* TODO; ev.key, ev.mod usable */
-                switch (ev.key) {
+                /*switch (ev.key) {
                     case TB_KEY_ARROW_UP:
                         if (set_y(y - 1))
                             print_cursor();
@@ -216,46 +195,43 @@ main(int argc, char *argv[])
                             print_cursor();
                         }
                         break;
-                }
+                }*/
             }
         } else if (ev.type == TB_EVENT_MOUSE) {
             /* TODO; ev.key, ev.x, ev.y usable */
             /* TB_KEY_MOUSE_{LEFT, RIGHT, MIDDLE, RELEASE, WHEEL_UP, WHEEL_DOWN} */
-            if (ev.key == TB_KEY_MOUSE_LEFT) {
+            /*if (ev.key == TB_KEY_MOUSE_LEFT) {
                 if (ev.y < screen_height - 1) {
                     x = (ev.x < MAX_CHARS) ? ev.x : MAX_CHARS - 1 ;
                     if (set_y(ev.y))
                         print_cursor();
                 } else if (ev.y == screen_height - 1) {
-                    /* TODO; check if in interface mode, etc */
+                    * TODO; check if in interface mode, etc *
                 }
             } else if (ev.key == TB_KEY_MOUSE_WHEEL_UP) {
                 move_screen(-SCROLL_LINE_NUMBER);
             } else if (ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
                 move_screen(SCROLL_LINE_NUMBER);
-            }
+            }*/
         } else if (ev.type == TB_EVENT_RESIZE) {
-            if (ev.w < MAX_CHARS) {
-                /* TODO: error, must fail gracefully */
+            /*if (ev.w < MAX_CHARS) {
+                * TODO: error, must fail gracefully *
             }
-            /* TODO: cursor */
+            * TODO: cursor *
             screen_height = ev.h;
             screen_width = ev.w;
             if (y >= screen_height - 1)
                 set_y(screen_height - 2);
-            print_screen();
+            print_screen();*/
         }
     }
 
     /* CLOSING */
     tb_shutdown();
-    if (src_file != NULL) {
-        fclose(src_file);
-        src_file = NULL;
-    }
+
     return 0;
 }
-
+/*
 int
 move_screen(int nlines)
 {
@@ -285,7 +261,7 @@ move_screen(int nlines)
         for (i = 0; i > nlines; i--) {
             if (first_line_on_screen == logical_first_line) {
                 if (number_of_forgotten_lines > 0) {
-                    /* TODO: must reload to see upwards */
+                    * TODO: must reload to see upwards *
                     return 0;
                 } else {
                     return 0;
@@ -334,251 +310,75 @@ set_y(int value)
         return 1;
     }
 }
+*/
 
 
 
-
-/* FILE MANAGEMENT *************************************************************/
-
-void
-load_file(char *src_file_name, char *dest_file_name, int nb_to_forget)
-{
-    /* connection to src_file is closed */
-    /* opens connection to src_file */
-
-    int i;
-    int c;
-
-    /* open connection to src_file */
-    src_file = fopen(src_file_name, "r");
-    HAS_BEEN_CHANGES = 0;
-    reached_EOF = 0;
-
-    /* empty buffer */
-    buffer_first_line = buffer_last_line = 0;
-    empty_buffer = 1;
-
-    /* ignore lines to forget */
-    i = 0;
-    while (i < nb_to_forget)
-        if (getc(src_file) == '\n')
-            i++;
-    number_of_forgotten_lines = number_of_eaten_lines = nb_to_forget;
+/* MEMORY MANAGEMENT ***********************************************************/
  
-    /* initialise cursor */
-    x = y = 0;
+/* LINE
+ * int  line length
+ * int  was_modified
+ * ptr  prev
+ * ptr  next
+ * int[]characters */
 
-    /* load some lines */
-    for (i = 0; i < screen_height - 1 && ~reached_EOF; i++)
-        eat_line(dest_file_name);
+int *
+new_line(int line_byte_length)
+{
+    return malloc(2*sizeof(int) + 2*sizeof(int *) + line_byte_length);
+}
+
+int *
+length_line(int *ptr)
+{
+    return ptr;
+}
+
+int *
+was_modified(int *ptr)
+{
+    return ptr + sizeof(int);
+}
+
+int *
+prev(int *ptr)
+{
+    return ptr + 2*sizeof(int);
+}
+
+int *
+next(int *ptr)
+{
+    return ptr + 2*sizeof(int) + sizeof(int *);
+}
+
+int *
+chars(int *ptr)
+{
+    return ptr + 2*sizeof(int) + 2*sizeof(int *);
 }
 
 void
-write_file(char *src_file_name, char *dest_file_name, int APPLY_CHANGES)
+free_everything(int *first_line, int *last_line,
+    int *first_screen_line, int *cursor_line)
 {
-    /* connection to dest_file can be opened or closed */
-    /* connection to src_file is opened, unless EOF has been reached */
-    /* closes both connections */
+    int *old_ptr;
+    int *ptr;
 
-    int current_line;
-    int n, i;
-    int c;
-
-    if (HAS_BEEN_CHANGES) {
-        /* open dest_file if needed */
-        if (dest_file == NULL)
-            dest_file = fopen(dest_file_name, "w");
-
-        if (APPLY_CHANGES) {
-            /* write buffer to dest */
-            current_line = logical_first_line;
-            while (current_line != logical_last_line) {
-                for (i = 0; (c = buf[current_line].chars[i]) != '\n'; i++)
-                    putc(c, dest_file);
-                putc('\n', dest_file);
-                current_line = buf[current_line].next;
-            }
-            for (i = 0; (c = buf[logical_last_line].chars[i]) != '\n'; i++)
-                putc(c, dest_file);
-            putc('\n', dest_file);
-        } else {
-            /* (re)open src file */
-            if (src_file != NULL)
-                fclose(src_file);
-            src_file = fopen(src_file_name, "r");
-
-            /* read and do nothing of forgotten lines */
-            n = 0;
-            while (n < number_of_forgotten_lines)
-                if (c == '\n')
-                    n++;
+    if (~empty)
+    {
+        ptr = *first_line;
+        while (ptr != *last_line) {
+            old_ptr = ptr;
+            ptr = *next(ptr);
+            free(old_ptr);
         }
-        /* write end of src file to dest */
-        while ((c = getc(src_file)) != EOF)
-            putc(c, dest_file);
-        putc(EOF, dest_file);
-
-        /* exchange src and dest modes of connections */
-        fclose(src_file);
-        src_file = fopen(src_file_name, "w");
-        fclose(dest_file);
-        dest_file = fopen(dest_file_name, "r");
-
-        /* write entire dest to src */
-        while ((c = getc(dest_file)) != EOF)
-            putc(c, src_file);
-        putc(EOF, src_file);
+        free(ptr);
+        empty = 1;
     }
-    /* close connections */
-    if (src_file != NULL) {
-        fclose(src_file);
-        src_file = NULL;
-    }
-    if (dest_file != NULL) {
-        fclose(dest_file);
-        dest_file = NULL;
-    }
-}
-
-
-/* BUFFER MANAGEMENT ***********************************************************/
-
-int
-buffer_is_full(void)
-{
-    return empty_buffer == 0 && buffer_first_line == buffer_last_line;
-}
-
-void
-move_line(int src, int dest)
-{
-    int i;
-    char c;
-
-    /* refresh was_modified */
-    buf[dest].was_modified = buf[src].was_modified;
-
-    /* refresh chars; assumes '\n' is in line */
-    for (i = 0; (c = buf[src].chars[i]) != '\n'; i++)
-        buf[dest].chars[i] = c;
-    buf[dest].chars[i] = '\n';
-
-    /* refresh pointers */
-    if (src == logical_first_line) {
-        buf[dest].prev = dest;
-        logical_first_line = dest;
-    } else {
-        buf[dest].prev = buf[src].prev;
-        buf[buf[src].prev].next = dest;
-    }
-    if (src == logical_last_line) {
-        buf[dest].next = dest;
-        logical_last_line = dest;
-    } else {
-        buf[dest].next = buf[src].next;
-        buf[buf[src].next].prev = dest;
-    }
-    if (first_line_on_screen == src)
-        first_line_on_screen = dest;
-    if (cursor_line == src)
-        cursor_line = dest;
-}
-
-void
-suppress_line(int line)
-{
-    move_line(buffer_first_line, line);
-    buffer_first_line = (buffer_first_line + 1)%BUFFER_SIZE;
-}
-
-int
-pop_line(char *dest_file_name)
-{
-    /* connection to dest_file can be opened or closed */
-
-    int old_logical_first_line;
-    int i;
-    int c;
-
-    if (buffer_is_full()) {
-        if (buf[logical_first_line].was_modified) {
-            return UNSAVED_CHANGES;
-        } else {
-            /* open dest_file if needed */
-            if (dest_file == NULL)
-                dest_file = fopen(dest_file_name, "w");
-            
-            /* push logical_first_line to dest_file */
-            for (i = 0; (c = buf[logical_first_line].chars[i]) != '\n'; i++)
-                putc(c, dest_file);
-            putc('\n', dest_file);
-
-            /* suppress logical_first_line */
-            old_logical_first_line = logical_first_line;
-            logical_first_line = buf[logical_first_line].next;
-            buf[logical_first_line].prev = logical_first_line;
-            suppress_line(old_logical_first_line);
-            number_of_forgotten_lines++;
-
-            return 0;
-        }
-    }
-    return 0;
-}
-
-int
-eat_line(char *dest_file_name)
-{
-    /* connection to src_file is opened */
-    /* close connection to src_file on reaching EOF */
-
-    int i;
-    char c;
-    int working_line;
-
-    /* make sure of the existence of an empty slot */
-    if (pop_line(dest_file_name)) {
-        return UNSAVED_CHANGES;
-    }
-
-    /* empty slot to fill */
-    working_line = (empty_buffer) ? 0 : buffer_last_line;
-    buffer_last_line = (working_line + 1)%BUFFER_SIZE;
-
-    /* read characters */
-    for (i = 0; ; i++) {
-        if (i == MAX_CHARS) {
-            /* TODO: manage line longer than MAX_CHARS chars */
-        } else {
-            c = getc(src_file);
-            buf[working_line].chars[i] = (c == EOF) ? '\n' : c;
-            if (c == EOF) {
-                reached_EOF = 1;
-                fclose(src_file);
-                src_file = NULL;
-                break;
-            } else if (c == '\n') {
-                break;
-            }
-        }
-    }
-
-    /* manage pointers */
-    number_of_eaten_lines++;
-    buf[working_line].was_modified = 0;
-    if (empty_buffer) {
-        buffer_first_line = logical_first_line = working_line;
-        empty_buffer = 0;
-        first_line_on_screen = cursor_line = working_line;
-        buf[working_line].prev = working_line;
-    } else {
-        buf[logical_last_line].next = working_line;
-        buf[working_line].prev = logical_last_line;
-    }
-    buf[working_line].next = working_line;
-    logical_last_line = working_line;
-
-    return 0;
+    
+    *first_line = *last_line = *first_screen_line = *cursor_line = NULL;
 }
 
 void
@@ -594,11 +394,99 @@ set_message(char *str)
 }
 
 
-/* GRAPHICAL *******************************************************************
+/* FILE MANAGEMENT *************************************************************/
 
-    tb_printf(0, y++, 0, 0, "event type=%d key=%d ch=%c", ev.type, ev.key, ev.ch);
-    tb_present();
-    tb_poll_event(&ev);
+int
+load_file(char *src_file_name, int *first_line, int *last_line,
+    int *first_screen_line, int *cursor_line)
+{
+    FILE *src_file = NULL;
+    int buf[MAX_CHARS];
+    int *ptr;
+    int i;
+    int c;
+    int reached_EOF;
+
+    /* open connection to src_file */
+    src_file = fopen(src_file_name, "r");
+    reached_EOF = 0;
+    empty = 1;
+    *first_line = *last_line = *first_screen_line = *cursor_line = NULL;
+
+    /* read content into memory */
+    while (~reached_EOF) {
+        i = 0;
+        while (1) {
+            if (i == MAX_CHARS) {
+                return ERR_TOO_LONG_LINE;
+            } else {
+                /* TODO */
+                buf[i++] = c = getc(src_file);
+                if (c == EOF) {
+                    reached_EOF = 1;
+                    break;
+                } else if (c == '\n') {
+                    break;
+                }
+            }
+        }
+        /* store line */
+        if ((ptr = new_line(i * sizeof(int))) == NULL)
+            return ERR_MALLOC;
+        *length_line(ptr) = i;
+        *was_modified(ptr) = 0;
+        if (empty) {
+            empty = 0;
+            *first_line = *last_line = *first_screen_line = *cursor_line = ptr;
+            *prev(ptr) = ptr;
+            *next(ptr) = ptr;
+        } else {
+            *prev(ptr) = *last_line;
+            *next(ptr) = ptr;
+            *last_line = ptr;
+        }
+        while (i--)
+            *(chars(ptr) + i*sizeof(int)) = buf[i];
+    }
+
+    /* close connection to src_file */
+    fclose(src_file);
+
+    return 0;
+}
+
+int
+write_file(char *dest_file_name, int *first_line)
+{
+    FILE *dest_file = NULL;
+    int *ptr;
+    int i;
+    int c;
+
+    /* open connection to dest_file */
+    dest_file = fopen(dest_file_name, "w");
+
+    /* write content to dest_file */
+    ptr = *first_line;
+    while (1) {
+        for (i = 0; (c = *(chars(ptr) + i*sizeof(int))) != EOF && c != '\n'; i++)
+            putc(c, dest_file);
+        putc(c, dest_file);
+        if (c == EOF) {
+            break;
+        } else {
+            ptr = *next(ptr);
+        }
+    }
+
+    /* close connection to dest_file */
+    fclose(dest_file);
+
+    return 0;
+}
+
+
+/* GRAPHICAL *******************************************************************
 
 int tb_init();
 int tb_shutdown();
@@ -621,25 +509,14 @@ int tb_printf(int x, int y, uintattr_t fg, uintattr_t bg, const char *fmt, ...);
 
 *******************************************************************************/
 
+/* TODO: merge print_line and print_interface ? */
 void
-print_cursor(void)
-{
-    tb_set_cursor(x, y);
-}
-
-void
-hide_cursor(void)
-{
-    tb_hide_cursor();
-}
-
-void
-print_line(int line_index, int screen_line)
+print_line(int *ptr, int screen_line)
 {
     int i;
     char c;
 
-    for (i = 0; (c = buf[line_index].chars[i]) != '\n'; i++)
+    for (i = 0; (c = *(chars(ptr) + i*sizeof(int))) != '\n' && c != EOF; i++)
         tb_set_cell(i, screen_line, c, 0, 0);
     for (; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', 0, 0);
@@ -658,31 +535,27 @@ print_interface(void)
 }
 
 void
-print_screen(void)
+print_screen(int *first_screen_line, int *last_line, int x, int y)
 {
-    int line_index, y;
+    int *ptr;
+    int sc_line;
 
-    line_index = first_line_on_screen;
+    ptr = *first_screen_line;
 
     /* clear screen */
     tb_clear();
 
     /* print lines */
-    for (y = 0; y < screen_height - 1; y++) {
-        print_line(line_index, y);
-        if (line_index == logical_last_line) {
-            if (reached_EOF) {
-                break;
-            } else {
-                eat_line("output");
-            }
-        }
-        line_index = buf[line_index].next;
+    for (sc_line = 0; sc_line < screen_height - 1; sc_line++) {
+        print_line(ptr, sc_line);
+        if (ptr == *last_line)
+            break;
+        ptr = *next(ptr);
     }
 
      /* print interface */
     print_interface();
 
     /* print cursor */
-    print_cursor();
+    tb_set_cursor(x, y);
 }

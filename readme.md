@@ -1,5 +1,8 @@
 https://github.com/termbox/termbox2
 
+https://denbeke.be/blog/programming/syntax-highlighting-in-latex/
+https://www.gnu.org/software/src-highlite/
+https://en.wikipedia.org/wiki/UTF-8
 
 (Too) complete list of features that one could want
 > https://github.com/adsr/mle
@@ -252,10 +255,3 @@ e.g. sed replacement:
 
     s<pattern>
     r<pattern>
-
-
-# Tutoriel
-
-* Launching
-    how to launch
-    what you get 

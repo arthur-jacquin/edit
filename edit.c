@@ -11,6 +11,8 @@
 
 /* TODO
  *
+ * making MAX_CHARS an optionnal argument, fail gracefully 
+ *     and asks for MAX_CHARS being greater than ???
  * remove duplicity between y and "cursor_line - first_screen_line"
  * get back when reload/save
  * add dialog mode
@@ -78,6 +80,7 @@ int write_file(char *dest_file_name,
 
 /* LINE MANAGEMENT FUNCTIONS */
 void move_cursor_line(int line_nb, struct line **cursor_line);
+void insert(char c, int pos, struct line *line);
 
 /* GRAPHICAL FUNCTIONS */
 void print_line(char *chars, int screen_line, int length);
@@ -162,13 +165,42 @@ main(int argc, char *argv[])
                 }
                 interface_line[0] = c;
                 interface_line[1] = '\0';
+                if (c == 'i') { // INSERT MODE
+                    print_line("INSERT (ESC to exit)", screen_height - 1, 20);
+                    while (1) {
+                        tb_present();
+                        tb_poll_event(&ev);
+                        if (ev.type == TB_EVENT_KEY) {
+                            if (c = ev.ch) {
+                                insert(c, x, cursor_line);
+                                HAS_BEEN_CHANGES = 1;
+                                print_line(cursor_line->chars, y, cursor_line->length);
+                                if (x < screen_width - 1) {
+                                    x++;
+                                    tb_set_cursor(x, y);
+                                }
+                            } else if (ev.key == 27) { // ESCAPE
+                                break;
+                            } else if (ev.key == 13) { // ENTER
+
+                            } else if (ev.key == 127) { // RETURN
+
+                            } else { // TODO: HANDLE OTHER THINGS
+
+                            }
+                        } else {
+                            // TODO: HANDLE OTHER THINGS
+                        }
+
+                    }
+                }
                 if (c == 'd')
                     move_screen(1, &x, &y, first_line, last_line,
                         &first_screen_line, &cursor_line);
                 if (c == 'u')
                     move_screen(-1, &x, &y, first_line, last_line,
                         &first_screen_line, &cursor_line);
-                if (c == 'r') { /* reload */
+                if (c == 'r') { // RELOAD
                     free_everything(&first_line, &last_line,
                         &first_screen_line, &cursor_line);
                     load_file(file_name, &nb_line, &first_line, &last_line,
@@ -176,7 +208,7 @@ main(int argc, char *argv[])
                     HAS_BEEN_CHANGES = 0;
                     strcpy(interface_line, "File reloaded.");
                 }
-                if (c == 'w') { /* save */
+                if (c == 'w') { // WRITE
                     write_file(file_name, first_line, last_line);
                     HAS_BEEN_CHANGES = 0;
                     strcpy(interface_line, "File saved.");
@@ -422,6 +454,28 @@ move_cursor_line(int line_nb, struct line **cursor_line)
         while (mov++)
             *cursor_line = (*cursor_line)->prev;
     }
+}
+
+void
+insert(char c, int pos, struct line *line)
+{
+    int i;
+    char *old_chars_start;
+    char *old_chars;
+    char *chars;
+
+    old_chars_start = old_chars = line->chars;
+    line->chars = chars = (char *) malloc((line->length + 1) * sizeof(char));
+
+    for (i = 0; i < pos; i++)
+        *chars++ = *old_chars++;
+    *chars++ = c;
+    strcpy(chars, old_chars);
+
+    line->length++;
+    line->was_modified = 1;
+
+    free(old_chars_start);
 }
 
 

@@ -11,12 +11,12 @@
 
 /* TODO
  *
- * making MAX_CHARS an optionnal argument, fail gracefully 
+ * making MAX_CHARS an optionnal argument, fail gracefully
  *     and asks for MAX_CHARS being greater than ???
  * remove duplicity between y and "cursor_line - first_screen_line"
  * get back when reload/save
  * add dialog mode
- * add insert mode
+ * better insert mode
  * add line management
  * manage malloc error
  * str alike management (strcpy...)
@@ -524,11 +524,9 @@ print_screen(struct line *first_screen_line, struct line *last_line,
 int
 set_x(int value, int line_length)
 {
-    if (value >= line_length) {
-        return line_length - 1;
-    } else {
-        return value;
-    }
+    return (value >= line_length) ?
+        (line_length - 1) :
+        ((value >= 0) ? value : 0);
 }
 
 

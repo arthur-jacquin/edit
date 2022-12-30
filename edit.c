@@ -13,6 +13,7 @@
  *
  * type cast, correct printing
  * add line number management, get back when reload/save, move in doc, move with cursor
+ * add ruler
  * add cursor movement
  * add dialog mode
  * add insert mode

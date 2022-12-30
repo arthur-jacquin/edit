@@ -76,6 +76,7 @@ Maybe in a far future:
 
 ## Roadmap
 
+* add edition engine (1 cursor, LIFO of selections)
 * add UTF-8 support
 
 ## Thanks
@@ -121,85 +122,99 @@ Documentation:
 * [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 
 
-### Commands/tutorial
+### Keybinds
 
-* related to engine (lines to send, actual commands)
-* cursor management (advanced movements, create/delete cursors...)
-* lines management (yank/delete <n> lines, paste, move <n> lines up/down <m> lines, duplicate...)
-* file management (reload, save, quit)
-* built in-commands (increase/decrease indent, comment/uncomment)
+echo "file %% opened (q to exit)"
 
+FILE MANAGEMENT:
+[q] quit; if unsaved changes: DIALOG single "qw"
+    [q] quit without save
+    [w] save and quit
+[w] write; if truncations: DIALOG single "Ww"
+    [W] write as: see below
+    [w] write
+[W] write as: if (DIALOG prompt "File name: ") {change name; write;}
+[R] reload
 
-### Keybinds (old)
+PARAMETER MANAGEMENT:
+[S] set parameter: if (DIALOG prompt "Parameter modification: ") modif (echoes if not successful)
 
-INSERT:
-[<ESCAPE>] >selection
+CURSOR MANAGEMENT:
+[ ] associated brackets
+[ / ] start/end of line
+[g] go to line: DIALOG prompt "Go to line: " (g -> start of file)
+[G] go to end of file
+[n/N] <n> next/previous match
+[ / ] <n> next/previous character
+[ / ] <n> next/previous word
+[ / ] <n> next/previous line
+[ / ] <n> next/previous block
 
-DIALOG:
-[<ENTER>] validation, ><previous_state>
-[<ESCAPE>] annulation, ><previous_state>
+GET IN INSERT MODE:
+[i] before cursor
+TODO ...
 
-MATCHES: (when no match: >selection)
-[<ESCAPE>] >selection
-[s] search in selection (prompt for pattern)
-    ENTER: write regex to pattern, jump cursor to next, >matches
-    ESCAPE: no write, >selection
-[ ] keep/exclude matches containing pattern (prompt for pattern)
-[...] extend/split matches to ... (see SPECIAL, same keybinds, when matches ongoing)
+IN INSERT:
+    echo "INSERT (ESC to exit)"
+    [ESC] get out of INSERT
+    [else] write char
+
+LINE MANAGEMENT:
+[ ] yank <n> lines
+[ ] delete <n> lines
+[ / ] paste after/before <n> times
+[ ] duplicate (<n>) lines
+[ / ] move (<n>) lines up/down (<m>) lines
+
+''' EDITION ENGINE RELATED
+
+SELECTIONS MANAGEMENT:
+[ESC] select only 0 chars at cursor
+    mark all lines of custom range (like sed)
+[%] select all lines of files                       (no filter)
+[b] select all lines of paragraph                   (no filter)
+TODO
+    what is deselected ?
+    create/delete selections
+    selections on search
+    selections by movement
+
+As a filter: select all lines at start
 
 SELECTION:
-[f] fix/free anchor
-SPECIAL:
-    [%] select all
-    [l] select line
-    [ ] select inner/outer element (can be field)
-    [ ] select inner/outer bracket
-    [ ] select block
+[s] search for pattern (mark pattern elements, narrow matches)
+[ ] keep containing pattern (mark pattern elements)
+[ ] ignore (remove match but outputs) containing pattern
+[ ] exclude (suppress) containing pattern
 
-ACTION: (on matches)
-[x] delete (selected/unselected ?)
-<quantifier>[p/P] paste after/before
-[ ] switch to uppercase/lowercase
-[r] replace with pattern
-[.] repeat last command
-[,] play macro
-[>/<] increase/decrease indent
-[c] count
-[ ] comment/uncomment (based on langage)
-[ ] reformat (based on langage)
+ACTIONS:
+[ ] change field separator
+[ ] display number of matches
+[ ] replace with pattern elements and fields (MATCH)
+[u/U] switch to lowercase/lowercase (MATCH) 
+[ ] insert character(s) before (MATCH)
+[ ] remove <n> first characters (MATCH)
+[ / ] increase/decrease indent (LINE)
+[ / ] comment/uncomment (LINE)
 
-ACTION: (on selection)
-ACTION on matches
-[y] copy
-[d] cut
-[ ] insert before/after selection [after going to the eol/inserting newline]
+for LINE actions, extends selections to lines before acting
+'''
 
-OTHER:
-[ ] show syntax group ?
-[q] start/stop macro recording
-[u] undo
-movements:
-    <n>[G] go to specific line
-    [ ] associated brackets
-    [ ] start/end of line/file
-    <quantifier>[n/N] next/previous match
-    <quantifier>[ / ] next/previous character
-    <quantifier>[ / ] next/previous word
-    <quantifier>[ / ] next/previous line
-    <quantifier>[ / ] next/previous screen
-    <quantifier>[ / ] next/previous block
-[w] write
-[R] reload (prompt for confirmation if unsaved changes, else print "No change")
-[Q] quit (prompt for confirmation if unsaved changes)
-[W] writeas (prompt for name)
-[S] set (prompt for variable/option and value)
-[:] enter command (prompt for command)
+IN DIALOG single(const char * prompt, const char * specifiedchars):
+    echo prompt
+    [ESC] return 0
+    [specifiedchars] return char
+
+IN DIALOG prompt(const char * prompt, char **buf, int nbcharmax):
+    echo prompt
+    [ESC] return 0
+    [ENTER] return 1
+    [else] write to buf, print after prompt
 
 
 ### Registers (old)
 
 OPTIONS:
-* autowrite
 * autoindent
 * syntax_highlight
 * highlight_matches

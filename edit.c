@@ -1,33 +1,24 @@
-/* text editor
- *
- * LIMITATIONS
- * assume screen is >= 81 chars wide
- * don't manage 81+ chars line
- *
- * TODO
- * type cast
- * add communication mode
- * manage malloc error
- * str alike management (strcpy...)
- * move screen when moving cursor
- * line number management, get back when reload/save
- * support for 80+ chars lines -> virtual lines (to manage)
- * error management
- * interface line management
- * check for screen height >= 2, width >= MAX_CHARS, else must fail beautifully in all cases
- *
- * write a version with C ptr management
- *  UTF-8 support
- *  only save real line length -> automatic support for 80+ chars lines
- *  manage copy/paste, variables
+/* TASKS
  *
  * add features
  * check correctness of all line fields and variables in any circumstances
- * check for HAS_BEEN_CHANGES correctness
- * chase unstated assumptions
+ * chase unstated assumptions, possibility of failure
+ * improve error management, assure safe and graceful fails
  * restructuring, cleaning, commenting code
  * documentation
  * publish
+ */
+
+/* TODO
+ *
+ * type cast, correct printing
+ * add line number management, get back when reload/save, move in doc, move with cursor
+ * add cursor movement
+ * add dialog mode
+ * add insert mode
+ * add line management 
+ * manage malloc error
+ * str alike management (strcpy...)
  */
 
 /* BUFFERS
@@ -48,7 +39,8 @@
 #include "termbox.h"
 
 /* CONSTANTS */
-#define MAX_CHARS                   81
+#define MAX_CHARS                   (1 << 10)
+#define MIN_WIDTH                   81
 #define SCROLL_LINE_NUMBER          3
 
 /* ERROR CODES */
@@ -110,7 +102,7 @@ main(int argc, char *argv[])
     struct line *first_screen_line = NULL;
     struct line *cursor_line = NULL;
     struct tb_event ev;
-    char interface_line[MAX_CHARS];
+    char interface_line[MIN_WIDTH];
 
     int i;
     uint32_t c;
@@ -119,8 +111,11 @@ main(int argc, char *argv[])
     tb_init();
     screen_height = tb_height();
     screen_width = tb_width();
-    if (screen_width < MAX_CHARS) {
+    if (screen_width < MIN_WIDTH) {
         fprintf(stderr, "Terminal is not wide enough: %d\n", screen_width);
+        return ERR_TERM_NOT_BIG_ENOUGH;
+    } else if (screen_height < 2) {
+        fprintf(stderr, "Terminal is not high enough: %d\n", screen_height);
         return ERR_TERM_NOT_BIG_ENOUGH;
     }
     if (MOUSE_SUPPORT)
@@ -206,7 +201,7 @@ main(int argc, char *argv[])
             /* TB_KEY_MOUSE_{LEFT, RIGHT, MIDDLE, RELEASE, WHEEL_UP, WHEEL_DOWN} */
             if (ev.key == TB_KEY_MOUSE_LEFT) {
                 if (ev.y < screen_height - 1) {
-                    x = (ev.x < MAX_CHARS) ? ev.x : MAX_CHARS - 1;
+                    x = ev.x;
                     set_y(ev.y, &x, &y, last_line, &cursor_line);
                 } else if (ev.y == screen_height - 1) {
                     /* TODO; check if in interface mode, etc */
@@ -219,7 +214,7 @@ main(int argc, char *argv[])
                     &first_screen_line, &cursor_line);
             }
         } else if (ev.type == TB_EVENT_RESIZE) {
-            if (ev.w < MAX_CHARS) {
+            if (ev.w < MIN_WIDTH) {
                 fprintf(stderr, "Terminal is not wide enough: %d\n", ev.w);
                 return ERR_TERM_NOT_BIG_ENOUGH;
             } else if (ev.h < 2) {
@@ -295,6 +290,7 @@ load_file(char *src_file_name,
     struct line **first_line, struct line **last_line,
     struct line **first_screen_line, struct line **cursor_line)
 {
+    int HAS_BEEN_TRUNCATIONS;
     FILE *src_file = NULL;
     char buf[MAX_CHARS];
     struct line *ptr;
@@ -303,33 +299,33 @@ load_file(char *src_file_name,
     int c;
     int reached_EOF;
 
-    /* open connection to src_file */
+    // open connection to src_file
     src_file = fopen(src_file_name, "r");
-    reached_EOF = 0;
+    HAS_BEEN_TRUNCATIONS = reached_EOF = 0;
     empty = 1;
     *first_line = *last_line = *first_screen_line = *cursor_line = NULL;
 
-    /* read content into memory */
+    // read content into memory
     while (reached_EOF == 0) {
         i = 0;
         while (1) {
-            if (i == MAX_CHARS) {
-                return ERR_TOO_LONG_LINE;
+            c = getc(src_file);
+            if (c == EOF) {
+                reached_EOF = 1;
+                break;
+            } else if (c == '\n') {
+                break;
+            } else if (i == MAX_CHARS - 1) {
+                // no break, i will remain MAX_CHARS - 1
+                // break with end of logical line (EOF or '\n')
+                HAS_BEEN_TRUNCATIONS = 1;
             } else {
-                c = getc(src_file);
-                if (c == EOF) {
-                    reached_EOF = 1;
-                    break;
-                } else if (c == '\n') {
-                    break;
-                } else {
-                    buf[i++] = c;
-                }
+                buf[i++] = c;
             }
         }
         buf[i++] = '\0';
 
-        /* store line */
+        // store line
         ptr = new_line(i, 0);
         if (empty) {
             empty = 0;
@@ -345,10 +341,10 @@ load_file(char *src_file_name,
         strcpy(ptr->chars, buf);
     }
 
-    /* close connection to src_file */
+    // close connection to src_file
     fclose(src_file);
 
-    return 0;
+    return HAS_BEEN_TRUNCATIONS;
 }
 
 int
@@ -392,7 +388,7 @@ print_line(char *chars, int screen_line)
     int i;
     char c;
 
-    for (i = 0; c = *chars++; i++)
+    for (i = 0; c = *chars++ && i < screen_width; i++)
         tb_set_cell(i, screen_line, c, 0, 0);
     for (; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', 0, 0);
@@ -480,6 +476,7 @@ int
 set_y(int value, int *x, int *y,
     struct line *last_line, struct line **cursor_line)
 {
+    // TODO: better x management
     int i;
 
     if (value < 0 || screen_height - 1 <= value) {

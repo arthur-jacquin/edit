@@ -77,6 +77,9 @@ int load_file(char *src_file_name, int *nb_line,
 int write_file(char *dest_file_name,
     struct line *first_line, struct line *last_line);
 
+/* LINE MANAGEMENT FUNCTIONS */
+void move_cursor_line(int line_nb, struct line **cursor_line);
+
 /* GRAPHICAL FUNCTIONS */
 void print_line(char *chars, int screen_line);
 void print_screen(struct line *first_screen_line, struct line *last_line,
@@ -86,8 +89,6 @@ void print_screen(struct line *first_screen_line, struct line *last_line,
 int move_screen(int nlines, int *x, int *y,
     struct line *first_line, struct line *last_line,
     struct line **first_screen_line, struct line **cursor_line);
-void move_cursor_line(int line_nb, struct line **cursor_line);
-int set_y(int value);
 int set_x(int value, int line_length);
 
 
@@ -177,7 +178,7 @@ main(int argc, char *argv[])
                     strcpy(interface_line, "File reloaded.");
                 }
                 if (c == 'w') { /* save */
-                    write_file(file_name, first_line, last_line);
+                    write_file("output", first_line, last_line);
                     HAS_BEEN_CHANGES = 0;
                     strcpy(interface_line, "File saved.");
                 }
@@ -214,41 +215,41 @@ main(int argc, char *argv[])
                 }
             }
         } else if (ev.type == TB_EVENT_MOUSE) {
-            /* TODO; ev.key, ev.x, ev.y usable */
-            /* TB_KEY_MOUSE_{LEFT, RIGHT, MIDDLE, RELEASE, WHEEL_UP, WHEEL_DOWN} */
-            if (ev.key == TB_KEY_MOUSE_LEFT) {
-                if (ev.y < screen_height - 1) {
-                    if ((cursor_line->line_nb + ev.y - y) >= nb_line) {
-                        y = y + nb_line - 1 - cursor_line->line_nb;
-                        move_cursor_line(nb_line - 1, &cursor_line);
-                    } else {
-                        move_cursor_line(cursor_line->line_nb + ev.y - y, &cursor_line);
-                        y = ev.y;
-                    }
-                    x = set_x(ev.x, cursor_line->length);
-                } else if (ev.y == screen_height - 1) {
-                    /* TODO; check if in interface mode, etc */
+            if (ev.key == TB_KEY_MOUSE_LEFT && ev.y < screen_height - 1) {
+                // Click in file area
+                if ((cursor_line->line_nb + ev.y - y) >= nb_line) {
+                    y = y + nb_line - 1 - cursor_line->line_nb;
+                    move_cursor_line(nb_line - 1, &cursor_line);
+                } else {
+                    move_cursor_line(cursor_line->line_nb + ev.y - y, &cursor_line);
+                    y = ev.y;
                 }
+                x = set_x(ev.x, cursor_line->length);
             } else if (ev.key == TB_KEY_MOUSE_WHEEL_UP) {
+                // Scroll up SCROLL_LINE_NUMER lines
                 move_screen(-SCROLL_LINE_NUMBER, &x, &y, first_line, last_line,
                     &first_screen_line, &cursor_line);
             } else if (ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
+                // Scroll down SCROLL_LINE_NUMER lines
                 move_screen(SCROLL_LINE_NUMBER, &x, &y, first_line, last_line,
                     &first_screen_line, &cursor_line);
             }
         } else if (ev.type == TB_EVENT_RESIZE) {
+            // Terminal has been resized
             if (ev.w < MIN_WIDTH) {
+                // TODO: graceful crash
                 fprintf(stderr, "Terminal is not wide enough: %d\n", ev.w);
                 return ERR_TERM_NOT_BIG_ENOUGH;
             } else if (ev.h < 2) {
+                // TODO: graceful crash
                 fprintf(stderr, "Terminal is not high enough: %d\n", ev.h);
                 return ERR_TERM_NOT_BIG_ENOUGH;
             }
-            /* TODO: cursor */
             screen_height = ev.h;
             screen_width = ev.w;
             if (y >= screen_height - 1)
-                set_y(screen_height - 2);
+                y = screen_height - 2;
+            x = set_x(x, cursor_line->length);
         }
     }
 
@@ -304,21 +305,6 @@ free_everything(struct line **first_line, struct line **last_line,
     }
     
     *first_line = *last_line = *first_screen_line = *cursor_line = NULL;
-}
-
-void
-move_cursor_line(int line_nb, struct line **cursor_line)
-{
-    int mov;
-
-    mov = line_nb - (*cursor_line)->line_nb;
-    if (mov > 0) {
-        while (mov--)
-            *cursor_line = (*cursor_line)->next;
-    } else {
-        while (mov++)
-            *cursor_line = (*cursor_line)->prev;
-    }
 }
 
 
@@ -422,6 +408,24 @@ write_file(char *dest_file_name,
 }
 
 
+/* LINE MANAGEMENT *************************************************************/
+
+void
+move_cursor_line(int line_nb, struct line **cursor_line)
+{
+    int mov;
+
+    mov = line_nb - (*cursor_line)->line_nb;
+    if (mov > 0) {
+        while (mov--)
+            *cursor_line = (*cursor_line)->next;
+    } else {
+        while (mov++)
+            *cursor_line = (*cursor_line)->prev;
+    }
+}
+
+
 /* GRAPHICAL ******************************************************************/
 
 void
@@ -430,8 +434,11 @@ print_line(char *chars, int screen_line)
     int i;
     char c;
 
-    for (i = 0; c = *chars++ && i < screen_width; i++)
-        tb_set_cell(i, screen_line, (uint32_t) c, 0, 0);
+    for (i = 0; c = *chars++ && i < screen_width; i++) {
+        printf("%c, %d; ", c, c);
+        tb_set_cell(i, screen_line, (uint32_t) 'b', 0, 0);
+    }
+    putchar('\n');
     for (; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', 0, 0);
 }
@@ -484,8 +491,8 @@ move_screen(int nlines, int *x, int *y,
                 *first_screen_line = (*first_screen_line)->next;
             }
         }
-        if (*y - nlines >= 0) {
-            *y = *y - nlines;
+        if (*y - i >= 0) {
+            *y = *y - i;
         } else {
             *cursor_line = *first_screen_line;
             *y = 0;
@@ -499,8 +506,8 @@ move_screen(int nlines, int *x, int *y,
                 *first_screen_line = (*first_screen_line)->prev;
             }
         }
-        if (*y - nlines < screen_height - 1) {
-            *y = *y - nlines;
+        if (*y - i < screen_height - 1) {
+            *y = *y - i;
         } else {
             *cursor_line = *first_screen_line;
             for (i = 0; i < screen_height - 2; i++)
@@ -511,12 +518,6 @@ move_screen(int nlines, int *x, int *y,
     }
 
     return 0;
-}
-
-int
-set_y(int value)
-{
-    return (value < 0) ? 0 : ((value >= screen_height - 1) ? screen_height - 2 : value);
 }
 
 int

@@ -11,13 +11,12 @@
 
 /* TODO
  *
+ * remove duplicity between y and "cursor_line - first_screen_line"
  * type cast, correct printing
- * add line number management, get back when reload/save, move in doc, move with cursor
- * add ruler
- * add cursor movement
+ * get back when reload/save
  * add dialog mode
  * add insert mode
- * add line management 
+ * add line management
  * manage malloc error
  * str alike management (strcpy...)
  */
@@ -57,6 +56,7 @@ int empty = 1;
 
 /* LINE STRUCT */
 struct line {
+    int line_nb;
     int length;
     int was_modified;
     struct line *prev;  /* ptr to prev line struct */
@@ -65,13 +65,13 @@ struct line {
 };
 
 /* MEMORY MANAGEMENT FUNCTIONS */
-struct line *new_line(int length, int was_modified);
+struct line *new_line(int line_nb, int length, int was_modified);
 void free_line(struct line *ptr);
 void free_everything(struct line **first_line, struct line **last_line,
     struct line **first_screen_line, struct line **cursor_line);
 
 /* FILE MANAGEMENT FUNCTIONS */
-int load_file(char *src_file_name,
+int load_file(char *src_file_name, int *nb_line,
     struct line **first_line, struct line **last_line,
     struct line **first_screen_line, struct line **cursor_line);
 int write_file(char *dest_file_name,
@@ -80,14 +80,15 @@ int write_file(char *dest_file_name,
 /* GRAPHICAL FUNCTIONS */
 void print_line(char *chars, int screen_line);
 void print_screen(struct line *first_screen_line, struct line *last_line,
-    char *buf, int x, int y);
+    char *buf, int x, int y, int line_nb);
 
 /* UGLY STUFF */
 int move_screen(int nlines, int *x, int *y,
     struct line *first_line, struct line *last_line,
     struct line **first_screen_line, struct line **cursor_line);
-int set_y(int value, int *x, int *y,
-    struct line *last_line, struct line **cursor_line);
+void move_cursor_line(int line_nb, struct line **cursor_line);
+int set_y(int value);
+int set_x(int value, int line_length);
 
 
 
@@ -96,6 +97,7 @@ int set_y(int value, int *x, int *y,
 int
 main(int argc, char *argv[])
 {
+    char file_name[MIN_WIDTH];
     int HAS_BEEN_CHANGES = 0;
     int x, y;                               /* cursor position */
     struct line *first_line = NULL;
@@ -104,6 +106,7 @@ main(int argc, char *argv[])
     struct line *cursor_line = NULL;
     struct tb_event ev;
     char interface_line[MIN_WIDTH];
+    int nb_line;
 
     int i;
     uint32_t c;
@@ -128,10 +131,11 @@ main(int argc, char *argv[])
         return ERR_MISSING_FILE_NAME;
     } else {
         /* TODO: manage options */
+        strcpy(file_name, argv[argc - 1]);
     }
 
     /* -- INIT BUFFER */
-    load_file(argv[argc - 1], &first_line, &last_line,
+    load_file(file_name, &nb_line, &first_line, &last_line,
         &first_screen_line, &cursor_line);
     HAS_BEEN_CHANGES = 0;
     strcpy(interface_line, "Welcome to vsed!");
@@ -139,7 +143,8 @@ main(int argc, char *argv[])
 
     /* MAIN LOOP */
     while (1) {
-        print_screen(first_screen_line, last_line, interface_line, x, y);
+        print_screen(first_screen_line, last_line, interface_line,
+            x, y, cursor_line->line_nb);
         tb_present();
         tb_poll_event(&ev);
         if (ev.type == TB_EVENT_KEY) {
@@ -166,13 +171,13 @@ main(int argc, char *argv[])
                 if (c == 'r') { /* reload */
                     free_everything(&first_line, &last_line,
                         &first_screen_line, &cursor_line);
-                    load_file(argv[argc - 1], &first_line, &last_line,
+                    load_file(file_name, &nb_line, &first_line, &last_line,
                         &first_screen_line, &cursor_line);
                     HAS_BEEN_CHANGES = 0;
                     strcpy(interface_line, "File reloaded.");
                 }
                 if (c == 'w') { /* save */
-                    write_file(argv[argc - 1], first_line, last_line);
+                    write_file(file_name, first_line, last_line);
                     HAS_BEEN_CHANGES = 0;
                     strcpy(interface_line, "File saved.");
                 }
@@ -182,18 +187,29 @@ main(int argc, char *argv[])
                 /* TODO; ev.key, ev.mod usable */
                 switch (ev.key) {
                     case TB_KEY_ARROW_UP:
-                        set_y(y - 1, &x, &y, last_line, &cursor_line);
+                        if (y > 0) {
+                            y--;
+                            cursor_line = cursor_line->prev;
+                        } else if (cursor_line != first_line) {
+                            first_screen_line = cursor_line = first_screen_line->prev;
+                        }
+                        x = set_x(x, cursor_line->length);
                         break;
                     case TB_KEY_ARROW_DOWN:
-                        set_y(y + 1, &x, &y, last_line, &cursor_line);
+                        if (y < screen_height - 2) {
+                            y++;
+                            cursor_line = cursor_line->next;
+                        } else if (cursor_line != last_line) {
+                            first_screen_line = first_screen_line->next;
+                            cursor_line = cursor_line->next;
+                        }
+                        x = set_x(x, cursor_line->length);
                         break;
                     case TB_KEY_ARROW_LEFT:
-                        if (x > 0)
-                            x--;
+                        x = set_x(x - 1, cursor_line->length);
                         break;
                     case TB_KEY_ARROW_RIGHT:
-                        if (cursor_line->chars[x])
-                            x++;
+                        x = set_x(x + 1, cursor_line->length);
                         break;
                 }
             }
@@ -202,8 +218,14 @@ main(int argc, char *argv[])
             /* TB_KEY_MOUSE_{LEFT, RIGHT, MIDDLE, RELEASE, WHEEL_UP, WHEEL_DOWN} */
             if (ev.key == TB_KEY_MOUSE_LEFT) {
                 if (ev.y < screen_height - 1) {
-                    x = ev.x;
-                    set_y(ev.y, &x, &y, last_line, &cursor_line);
+                    if ((cursor_line->line_nb + ev.y - y) >= nb_line) {
+                        y = y + nb_line - 1 - cursor_line->line_nb;
+                        move_cursor_line(nb_line - 1, &cursor_line);
+                    } else {
+                        move_cursor_line(cursor_line->line_nb + ev.y - y, &cursor_line);
+                        y = ev.y;
+                    }
+                    x = set_x(ev.x, cursor_line->length);
                 } else if (ev.y == screen_height - 1) {
                     /* TODO; check if in interface mode, etc */
                 }
@@ -226,7 +248,7 @@ main(int argc, char *argv[])
             screen_height = ev.h;
             screen_width = ev.w;
             if (y >= screen_height - 1)
-                set_y(screen_height - 2, &x, &y, last_line, &cursor_line);
+                set_y(screen_height - 2);
         }
     }
 
@@ -241,11 +263,12 @@ main(int argc, char *argv[])
 /* MEMORY MANAGEMENT ***********************************************************/
 
 struct line *
-new_line(int length, int was_modified)
+new_line(int line_nb, int length, int was_modified)
 {
     struct line *res;
 
     res = (struct line *) malloc(sizeof(struct line));
+    res->line_nb = line_nb;
     res->length = length;
     res->was_modified = was_modified;
     res->prev = res->next = NULL;
@@ -283,11 +306,26 @@ free_everything(struct line **first_line, struct line **last_line,
     *first_line = *last_line = *first_screen_line = *cursor_line = NULL;
 }
 
+void
+move_cursor_line(int line_nb, struct line **cursor_line)
+{
+    int mov;
+
+    mov = line_nb - (*cursor_line)->line_nb;
+    if (mov > 0) {
+        while (mov--)
+            *cursor_line = (*cursor_line)->next;
+    } else {
+        while (mov++)
+            *cursor_line = (*cursor_line)->prev;
+    }
+}
+
 
 /* FILE MANAGEMENT *************************************************************/
 
 int
-load_file(char *src_file_name,
+load_file(char *src_file_name, int *nb_line,
     struct line **first_line, struct line **last_line,
     struct line **first_screen_line, struct line **cursor_line)
 {
@@ -298,12 +336,14 @@ load_file(char *src_file_name,
     char *chars;
     int i, j;
     int c;
+    int line_nb;
     int reached_EOF;
 
     // open connection to src_file
     src_file = fopen(src_file_name, "r");
     HAS_BEEN_TRUNCATIONS = reached_EOF = 0;
     empty = 1;
+    line_nb = 1;
     *first_line = *last_line = *first_screen_line = *cursor_line = NULL;
 
     // read content into memory
@@ -321,13 +361,13 @@ load_file(char *src_file_name,
                 // break with end of logical line (EOF or '\n')
                 HAS_BEEN_TRUNCATIONS = 1;
             } else {
-                buf[i++] = c;
+                buf[i++] = (char) c;
             }
         }
         buf[i++] = '\0';
 
         // store line
-        ptr = new_line(i, 0);
+        ptr = new_line(line_nb++, i, 0);
         if (empty) {
             empty = 0;
             *first_line = *last_line = *first_screen_line = *cursor_line = ptr;
@@ -343,6 +383,7 @@ load_file(char *src_file_name,
     }
 
     // close connection to src_file
+    *nb_line = line_nb;
     fclose(src_file);
 
     return HAS_BEEN_TRUNCATIONS;
@@ -390,14 +431,14 @@ print_line(char *chars, int screen_line)
     char c;
 
     for (i = 0; c = *chars++ && i < screen_width; i++)
-        tb_set_cell(i, screen_line, c, 0, 0);
+        tb_set_cell(i, screen_line, (uint32_t) c, 0, 0);
     for (; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', 0, 0);
 }
 
 void
 print_screen(struct line *first_screen_line, struct line *last_line,
-    char *buf, int x, int y)
+    char *buf, int x, int y, int line_nb)
 {
     struct line *ptr;
     int sc_line;
@@ -420,6 +461,9 @@ print_screen(struct line *first_screen_line, struct line *last_line,
 
     /* print cursor */
     tb_set_cursor(x, y);
+
+    /* print ruler */
+    tb_printf(50, screen_height - 1, 0, 0, "%d,%d", line_nb, x);
 }
 
 
@@ -445,9 +489,7 @@ move_screen(int nlines, int *x, int *y,
         } else {
             *cursor_line = *first_screen_line;
             *y = 0;
-            for (i = *x; i >= 0; i--)
-                if ((*cursor_line)->chars[i] == '\0')
-                    *x = i;
+            *x = set_x(*x, (*cursor_line)->length);
         }
     } else if (nlines < 0) {
         for (i = 0; i > nlines; i--) {
@@ -464,9 +506,7 @@ move_screen(int nlines, int *x, int *y,
             for (i = 0; i < screen_height - 2; i++)
                 *cursor_line = (*cursor_line)->next;
             *y = screen_height - 2;
-            for (i = *x; i >= 0; i--)
-                if ((*cursor_line)->chars[i] == '\0')
-                    *x = i;
+            *x = set_x(*x, (*cursor_line)->length);
         }
     }
 
@@ -474,30 +514,17 @@ move_screen(int nlines, int *x, int *y,
 }
 
 int
-set_y(int value, int *x, int *y,
-    struct line *last_line, struct line **cursor_line)
+set_y(int value)
 {
-    // TODO: better x management
-    int i;
+    return (value < 0) ? 0 : ((value >= screen_height - 1) ? screen_height - 2 : value);
+}
 
-    if (value < 0 || screen_height - 1 <= value) {
-        return ERR_INVALID_LINE_VALUE;
+int
+set_x(int value, int line_length)
+{
+    if (value >= line_length) {
+        return line_length - 1;
     } else {
-        if (value > *y) {
-            for (; *y < value; *y++)
-                if (*cursor_line == last_line) {
-                    break;
-                } else {
-                    *cursor_line = (*cursor_line)->next;
-                }
-        } else if (value < *y) {
-            for (; *y > value; *y--)
-                *cursor_line = (*cursor_line)->prev; 
-        }
-        for (i = *x; i >= 0; i--)
-            if ((*cursor_line)->chars[i] == '\0')
-                *x = i;
-
-        return 0;
+        return value;
     }
 }

@@ -12,7 +12,6 @@
 /* TODO
  *
  * remove duplicity between y and "cursor_line - first_screen_line"
- * type cast, correct printing
  * get back when reload/save
  * add dialog mode
  * add insert mode
@@ -81,15 +80,15 @@ int write_file(char *dest_file_name,
 void move_cursor_line(int line_nb, struct line **cursor_line);
 
 /* GRAPHICAL FUNCTIONS */
-void print_line(char *chars, int screen_line);
+void print_line(char *chars, int screen_line, int length);
 void print_screen(struct line *first_screen_line, struct line *last_line,
     char *buf, int x, int y, int line_nb);
+int set_x(int value, int line_length);
 
 /* UGLY STUFF */
 int move_screen(int nlines, int *x, int *y,
     struct line *first_line, struct line *last_line,
     struct line **first_screen_line, struct line **cursor_line);
-int set_x(int value, int line_length);
 
 
 
@@ -178,7 +177,7 @@ main(int argc, char *argv[])
                     strcpy(interface_line, "File reloaded.");
                 }
                 if (c == 'w') { /* save */
-                    write_file("output", first_line, last_line);
+                    write_file(file_name, first_line, last_line);
                     HAS_BEEN_CHANGES = 0;
                     strcpy(interface_line, "File saved.");
                 }
@@ -429,17 +428,12 @@ move_cursor_line(int line_nb, struct line **cursor_line)
 /* GRAPHICAL ******************************************************************/
 
 void
-print_line(char *chars, int screen_line)
+print_line(char *chars, int screen_line, int length)
 {
     int i;
-    char c;
 
-    for (i = 0; c = *chars++ && i < screen_width; i++) {
-        printf("%c, %d; ", c, c);
-        tb_set_cell(i, screen_line, (uint32_t) 'b', 0, 0);
-    }
-    putchar('\n');
-    for (; i < screen_width; i++)
+    tb_printf(0, screen_line, 0, 0, chars);
+    for (i = length; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', 0, 0);
 }
 
@@ -457,20 +451,30 @@ print_screen(struct line *first_screen_line, struct line *last_line,
 
     /* print lines */
     for (sc_line = 0; sc_line < screen_height - 1; sc_line++) {
-        print_line(ptr->chars, sc_line);
+        print_line(ptr->chars, sc_line, ptr->length);
         if (ptr == last_line)
             break;
         ptr = ptr->next;
     }
 
      /* print interface */
-    print_line(buf, screen_height - 1);
+    print_line(buf, screen_height - 1, strlen(buf));
 
     /* print cursor */
     tb_set_cursor(x, y);
 
     /* print ruler */
     tb_printf(50, screen_height - 1, 0, 0, "%d,%d", line_nb, x);
+}
+
+int
+set_x(int value, int line_length)
+{
+    if (value >= line_length) {
+        return line_length - 1;
+    } else {
+        return value;
+    }
 }
 
 
@@ -518,14 +522,4 @@ move_screen(int nlines, int *x, int *y,
     }
 
     return 0;
-}
-
-int
-set_x(int value, int line_length)
-{
-    if (value >= line_length) {
-        return line_length - 1;
-    } else {
-        return value;
-    }
 }

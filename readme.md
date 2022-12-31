@@ -34,25 +34,12 @@ Most of these are not considered as a problem.
 
 ### Edition engine
 
-At start: matches are initialised at lines.
+... see commands
 
-SELECTION:
-* search for pattern (mark pattern elements, narrow matches)
-* keep containing pattern (mark pattern elements)
-* ignore (remove match but outputs) or exclude (suppress) containing pattern
-
-ACTIONS:
-* change field separator
-* display number of matches
-* replace with pattern elements and fields
-* switch to uppercase/lowercase
-* insert character at given position
-* remove character at given position
-
-    \\ (backslash), \$ (dollar sign)
-    \0 (whole pattern), \1 .. \9 (subpattern in regex)
-    $0 (whole line), $1 .. $9 (fields)
-    $c (inline_clipboard) ??
+\\ (backslash), \$ (dollar sign)
+\0 (whole pattern), \1 .. \9 (subpattern in regex)
+$0 (whole line), $1 .. $9 (fields)
+$c (inline_clipboard) ??
 
 ### Client
 
@@ -74,10 +61,28 @@ Maybe in a far future:
 * [langage] structural completion, reformating ???
 * visual wrap of long lines ???
 
+## Commands
+
+    FILE MANAGEMENT
+    
+        q   quit
+        w   write
+        W   write as
+        r   reload
+
+    MODES MANAGEMENT
+
+    <ESC>   return to default mode
+        i   get in insert mode
+
+    PARAMETERS MANAGEMENTS
+        S   change a parameter
+
 ## Roadmap
 
 * add edition engine (1 cursor, LIFO of selections)
 * add UTF-8 support
+* add long line support
 
 ## Thanks
 
@@ -124,92 +129,54 @@ Documentation:
 
 ### Keybinds
 
-echo "file %% opened (q to exit)"
-
-FILE MANAGEMENT:
-[q] quit; if unsaved changes: DIALOG single "qw"
-    [q] quit without save
-    [w] save and quit
-[w] write; if truncations: DIALOG single "Ww"
-    [W] write as: see below
-    [w] write
-[W] write as: if (DIALOG prompt "File name: ") {change name; write;}
-[R] reload
-
-PARAMETER MANAGEMENT:
-[S] set parameter: if (DIALOG prompt "Parameter modification: ") modif (echoes if not successful)
-
-CURSOR MANAGEMENT:
-[ ] associated brackets
-[ / ] start/end of line
-[g] go to line: DIALOG prompt "Go to line: " (g -> start of file)
-[G] go to end of file
-[n/N] <n> next/previous match
-[ / ] <n> next/previous character
-[ / ] <n> next/previous word
-[ / ] <n> next/previous line
-[ / ] <n> next/previous block
-
-GET IN INSERT MODE:
-[i] before cursor
-TODO ...
-
-IN INSERT:
-    echo "INSERT (ESC to exit)"
-    [ESC] get out of INSERT
-    [else] write char
-
-LINE MANAGEMENT:
+''' LINE MANAGEMENT:
 [ ] yank <n> lines
 [ ] delete <n> lines
 [ / ] paste after/before <n> times
 [ ] duplicate (<n>) lines
 [ / ] move (<n>) lines up/down (<m>) lines
+'''
 
-''' EDITION ENGINE RELATED
+''' EDITION ENGINE
+When multiples matches: what appends on move ? keep selection ? move all cursors ?
 
-SELECTIONS MANAGEMENT:
-[ESC] select only 0 chars at cursor
-    mark all lines of custom range (like sed)
-[%] select all lines of files                       (no filter)
-[b] select all lines of paragraph                   (no filter)
-TODO
-    what is deselected ?
-    create/delete selections
-    selections on search
-    selections by movement
-
-As a filter: select all lines at start
+CURSOR MANAGEMENT:
+[ ] anchor
+[ ] associated brackets (OK for multiples)
+[ / ] start/end of line (OK for multiples)
+[g] go to line: DIALOG prompt "Go to line: " (g -> start of file)
+[G] go to end of file
+[n/N] <n> next/previous match
+[ / ] <n> next/previous character (OK for multiples)
+[ / ] <n> next/previous word (OK for multiples)
+[ / ] <n> next/previous line ()
+[ / ] <n> next/previous block
 
 SELECTION:
-[s] search for pattern (mark pattern elements, narrow matches)
-[ ] keep containing pattern (mark pattern elements)
-[ ] ignore (remove match but outputs) containing pattern
-[ ] exclude (suppress) containing pattern
+    mark all lines of custom range (like sed)       (OUTPUTS LINES)
+[s] search for pattern                              (OUTPUTS MATCHES)
+[ ] keep containing pattern                         (OUTPUTS LINES)
+[ ] ignore (print to stdout) containing pattern     (OUTPUTS LINES)
+[ ] suppress containing pattern                     (OUTPUTS LINES)
+[.] MATCHES TO LINES MODES                          (OUTPUTS LINES)
+(in interactive only)
+[ ] select only 0 chars at cursor                   (OUTPUTS MATCHES)
+    create/delete matches, anchor, column editing...(OUTPUTS MATCHES)
+[%] select all lines of files                       (OUTPUTS LINES)
+[b] select all lines of current paragraph           (OUTPUTS LINES)
 
 ACTIONS:
 [ ] change field separator
 [ ] display number of matches
 [ ] replace with pattern elements and fields (MATCH)
-[u/U] switch to lowercase/lowercase (MATCH) 
-[ ] insert character(s) before (MATCH)
-[ ] remove <n> first characters (MATCH)
+[u/U] switch to lowercase/uppercase (MATCH) 
+[ / ] insert character before/after (MATCH)
+[ / ] remove (/and move match) selection/first character (MATCH)
 [ / ] increase/decrease indent (LINE)
 [ / ] comment/uncomment (LINE)
 
 for LINE actions, extends selections to lines before acting
 '''
-
-IN DIALOG single(const char * prompt, const char * specifiedchars):
-    echo prompt
-    [ESC] return 0
-    [specifiedchars] return char
-
-IN DIALOG prompt(const char * prompt, char **buf, int nbcharmax):
-    echo prompt
-    [ESC] return 0
-    [ENTER] return 1
-    [else] write to buf, print after prompt
 
 
 ### Registers (old)
@@ -220,7 +187,6 @@ OPTIONS:
 * highlight_matches
 * case_sensitive
 * use_tabs
-* cursor_line
 * is_anchored
 
 VARIABLES:

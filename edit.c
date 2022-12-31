@@ -11,9 +11,10 @@
 
 /* TODO
  *
- * add dialog mode
- * better insert mode
  * add line management
+ * add parameters
+ * dialog mode: click, arrow, return
+ * insert mode: return, enter
  * manage malloc error
  * str alike management (strcpy...)
  */
@@ -37,12 +38,17 @@
 #include "termbox.h"
 
 // CONSTANTS
+#define BACKUP_FILE_NAME            "edit_backup_file"
 #define MAX_CHARS                   (1 << 10)
 #define MIN_WIDTH                   81
 #define RULER_WIDTH                 8
 #define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
 #define MIN_HEIGHT                  2
 #define SCROLL_LINE_NUMBER          3
+
+// STATES
+#define DEFAULT_MODE                0
+#define INSERT_MODE                 1
 
 // ERROR CODES
 #define ERR_TERM_NOT_BIG_ENOUGH     1
@@ -82,8 +88,8 @@ void print_ruler(void);
 void echo(const char *str);
 void set_x(int value);
 
-// INTERACTION FUNCTIONS
-int dialog(const char *prompt, const char *specific_chars, int WRITE_TO_BUF);
+// INTERACTION
+int dialog(const char *prompt, const char *specific, int writable);
 
 // VARIABLES
 char file_name[INTERFACE_WIDTH];            // manipulated file name
@@ -92,6 +98,7 @@ int has_been_changes;                       // store the existence of changes
 int screen_height, screen_width;            // terminal dimensions
 int x, y;                                   // cursor position in file area
 char interface[INTERFACE_WIDTH];            // interface buffer
+int prompt_length, interface_x;             // prompt length, cursor position in interface
 char message_archive[INTERFACE_WIDTH];      // echoed message archive
 struct tb_event ev;                         // struct to retrieve events
 struct line *first_line;
@@ -105,6 +112,8 @@ struct line *cursor_line;                   // only for fast access
 int
 main(int argc, char *argv[])
 {
+    int state;
+    int a; /* answer to dialog */
     int i;
     uint32_t c;
 
@@ -120,6 +129,7 @@ main(int argc, char *argv[])
     // load file
     first_line = first_line_on_screen = cursor_line = NULL;
     has_been_changes = 0;
+    state = DEFAULT_MODE;
     load_file(file_name, 1, 0);
     printf("File %s loaded.\n", file_name);
 
@@ -134,7 +144,7 @@ main(int argc, char *argv[])
 
     // main loop
     while (1) {
-        print_screen();
+        print_screen(); // TODO: be smarter
         tb_present();
         tb_poll_event(&ev);
         if (ev.type == TB_EVENT_KEY) {
@@ -145,112 +155,150 @@ main(int argc, char *argv[])
             //  modifiers to TB_KEY_ARROW_*.
             if (c = ev.ch) {
                 // TODO; c = ev.ch, ev.mod usable
-                if (c == 'q') {
-                    // QUIT
-                    // TODO: check for need to save ?
-                    break;
-                }
-                if (c == 'i') { // INSERT MODE
-                    echo("INSERT (ESC to exit)");
-                    while (1) {
-                        tb_present();
-                        tb_poll_event(&ev);
-                        if (ev.type == TB_EVENT_KEY) {
-                            if (c = ev.ch) {
-                                insert(c, x, cursor_line);
-                                has_been_changes = 1;
-                                print_line(cursor_line->chars, y, cursor_line->length);
-                                if (x < screen_width - 1) {
-                                    x++;
-                                    tb_set_cursor(x, y);
-                                }
-                            } else if (ev.key == 27) { // ESCAPE
+                if (state == DEFAULT_MODE) {
+                    // control key
+                    if (c == 'q') { // QUIT
+                        // TODO: check for need to save ?
+                        if (has_been_changes) {
+                            if (a = dialog("Lose changes ? (q: quit, w: write and quit, ESC: cancel)", "qw", 0)) {
+                                if (a == 'w')
+                                    write_file(file_name);
                                 break;
-                            } else if (ev.key == 13) { // ENTER
-
-                            } else if (ev.key == 127) { // RETURN
-
-                            } else { // TODO: HANDLE OTHER THINGS
-
                             }
                         } else {
-                            // TODO: HANDLE OTHER THINGS
+                            break;
+                        }
+                    } else if (c == 'w') { // WRITE
+                        if (has_been_changes) {
+                            write_file(file_name);
+                            has_been_changes = 0;
+                            echo("File saved.");
+                        } else {
+                            echo("No changes to write.");
+                        }
+                    } else if (c == 'W') { // WRITE AS
+                        if (dialog("Save as (ESC to cancel): ", "", 1)) {
+                            for (i = interface_x; i >= prompt_length; i--)
+                                file_name[i-prompt_length] = interface[i];
+                            write_file(file_name);
+                            has_been_changes = 0;
+                            echo("File saved.");
+                        }
+                    } else if (c == 'r') { // RELOAD
+                        if (has_been_changes) {
+                            free_lines();
+                            load_file(file_name, first_line_on_screen->line_nb, y);
+                            has_been_changes = 0;
+                            echo("File reloaded.");
+                        } else {
+                            echo("No changes to revert.");
                         }
 
+                    } else if (c == 'i') { // INSERT MODE
+                        state = INSERT_MODE;
+                        echo("INSERT (ESC to exit)");
+
+                    } else if (c == 'S') { // CHANGE PARAMETER
+                        if (dialog("Change parameter: ", "", 1)) {
+                            for (i = interface_x; i >= prompt_length; i--)
+                                file_name[i-prompt_length] = interface[i];
+                            // TODO: parameter modif, echoes if not succesful
+
+                        }
+
+                    } else if (c == 't') { // TESTING
+                        echo(file_name);
+                    } else if (c == 'd') {
+                        move_screen(1);
+                    } else if (c == 'u') {
+                        move_screen(-1);
                     }
-                    echo("");
+
+                } else if (state == INSERT_MODE) {
+                    // character insertion
+                    insert(c, x, cursor_line);
+                    has_been_changes = 1;
+                    print_line(cursor_line->chars, y, cursor_line->length);
+                    if (x < screen_width - 1) {
+                        x++;
+                        tb_set_cursor(x, y);
+                    }
+
                 }
-                if (c == 'd')
-                    move_screen(1);
-                if (c == 'u')
-                    move_screen(-1);
-                if (c == 'r') { // RELOAD
-                    // TODO: check if get back to right line..., get cursor right
-                    printf("Tryint to free...\n");
-                    free_lines();
-                    printf("Successful free.\n");
-                    load_file(file_name, first_line_on_screen->line_nb, y);
-                    has_been_changes = 0;
-                    echo("File reloaded.");
-                }
-                if (c == 'w') { // WRITE
-                    write_file(file_name);
-                    has_been_changes = 0;
-                    echo("File saved.");
-                }
+
             } else {
-                // TODO; ev.key, ev.mod usable
-                switch (ev.key) {
-                case TB_KEY_ARROW_UP:
-                    if (y > 0) {
-                        y--;
-                        cursor_line = cursor_line->prev;
-                    } else if (cursor_line->prev != NULL) {
-                        first_line_on_screen = cursor_line = cursor_line->prev;
-                    }
-                    set_x(x);
-                    break;
-                case TB_KEY_ARROW_DOWN:
-                    if (cursor_line->next != NULL) {
-                        cursor_line = cursor_line->next;
-                        if (y < screen_height - 2) {
-                            y++;
-                        } else {
-                            first_line_on_screen = first_line_on_screen->next;
+                // much TODO; ev.key, ev.mod usable
+                if (ev.key == TB_KEY_ESC) {
+                    state = DEFAULT_MODE;
+                    echo("");
+                } else if (ev.key == TB_KEY_ENTER) {
+                    // TODO
+                } else if (ev.key == 127) { // RETURN (TODO: change code)
+                    // TODO
+                } else {
+                    // arrows movement
+                    if (ev.key == TB_KEY_ARROW_UP) {
+                        if (y > 0) {
+                            y--;
+                            cursor_line = cursor_line->prev;
+                        } else if (cursor_line->prev != NULL) {
+                            first_line_on_screen = cursor_line = cursor_line->prev;
                         }
                         set_x(x);
+                    } else if (ev.key == TB_KEY_ARROW_DOWN) {
+                        if (cursor_line->next != NULL) {
+                            cursor_line = cursor_line->next;
+                            if (y < screen_height - 2) {
+                                y++;
+                            } else {
+                                first_line_on_screen = first_line_on_screen->next;
+                            }
+                            set_x(x);
+                        }
+                    } else if (ev.key == TB_KEY_ARROW_LEFT) {
+                        set_x(x - 1);
+                    } else if (ev.key == TB_KEY_ARROW_RIGHT) {
+                        set_x(x + 1);
                     }
-                    break;
-                case TB_KEY_ARROW_LEFT:
-                    set_x(x - 1);
-                    break;
-                case TB_KEY_ARROW_RIGHT:
-                    set_x(x + 1);
-                    break;
                 }
             }
+
         } else if (ev.type == TB_EVENT_MOUSE) {
-            if (ev.key == TB_KEY_MOUSE_LEFT && ev.y < screen_height - 1) {
-                if ((cursor_line->line_nb + ev.y - y) >= nb_line) {
-                    y = y + nb_line - 1 - cursor_line->line_nb;
-                    move_cursor_line(nb_line - 1);
-                } else {
-                    move_cursor_line(cursor_line->line_nb + ev.y - y);
-                    y = ev.y;
+            if (ev.key == TB_KEY_MOUSE_LEFT) {
+                // left mouse click
+                if (ev.y < screen_height - 1) {
+                    if ((cursor_line->line_nb + ev.y - y) >= nb_line) {
+                        move_cursor_line(nb_line - 1);
+                        y = y + nb_line - 1 - cursor_line->line_nb;
+                    } else {
+                        move_cursor_line(cursor_line->line_nb + ev.y - y);
+                        y = ev.y;
+                    }
+                    set_x(ev.x);
                 }
-                set_x(ev.x);
             } else if (ev.key == TB_KEY_MOUSE_WHEEL_UP) {
+                // scrolling up
                 move_screen(-SCROLL_LINE_NUMBER);
+
             } else if (ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
+                // scrolling down
                 move_screen(SCROLL_LINE_NUMBER);
             }
+
         } else if (ev.type == TB_EVENT_RESIZE) {
-            if (resize(ev.w, ev.h))
-                // TODO: graceful crash if unsaved changes
+            // terminal is resized
+            if (resize(ev.w, ev.h)) {
+                if (has_been_changes) {
+                    write_file(BACKUP_FILE_NAME);
+                    fprintf(stderr, "%s as been wrote as backup.\n", BACKUP_FILE_NAME);
+                }
                 return ERR_TERM_NOT_BIG_ENOUGH;
-            if (y >= screen_height - 1)
-                y = screen_height - 2;
-            set_x(x);
+            } else {
+                if (y >= screen_height - 1)
+                    move_cursor_line(first_line_on_screen->line_nb + screen_height - 2);
+                    y = screen_height - 2;
+                set_x(x);
+            }
         }
     }
 
@@ -589,40 +637,84 @@ is_in(const char *chars, char x)
 }
 
 int
-dialog(const char *prompt, const char *specific_chars, int WRITE_TO_BUF)
-{
-    struct tb_event ev;
-    int prompt_length;
+dialog(const char *prompt, const char *specific_chars, int writable_dialog)
+{ 
     int available_width;
     int i;
     char c;
 
     prompt_length = strlen(prompt);
-    available_width = INTERFACE_WIDTH - prompt_length;
+    interface_x = prompt_length;
+    strcpy(interface, prompt);
+    echo(interface);
 
-    // TODO: echo prompt
-    print_line(prompt, screen_height - 1, prompt_length);
-
-    i = 0;
     while (1) {
+        print_screen(); // TODO: be smarter
         tb_present();
         tb_poll_event(&ev);
         if (ev.type == TB_EVENT_KEY) {
+            // TODO: manage modifiers
+            //  (key XOR ch, one will be zero), mod. Note there is
+            //  overlap between TB_MOD_CTRL and TB_KEY_CTRL_*.
+            //  TB_MOD_CTRL and TB_MOD_SHIFT are only set as
+            //  modifiers to TB_KEY_ARROW_*.
             if (c = ev.ch) {
                 if (is_in(specific_chars, c)) {
                     return c;
-                } else if (WRITE_TO_BUF && i < available_width) {
-                    tb_set_cell(prompt_length + i, screen_height - 1, c, 0, 0);
-                    interface[i++] = c;
+                } else if (writable_dialog
+                    && interface_x < INTERFACE_WIDTH - 1) {
+                    // TODO: manage deletes, cursor click, arrow movement
+                    interface[interface_x++] = c;
+                    interface[interface_x] = '\0';
+                    echo(interface);
                 }
-            } else if (ev.key == 27) { // ESCAPE
-                return 0;
-            } else if (ev.key == 13) { // ENTER
-                return -1;
-            } else if (ev.key == 127) { // RETURN
+            } else {
+                // much TODO; ev.key, ev.mod usable
+                if (ev.key == TB_KEY_ESC) { // cancel
+                    echo("");
+                    return 0;
+                } else if (writable_dialog && ev.key == TB_KEY_ENTER) {
+                    return -1;
+                } /*else if (ev.key == 127) { // RETURN (TODO: change code)
+                    // TODO
+                } else {
+                    // arrows movement
+                    if (ev.key == TB_KEY_ARROW_UP) {
+                    } else if (ev.key == TB_KEY_ARROW_DOWN) {
+                    } else if (ev.key == TB_KEY_ARROW_LEFT) {
+                    } else if (ev.key == TB_KEY_ARROW_RIGHT) {
+                    }
+                }*/
             }
-        } else {
-            // TODO: manage others
-        }
+    
+        } /*else if (ev.type == TB_EVENT_MOUSE) {
+            if (ev.key == TB_KEY_MOUSE_LEFT
+                // left mouse click
+                && ev.y = screen_height - 1
+                && prompt_length <= ev.x && ev.x < INTERFACE_WIDTH) {
+                interface_x = ev.x;
+                tb_set_cursor(interface_x, screen_height - 1);
+            } else if (ev.key == TB_KEY_MOUSE_WHEEL_UP) {
+                // scrolling up
+                move_screen(-SCROLL_LINE_NUMBER);
+    
+            } else if (ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
+                // scrolling down
+                move_screen(SCROLL_LINE_NUMBER);
+            }
+    
+        } else if (ev.type == TB_EVENT_RESIZE) {
+            // terminal is resized
+            if (resize(ev.w, ev.h)) {
+                write_file(BACKUP_FILE_NAME);
+                fprintf(stderr, "%s as been wrote as backup.\n", BACKUP_FILE_NAME);
+            return ERR_TERM_NOT_BIG_ENOUGH;
+            } else {
+                if (y >= screen_height - 1)
+                    move_cursor_line(first_line_on_screen->line_nb + screen_height - 2);
+                    y = screen_height - 2;
+                set_x(x);
+            }
+        }*/
     }
 }

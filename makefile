@@ -1,5 +1,5 @@
-edit: edit.c termbox.h
-	gcc -o edit edit.c
+binary: edit.c termbox.h
+	gcc -o binary edit.c
 
-test: edit
-	./edit input > log.txt
+test: binary
+	./binary input > log.txt

@@ -80,6 +80,7 @@ Maybe in a far future:
 
 ## Roadmap
 
+* add syntax highlight
 * add edition engine (1 cursor, LIFO of selections)
 * add UTF-8 support
 * add long line support
@@ -179,7 +180,7 @@ for LINE actions, extends selections to lines before acting
 '''
 
 
-### Registers (old)
+### Registers (in far future)
 
 OPTIONS:
 * autoindent
@@ -192,11 +193,8 @@ OPTIONS:
 VARIABLES:
 * field_separator
 * tab_width
-* scrolloff (number of screen lines to keep above and below the cursor)
 * langage
-* state (with precedent)
 * anchor, cursor (with precedent) position
-* window size
 * search pattern (with precedent)
 * clipboard (history ?)
 * macro (with precedent)

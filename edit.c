@@ -11,7 +11,6 @@
 
 /* TODO
  *
- * fix bug on reload, get back at position
  * add dialog mode
  * better insert mode
  * add line management
@@ -34,6 +33,7 @@
 
 // INCLUDES
 #include <stdio.h>
+#include <stdlib.h>
 #include "termbox.h"
 
 // CONSTANTS
@@ -56,14 +56,14 @@ struct line {
     int line_nb;
     int length;
     int was_modified;
-    struct line *prev;                      // ptr to prev line struct
-    struct line *next;                      // ptr to next line struct
+    struct line *prev;                      // pointer to prev line struct
+    struct line *next;                      // pointer to next line struct
     char *chars;
 };
 
 // MEMORY MANAGEMENT FUNCTIONS
 struct line *new_line(int line_nb, int length, int was_modified);
-void free_everything(void);
+void free_lines(void);
 
 // FILE MANAGEMENT FUNCTIONS
 int load_file(char *src_file_name, int first_line_on_screen_nb, int asked_y);
@@ -122,7 +122,7 @@ main(int argc, char *argv[])
     has_been_changes = 0;
     load_file(file_name, 1, 0);
     printf("File %s loaded.\n", file_name);
-    
+
     // initialise termbox
     x = y = 0;
     tb_init();
@@ -178,6 +178,7 @@ main(int argc, char *argv[])
                         }
 
                     }
+                    echo("");
                 }
                 if (c == 'd')
                     move_screen(1);
@@ -185,8 +186,8 @@ main(int argc, char *argv[])
                     move_screen(-1);
                 if (c == 'r') { // RELOAD
                     // TODO: check if get back to right line..., get cursor right
-                    printf("To reload...\n");
-                    free_everything();
+                    printf("Tryint to free...\n");
+                    free_lines();
                     printf("Successful free.\n");
                     load_file(file_name, first_line_on_screen->line_nb, y);
                     has_been_changes = 0;
@@ -210,14 +211,15 @@ main(int argc, char *argv[])
                     set_x(x);
                     break;
                 case TB_KEY_ARROW_DOWN:
-                    if (y < screen_height - 2) {
-                        y++;
+                    if (cursor_line->next != NULL) {
                         cursor_line = cursor_line->next;
-                    } else if (cursor_line->next != NULL) {
-                        first_line_on_screen = first_line_on_screen->next;
-                        cursor_line = cursor_line->next;
+                        if (y < screen_height - 2) {
+                            y++;
+                        } else {
+                            first_line_on_screen = first_line_on_screen->next;
+                        }
+                        set_x(x);
                     }
-                    set_x(x);
                     break;
                 case TB_KEY_ARROW_LEFT:
                     set_x(x - 1);
@@ -267,25 +269,27 @@ new_line(int line_nb, int length, int was_modified)
 {
     struct line *res;
 
+    printf("Asking for a line... ");
     res = (struct line *) malloc(sizeof(struct line));
+    printf("got %p (line %d, length %d)\n", res, line_nb, length);
     res->line_nb = line_nb;
     res->length = length;
     res->was_modified = was_modified;
     res->prev = res->next = NULL;
+    printf("Asking for %d characters... \n", length);
     res->chars = (char *) malloc(length * sizeof(char));
 
     return res;
 }
 
 void
-free_everything(void)
+free_lines(void)
 {
+
     struct line *old_ptr;
     struct line *ptr;
 
-    printf("Trying to free everything.\n");
-    if (first_line != NULL)
-    {
+    if (first_line != NULL) {
         printf("First line at %p.\n", first_line);
         ptr = first_line;
         while (ptr->next != NULL) {
@@ -294,10 +298,11 @@ free_everything(void)
             free(old_ptr->chars);
             free(old_ptr);
         }
-        // free(ptr->chars);
-        // free(ptr);
-        first_line = first_line_on_screen = cursor_line = NULL;
+        free(ptr->chars);
+        free(ptr);
     }
+
+    /* first_line, cursor_line and first_line_on_screen points to nowhere */
 }
 
 
@@ -344,11 +349,9 @@ load_file(char *src_file_name, int first_line_on_screen_nb, int asked_y)
         if (first_line == NULL) {
             first_line = last_line = ptr;
             ptr->prev = NULL;
-            ptr->next = NULL;
         } else {
             last_line->next = ptr;
             ptr->prev = last_line;
-            ptr->next = NULL;
             last_line = ptr;
         }
         strcpy(ptr->chars, buf);
@@ -358,6 +361,8 @@ load_file(char *src_file_name, int first_line_on_screen_nb, int asked_y)
             cursor_line = ptr;
         line_nb++;
     }
+
+    last_line->next = NULL;
 
     // fall back for pointers
     if (cursor_line == NULL) {

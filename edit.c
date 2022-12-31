@@ -66,11 +66,12 @@ struct line *new_line(int line_nb, int length, int was_modified);
 void free_everything(void);
 
 // FILE MANAGEMENT FUNCTIONS
-int load_file(char *file_name);
+int load_file(char *src_file_name, int first_line_on_screen_nb, int asked_y);
 int write_file(char *file_name);
 
 // LINE MANAGEMENT FUNCTIONS
 void move_cursor_line(int line_nb);
+int move_screen(int nlines);
 void insert(char c, int pos, struct line *line);
 
 // GRAPHICAL FUNCTIONS
@@ -79,14 +80,10 @@ void print_line(const char *chars, int screen_line, int length);
 void print_screen(void);
 void print_ruler(void);
 void echo(const char *str);
-int set_x(int value);
+void set_x(int value);
 
 // INTERACTION FUNCTIONS
 int dialog(const char *prompt, const char *specific_chars, int WRITE_TO_BUF);
-
-// UGLY STUFF
-int move_screen(int nlines);
-int is_in(const char *chars, char x);
 
 // VARIABLES
 char file_name[INTERFACE_WIDTH];            // manipulated file name
@@ -95,6 +92,7 @@ int has_been_changes;                       // store the existence of changes
 int screen_height, screen_width;            // terminal dimensions
 int x, y;                                   // cursor position in file area
 char interface[INTERFACE_WIDTH];            // interface buffer
+char message_archive[INTERFACE_WIDTH];      // echoed message archive
 struct tb_event ev;                         // struct to retrieve events
 struct line *first_line;
 struct line *first_line_on_screen;
@@ -122,16 +120,16 @@ main(int argc, char *argv[])
     // load file
     first_line = first_line_on_screen = cursor_line = NULL;
     has_been_changes = 0;
-    load_file(file_name);
+    load_file(file_name, 1, 0);
     printf("File %s loaded.\n", file_name);
     
     // initialise termbox
+    x = y = 0;
     tb_init();
     if (MOUSE_SUPPORT)
         tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
     if (resize(tb_width(), tb_height()))
         return ERR_TERM_NOT_BIG_ENOUGH;
-    x = y = 0;
     echo("Welcome to edit!");
 
     // main loop
@@ -186,9 +184,11 @@ main(int argc, char *argv[])
                 if (c == 'u')
                     move_screen(-1);
                 if (c == 'r') { // RELOAD
-                    // TODO: get back to right line..., get cursor right
+                    // TODO: check if get back to right line..., get cursor right
+                    printf("To reload...\n");
                     free_everything();
-                    load_file(file_name);
+                    printf("Successful free.\n");
+                    load_file(file_name, first_line_on_screen->line_nb, y);
                     has_been_changes = 0;
                     echo("File reloaded.");
                 }
@@ -283,8 +283,10 @@ free_everything(void)
     struct line *old_ptr;
     struct line *ptr;
 
+    printf("Trying to free everything.\n");
     if (first_line != NULL)
     {
+        printf("First line at %p.\n", first_line);
         ptr = first_line;
         while (ptr->next != NULL) {
             old_ptr = ptr;
@@ -292,8 +294,8 @@ free_everything(void)
             free(old_ptr->chars);
             free(old_ptr);
         }
-        free(ptr->chars);
-        free(ptr);
+        // free(ptr->chars);
+        // free(ptr);
         first_line = first_line_on_screen = cursor_line = NULL;
     }
 }
@@ -302,7 +304,7 @@ free_everything(void)
 /* FILE MANAGEMENT *************************************************************/
 
 int
-load_file(char *src_file_name)
+load_file(char *src_file_name, int first_line_on_screen_nb, int asked_y)
 {
     FILE *src_file = NULL;
     char buf[MAX_CHARS];
@@ -338,9 +340,9 @@ load_file(char *src_file_name)
         buf[i++] = '\0';
 
         // store line
-        ptr = new_line(line_nb++, i, 0);
+        ptr = new_line(line_nb, i, 0);
         if (first_line == NULL) {
-            first_line = first_line_on_screen = last_line = cursor_line = ptr;
+            first_line = last_line = ptr;
             ptr->prev = NULL;
             ptr->next = NULL;
         } else {
@@ -350,7 +352,19 @@ load_file(char *src_file_name)
             last_line = ptr;
         }
         strcpy(ptr->chars, buf);
+        if (line_nb == first_line_on_screen_nb)
+            first_line_on_screen = ptr;
+        if (line_nb == first_line_on_screen_nb + asked_y)
+            cursor_line = ptr;
+        line_nb++;
     }
+
+    // fall back for pointers
+    if (cursor_line == NULL) {
+        first_line_on_screen = cursor_line = ptr;
+        y = 0; // TODO: check if coherent
+    }
+    set_x(x);
 
     // close connection to src_file
     nb_line = line_nb;
@@ -410,6 +424,48 @@ move_cursor_line(int line_nb)
     }
 }
 
+int
+move_screen(int nlines)
+{
+    int i;
+
+    if (nlines > 0) {
+        for (i = 0; i < nlines; i++) {
+            if (first_line_on_screen->next == NULL) {
+                break;
+            } else {
+                first_line_on_screen = first_line_on_screen->next;
+            }
+        }
+        if (y - i >= 0) {
+            y = y - i;
+        } else {
+            cursor_line = first_line_on_screen;
+            y = 0;
+            set_x(x);
+        }
+    } else if (nlines < 0) {
+        for (i = 0; i > nlines; i--) {
+            if (first_line_on_screen->prev == NULL) {
+                break;
+            } else {
+                first_line_on_screen = first_line_on_screen->prev;
+            }
+        }
+        if (y - i < screen_height - 1) {
+            y = y - i;
+        } else {
+            cursor_line = first_line_on_screen;
+            for (i = 0; i < screen_height - 2; i++)
+                cursor_line = cursor_line->next;
+            y = screen_height - 2;
+            set_x(x);
+        }
+    }
+
+    return 0;
+}
+
 void
 insert(char c, int pos, struct line *line)
 {
@@ -455,7 +511,7 @@ print_line(const char *chars, int screen_line, int length)
     int i;
 
     tb_printf(0, screen_line, 0, 0, chars);
-    for (i = length; i < screen_width; i++)
+    for (i = length - 1; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', 0, 0);
 }
 
@@ -479,12 +535,18 @@ print_screen(void)
 
     tb_set_cursor(x, y);
     print_ruler();
+    echo(message_archive);
 }
 
 void
 print_ruler(void)
 {
-    tb_printf(screen_width - RULER_WIDTH, screen_height - 1, 0, 0, "%d,%d", y, x);
+    int i;
+
+    for (i = 0; i < RULER_WIDTH; i++)
+        tb_set_cell(screen_width - RULER_WIDTH + i, screen_height - 1, ' ', 0, 0);
+    tb_printf(screen_width - RULER_WIDTH, screen_height - 1, 0, 0,
+        "%d,%d", cursor_line->line_nb, x);
 }
 
 void
@@ -492,12 +554,13 @@ echo(const char *str)
 {
     int i;
 
+    strcpy(message_archive, str);
     tb_print(0, screen_height - 1, 0, 0, str);
     for (i = strlen(str); i < screen_width - RULER_WIDTH; i++)
         tb_set_cell(i, screen_height - 1, ' ', 0, 0);
 }
 
-int
+void
 set_x(int value)
 {
     x = (value >= cursor_line->length) ?
@@ -532,7 +595,7 @@ dialog(const char *prompt, const char *specific_chars, int WRITE_TO_BUF)
     prompt_length = strlen(prompt);
     available_width = INTERFACE_WIDTH - prompt_length;
 
-    // echo prompt
+    // TODO: echo prompt
     print_line(prompt, screen_height - 1, prompt_length);
 
     i = 0;
@@ -557,49 +620,4 @@ dialog(const char *prompt, const char *specific_chars, int WRITE_TO_BUF)
             // TODO: manage others
         }
     }
-}
-
-
-/* UGLY STUFF *****************************************************************/
-
-int
-move_screen(int nlines)
-{
-    int i;
-
-    if (nlines > 0) {
-        for (i = 0; i < nlines; i++) {
-            if (first_line_on_screen->next == NULL) {
-                break;
-            } else {
-                first_line_on_screen = first_line_on_screen->next;
-            }
-        }
-        if (y - i >= 0) {
-            y = y - i;
-        } else {
-            cursor_line = first_line_on_screen;
-            y = 0;
-            set_x(x);
-        }
-    } else if (nlines < 0) {
-        for (i = 0; i > nlines; i--) {
-            if (first_line_on_screen->prev == NULL) {
-                break;
-            } else {
-                first_line_on_screen = first_line_on_screen->prev;
-            }
-        }
-        if (y - i < screen_height - 1) {
-            y = y - i;
-        } else {
-            cursor_line = first_line_on_screen;
-            for (i = 0; i < screen_height - 2; i++)
-                cursor_line = cursor_line->next;
-            y = screen_height - 2;
-            set_x(x);
-        }
-    }
-
-    return 0;
 }

@@ -2,99 +2,159 @@
 
 Simple, featured, modal text editor.
 
-## Uses
+## TODO
 
-Ships with both text editing engine and visual client.
+* change data representation
 
-* can be used as a filter, using only the edition engine.
-* modal visual client, with insert mode, edition mode and tight integration of the edition engine.
-* read-only mode (act as a pager).
+* load, save file
+* display file, basic movements
+* add dialog mode, with click, arrows, return
+
+* add advanced movements
+* add selections-oriented engine
+* add insert mode
+* add clipboard management
+* add read-only mode
+* add advanced modification tools
+* add syntax highlight
+* add UTF-8 support
+* add long line support
+* add search and replace engine
 
 ## Goals
 
-* simplicity, predictability, efficiency
+* simplicity, predictability, efficiency, orthogonality
+* sane defaults, in config.def.h
 * suckless (small, idiomatic codebase, no runtime parameter...)
 * <= 3000 SLOC
 * no deps
 
 ## Opiniated choices
 
-* *selection then action* philosophy
+* *selection then action* philosophy.
 * no undo/redo: the save/reload/quit philosophy...
+* does not visually wrap lines.
 
 ## Limitations
 
-Most of these are not considered as a problem.
-
 * does not work well with very big files.
 * does not visually wrap lines.
-* truncate each lines at MAX_CHARS characters.
 
 ## Features
 
-### Edition engine
-
-... see commands
-
-\\ (backslash), \$ (dollar sign)
-\0 (whole pattern), \1 .. \9 (subpattern in regex)
-$0 (whole line), $1 .. $9 (fields)
-$c (inline_clipboard) ??
-
-### Client
-
+* UTF-8 support
+* read-only mode (can act as a pager)
 * modal editor: edit, insert, dialog modes
 * syntax highlight (for some langages)
 * advanced navigation
-* mouse support (can be disabled at compile time)
+* mouse support
 * advanced line management
-* incremental view of what engine will do
-* client-server transactionnal architecture: issues edition commands to engine
+* search and replace engine
 
 Maybe in a far future:
-* multi-cursor/collaborative mode ?
+* scrolloff ?
 * [langage] auto-indenting ?
 * load other file in current file ?
 * tab-completion ??
 * inline clipboard ??
-* macros ???
-* [langage] structural completion, reformating ???
 * visual wrap of long lines ???
+* macros ???
 
-## Commands
+## Default keybinds
 
-    FILE MANAGEMENT
+    GENERAL
+            <ESC>   return to default mode
+                ?   help
+                q   quit
+                w   write
+                W   write as
+                r   reload
+                i   get in insert mode
+                s   change a parameter
+
+    INSERT MODE (after removing selections)
+              I/A   at start/end of line
+              o/O   on an empty line created below/above cursor line
+
+    LINES
+              y/Y   yank <n> lines/blocks
+              d/D   delete <n> lines/blocks
+              p/P   paste after/before <n> times
+    CTRL + arrows   move cursor line <n> lines up/down
+
+    MOVEMENTS
+                m   matching bracket
+            0/^/$   start/first non-blank character/end of line
+              g/G   go to line <n>/end of file
+      arrows, l/h   <n> next/previous character
+      arrows, j/k   <n> next/previous line
+              t/T   <n> next/previous word
+              {/}   <n> next/previous block
+              n/N   <n> next/previous match
+
+    SELECTIONS
+                c   display number of selections
+            <ESC>   reset to only one selection, at cursor, of length 0
+                .   select cursor line
+                :   select all lines of custom range
+                %   select all lines of files
+                b   select all lines of current block
+             f, /   search for pattern
+                v   anchor/unanchor
+                a   push running selection to pile; unanchor
+                z   duplicate the current selection on the next <n> lines
+
+    ACTIONS ON SELECTIONS
+              </>   <n> decrease/increase line indent
+                K   comment/uncomment line
+                x   suppress
+                R   replace with pattern elements and fields
+              u/U   switch to lowercase/uppercase
+
+
+## TODO Search and replace specials
     
-        q   quit
-        w   write
-        W   write as
-        r   reload
+    [-a-z#A-Z0-9], [^...]
+    \( ... \) mark a subpattern
 
-    MODES MANAGEMENT
+    \\ (backslash), \$ (dollar sign)
+    \0 (whole pattern), \1 .. \9 (subpattern in regex)
+    $1 .. $9 (fields)
 
-    <ESC>   return to default mode
-        i   get in insert mode
+## Runtime-modifiable parameters
 
-    PARAMETERS MANAGEMENTS
-        S   change a parameter
+    SHORT NAME  LONG NAME               TYPE    DEFAULT
+    i           autoindent              bool    yes
+    sh          syntax_highlight        bool    yes
+    h           highlight_selections    bool    yes
+    c           case_sensitive          bool    yes
+    rt          replace_tabs            bool    yes
+    fs          field_separator         char    ,
+    tw          tab_width               int     4
+    l           language                string  (from extension)
 
-## Roadmap
+## Non-runtime-modifiable parameters
 
-* add syntax highlight
-* add edition engine (1 cursor, LIFO of selections)
-* add UTF-8 support
-* add long line support
+You can modify settings in config.h, such as:
+- mouse support, scroll line number...
+- default values for parameters
+- colors
+- keybinds
+- ...
+
+If there is no config.h at compile time, a default configuration is loaded
+from config.def.h
 
 ## Thanks
 
 * [termbox2](https://github.com/termbox/termbox2) terminal rendering library
 
 
+
+
 ---
 
 ## Ressources
-
-### Inspiration
 
 Features/bindings and philosophy:
 * [vi](http://www.ungerhu.com/jxh/vi.html)
@@ -119,6 +179,7 @@ Edition engine:
 * [sed 2](https://pubs.opengroup.org/onlinepubs/007904975/utilities/sed.html)
 * [sed 3](https://pubs.opengroup.org/onlinepubs/9699919799/)
 * [sed 4](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/sed.html)
+* [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet)
 
 Syntax highlighting:
 * [latex](https://denbeke.be/blog/programming/syntax-highlighting-in-latex/)
@@ -126,79 +187,14 @@ Syntax highlighting:
 
 Documentation:
 * [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
+* [words delimitation](https://en.wikipedia.org/wiki/Delimiter)
 
+## Infinite loop
 
-### Keybinds
-
-''' LINE MANAGEMENT:
-[ ] yank <n> lines
-[ ] delete <n> lines
-[ / ] paste after/before <n> times
-[ ] duplicate (<n>) lines
-[ / ] move (<n>) lines up/down (<m>) lines
-'''
-
-''' EDITION ENGINE
-When multiples matches: what appends on move ? keep selection ? move all cursors ?
-
-CURSOR MANAGEMENT:
-[ ] anchor
-[ ] associated brackets (OK for multiples)
-[ / ] start/end of line (OK for multiples)
-[g] go to line: DIALOG prompt "Go to line: " (g -> start of file)
-[G] go to end of file
-[n/N] <n> next/previous match
-[ / ] <n> next/previous character (OK for multiples)
-[ / ] <n> next/previous word (OK for multiples)
-[ / ] <n> next/previous line ()
-[ / ] <n> next/previous block
-
-SELECTION:
-    mark all lines of custom range (like sed)       (OUTPUTS LINES)
-[s] search for pattern                              (OUTPUTS MATCHES)
-[ ] keep containing pattern                         (OUTPUTS LINES)
-[ ] ignore (print to stdout) containing pattern     (OUTPUTS LINES)
-[ ] suppress containing pattern                     (OUTPUTS LINES)
-[.] MATCHES TO LINES MODES                          (OUTPUTS LINES)
-(in interactive only)
-[ ] select only 0 chars at cursor                   (OUTPUTS MATCHES)
-    create/delete matches, anchor, column editing...(OUTPUTS MATCHES)
-[%] select all lines of files                       (OUTPUTS LINES)
-[b] select all lines of current paragraph           (OUTPUTS LINES)
-
-ACTIONS:
-[ ] change field separator
-[ ] display number of matches
-[ ] replace with pattern elements and fields (MATCH)
-[u/U] switch to lowercase/uppercase (MATCH) 
-[ / ] insert character before/after (MATCH)
-[ / ] remove (/and move match) selection/first character (MATCH)
-[ / ] increase/decrease indent (LINE)
-[ / ] comment/uncomment (LINE)
-
-for LINE actions, extends selections to lines before acting
-'''
-
-
-### Registers (in far future)
-
-OPTIONS:
-* autoindent
-* syntax_highlight
-* highlight_matches
-* case_sensitive
-* use_tabs
-* is_anchored
-
-VARIABLES:
-* field_separator
-* tab_width
-* langage
-* anchor, cursor (with precedent) position
-* search pattern (with precedent)
-* clipboard (history ?)
-* macro (with precedent)
-* command (with precedent)
-* 9 registers for subpattern in regex
-
-MATCHES LIST
+* add features
+* check correctness of all line fields and variables in any circumstances
+* chase unstated assumptions, possibility of failure
+* improve error management, assure safe and graceful fails
+* restructuring, cleaning, commenting code
+* documentation
+* publish

@@ -1,123 +1,160 @@
-/* TASKS
- *
- * add features
- * check correctness of all line fields and variables in any circumstances
- * chase unstated assumptions, possibility of failure
- * improve error management, assure safe and graceful fails
- * restructuring, cleaning, commenting code
- * documentation
- * publish
- */
-
-/* TODO
- *
- * struct line *first_line, struct line *first_line_on_screen, int y
- *  
- * dialog mode: click, arrow, return
- * fix return at start of line
- * add line management
- * manage malloc error
- * str alike management (strcpy...)
- */
-
-/* BUFFERS
- *
- * screen
- * graphical buffer
- * lines buffer
- * files
- */
-
-
-// FLAGS
-#define TB_IMPL
-#define MOUSE_SUPPORT               1
-
 // INCLUDES
 #include <stdio.h>
 #include <stdlib.h>
+#include "config.h"
 #include "termbox.h"
 
 // CONSTANTS
-#define BACKUP_FILE_NAME            "edit_backup_file"
+#define TB_IMPL
 #define MAX_CHARS                   (1 << 10)
-#define MIN_WIDTH                   81
-#define RULER_WIDTH                 8
 #define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
 #define MIN_HEIGHT                  2
-#define SCROLL_LINE_NUMBER          3
 
-// STATES
-#define DEFAULT_MODE                0
-#define INSERT_MODE                 1
 
-// ERROR CODES
-#define ERR_TERM_NOT_BIG_ENOUGH     1
-#define ERR_MISSING_FILE_NAME       2
-#define ERR_MALLOC                  3
-#define ERR_TOO_LONG_LINE           4
-#define ERR_INVALID_LINE_VALUE      5
- 
-// LINE STRUCT
+
+// STRUCTS *********************************************************************
+
 struct line {
     int line_nb;
     int length;
-    int was_modified;
-    struct line *prev;                      // pointer to prev line struct
-    struct line *next;                      // pointer to next line struct
+    struct line *prev;                  // pointer to prev line struct
+    struct line *next;                  // pointer to next line struct
     char *chars;
 };
 
-// MEMORY MANAGEMENT FUNCTIONS
-struct line *new_line(int line_nb, int length, int was_modified);
-void free_lines(void);
+struct pos {
+    int l;
+    int x;
+};
 
-// FILE MANAGEMENT FUNCTIONS
-int load_file(char *src_file_name, int first_line_on_screen_nb, int asked_y);
+struct selection {
+    int l, x;                           // line and column
+    int n;                              // number of characters
+    struct selection *next;             // pointer to next selection
+};
+
+struct clipboard {
+    struct line *start;
+    int nb_line;
+};
+
+struct substring {
+    int st;                             // starting position in original string
+    int n;                              // number of characters
+};
+
+
+
+// FUNCTIONS *******************************************************************
+
+// utils
+int is_blank(char c);
+int is_word_char(char c);
+
+// lines management
+struct line *new_line(int line_nb, int length);
+struct line *cursor_line(void);
+void free_lines(void);
+void shift_lines(struct line *starting_line, int delta);
+void link_lines(struct line *l1, struct line *l2);
+void move_line(struct line *line, int delta);
+void copy_to_clip(struct line *starting_line, int nb);
+void move_to_clip(struct line *starting_line, int nb);
+void insert_clip(struct line *starting_line, int below);
+
+// file management
+int load_file(char *file_name, int first_line_on_screen_nb);
 int write_file(char *file_name);
 
-// LINE MANAGEMENT FUNCTIONS
-void move_cursor_line(int line_nb);
-int move_screen(int nlines);
-void insert(char c, int pos, struct line *line);
-void delete(int pos, struct line *line);
-void break_line(int pos, struct line *line);
-void move_line_after_upper_line(struct line *line);
+// moving
+struct pos find_first_non_blanck(void);
+struct pos find_matching_bracket(void);
+struct pos find_start_of_block(void);
+struct pos find_end_of_block(int nb);
+struct pos find_next_selection(int delta);
+void move_first_line_on_screen(int delta);
+void go_to(struct pos p);
 
-// GRAPHICAL FUNCTIONS
+// selections
+void comp(struct pos p1, struct pos p2);
+void empty_sel(void);
+void add_sel(int l, int x, int n);
+void shift_sels(struct pos starting, struct pos delta);
+void search(void);
+int nb_sels(void);
+
+// actions on selections
+void insert(char c);
+void split_lines(void);
+void suppress(void);
+void concatenate_lines(void);
+void indent(int nb);
+void comment(void);
+void lower(void);
+void upper(void);
+void replace(void);
+
+// graphical
 int resize(int width, int height);
 void print_line(const char *chars, int screen_line, int length);
-void print_screen(void);
-void print_ruler(void);
 void echo(const char *str);
-void set_x(int value);
+void print_ruler(void);
+void print_all(void);
 
-// INTERACTION
-int dialog(const char *prompt, const char *specific, int writable);
+// interaction
+int dialog(const char *prompt, const char *specifics, int writable);
+int display_help(void);
 
-// VARIABLES
-char file_name[INTERFACE_WIDTH];            // manipulated file name
-int nb_line;                                // number of lines in file
-int has_been_changes;                       // store the existence of changes
-int screen_height, screen_width;            // terminal dimensions
-int x, y;                                   // cursor position in file area
-char interface[INTERFACE_WIDTH];            // interface buffer
-int prompt_length, interface_x;             // prompt length, cursor position in interface
-char message_archive[INTERFACE_WIDTH];      // echoed message archive
-struct tb_event ev;                         // struct to retrieve events
+
+
+// VARIABLES *******************************************************************
+
+struct {
+    int autoindent;
+    int syntax_highlight;
+    int highlight_selections;
+    int case_sensitive;
+    int replace_tabs;
+    char field_separator;
+    int tab_width;
+    char language[4];
+} settings;
+
+int in_insert_mode;                 // default: 0
+int has_been_changes;               // default: 0
+
+int multiplier;                     // default: 0
+char dialog_chars[INTERFACE_WIDTH]; // dialog interface buffer
+int prompt_length, dialog_x;        // prompt length, cursor column in interface
+
+char file_name[INTERFACE_WIDTH];    // name of file to write
+
+struct selection *sel;              // selections queue
+
+char spattern[INTERFACE_WIDTH];     // search pattern
+char pspattern[INTERFACE_WIDTH];    // previous search pattern
+char rpattern[INTERFACE_WIDTH];     // replace pattern
+char prpattern[INTERFACE_WIDTH];    // previous replace pattern
+struct substring fields[9];
+struct substring subpatterns[9];
+
+int nb_line;                        // number of lines in file
 struct line *first_line;
 struct line *first_line_on_screen;
-struct line *cursor_line;                   // only for fast access
+
+int anchored;
+struct pos anchor;                  // anchor line and column
+int y, x;                           // cursor position in file area
+int screen_height, screen_width;    // terminal dimensions
+struct tb_event ev;                 // struct to retrieve events
 
 
 
-// MAIN
+// MAIN ************************************************************************
 
 int
 main(int argc, char *argv[])
 {
-    struct line *archive;
-    int state;
     int a; /* answer to dialog */
     int i;
     uint32_t c;
@@ -132,10 +169,9 @@ main(int argc, char *argv[])
     }
 
     // load file
-    first_line = first_line_on_screen = cursor_line = NULL;
+    first_line = first_line_on_screen = NULL;
     has_been_changes = 0;
-    state = DEFAULT_MODE;
-    load_file(file_name, 1, 0);
+    load_file(file_name, 1);
     printf("File %s loaded.\n", file_name);
 
     // initialise termbox
@@ -152,6 +188,17 @@ main(int argc, char *argv[])
         print_screen(); // TODO: be smarter
         tb_present();
         tb_poll_event(&ev);
+        /*switch (ev.type) {
+        case TB_EVENT_KEY:
+
+            break;
+        case TB_EVENT_MOUSE:
+
+            break;
+        case TB_EVENT_RESIZE:
+
+            break
+        }*/
         if (ev.type == TB_EVENT_KEY) {
             // TODO: manage modifiers
             //  (key XOR ch, one will be zero), mod. Note there is

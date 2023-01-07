@@ -2,25 +2,6 @@
 
 Simple, featured, modal text editor.
 
-## TODO
-
-* change data representation
-
-* load, save file
-* display file, basic movements
-* add dialog mode, with click, arrows, return
-
-* add advanced movements
-* add selections-oriented engine
-* add insert mode
-* add clipboard management
-* add read-only mode
-* add advanced modification tools
-* add syntax highlight
-* add UTF-8 support
-* add long line support
-* add search and replace engine
-
 ## Goals
 
 * simplicity, predictability, efficiency, orthogonality
@@ -39,6 +20,7 @@ Simple, featured, modal text editor.
 
 * does not work well with very big files.
 * does not visually wrap lines.
+* does not work with tabs.
 
 ## Features
 
@@ -80,7 +62,7 @@ Maybe in a far future:
               y/Y   yank <n> lines/blocks
               d/D   delete <n> lines/blocks
               p/P   paste after/before <n> times
-    CTRL + arrows   move cursor line <n> lines up/down
+     SHIFT+arrows   move cursor line <n> lines up/down
 
     MOVEMENTS
                 m   matching bracket
@@ -98,7 +80,7 @@ Maybe in a far future:
                 .   select cursor line
                 :   select all lines of custom range
                 %   select all lines of files
-                b   select all lines of current block
+                b   select all lines of <n> block
              f, /   search for pattern
                 v   anchor/unanchor
                 a   push running selection to pile; unanchor

@@ -5,6 +5,7 @@
 #define MIN_WIDTH                   81
 #define RULER_WIDTH                 8
 #define SCROLL_LINE_NUMBER          3
+#define DEFAULT_BUF_SIZE            (1 << 7)
 
 
 // DEFAULT VALUES FOR RUNTIME-MODIFIABLE PARAMETERS ****************************
@@ -48,7 +49,6 @@
 #define KB_CLIP_DELETE_BLOCK        'D'
 #define KB_CLIP_PASTE_AFTER         'p'
 #define KB_CLIP_PASTE_BEFORE        'P'
-// CTRL + arrows   move cursor line <n> lines up/down
 
 // movements
 #define KB_MOVE_MATCHING            'm'
@@ -57,16 +57,16 @@
 #define KB_MOVE_END_LINE            '$'
 #define KB_MOVE_SPECIFIC_LINE       'g'
 #define KB_MOVE_END_FILE            'G'
-#define KB_MOVE_NEXT_CHAR           'l' // RIGHT
-#define KB_MOVE_PREV_CHAR           'h' // LEFT
-#define KB_MOVE_NEXT_LINE           'j' // DOWN
-#define KB_MOVE_PREV_LINE           'k' // UP
+#define KB_MOVE_NEXT_CHAR           'l'
+#define KB_MOVE_PREV_CHAR           'h'
+#define KB_MOVE_NEXT_LINE           'j'
+#define KB_MOVE_PREV_LINE           'k'
 #define KB_MOVE_NEXT_WORD           't'
 #define KB_MOVE_PREV_WORD           'T'
-#define KB_MOVE_NEXT_BLOCK          '{'
-#define KB_MOVE_PREV_BLOCK          '}'
-#define KB_MOVE_NEXT_MATCH          'n'
-#define KB_MOVE_PREV_MATCH          'N'
+#define KB_MOVE_NEXT_BLOCK          '}'
+#define KB_MOVE_PREV_BLOCK          '{'
+#define KB_MOVE_NEXT_SEL            'n'
+#define KB_MOVE_PREV_SEL            'N'
 
 // selections
 #define KB_SEL_DISPLAY_COUNT        'c'
@@ -99,7 +99,7 @@
 
 // TODO
 #define ERR_TERM_NOT_BIG_ENOUGH     1
-#define ERR_MISSING_FILE_NAME       2
+#define ERR_BAD_ARGUMENTS           2
 #define ERR_MALLOC                  3
 #define ERR_TOO_LONG_LINE           4
 #define ERR_INVALID_LINE_VALUE      5
@@ -108,5 +108,3 @@
 // MISC ************************************************************************
 
 #define BRACKETS                    "()[]{}"    // TODO
-#define BLANKS                      " "
-#define DELIMITERS                  ", "

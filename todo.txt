@@ -1,0 +1,54 @@
+Notes:
+- overlap between TB_MOD_CTRL and TB_KEY_CTRL_*.
+- TB_MOD_{CTRL, SHIFT} are only set as mod to TB_KEY_ARROW_*.
+
+* add dialog mode, with click, arrows, return
+* add read-only mode
+
+* how act sels on line management ????
+* highlight syntax, selections
+* acts on selections
+* search and replace engine
+* add UTF-8 support
+
+* parse tabs ?
+* indent/comment empty line ?
+* better position after pasting/deleting ?
+* store optimal x ?
+* check for n-extensivity
+* check for has_been_changes
+* check for making const args
+* better help
+
+              n/N   <n> next/previous selection
+
+                v   anchor/unanchor
+                a   push running selection to pile; unanchor
+                z   duplicate the current selection on the next <n> lines
+
+                    insert char
+              </>   <n> decrease/increase line indent
+                K   comment/uncomment line
+                x   suppress
+              u/U   switch to lowercase/uppercase
+
+                m   matching bracket
+              t/T   <n> next/previous word
+
+                :   select all lines of custom range
+                W   write as
+                s   change a parameter
+
+             f, /   search for pattern
+                R   replace with pattern elements and fields
+
+
+Maybe in a far future:
+* scrolloff ?
+* display line number ?
+* [langage] auto-indenting ?
+* load other file in current file ?
+* tab-completion ??
+* inline clipboard ??
+* visual wrap of long lines ???
+* macros ???

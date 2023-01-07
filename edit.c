@@ -2,11 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "config.h"
+#define TB_IMPL
 #include "termbox.h"
 
 // CONSTANTS
-#define TB_IMPL
-#define MAX_CHARS                   (1 << 10)
+#define VERSION                     "alpha"
+#define MAX_CHARS                   (1 << 8)
 #define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
 #define MIN_HEIGHT                  2
 
@@ -33,11 +34,6 @@ struct selection {
     struct selection *next;             // pointer to next selection
 };
 
-struct clipboard {
-    struct line *start;
-    int nb_line;
-};
-
 struct substring {
     int st;                             // starting position in original string
     int n;                              // number of characters
@@ -53,13 +49,14 @@ int is_word_char(char c);
 
 // lines management
 struct line *new_line(int line_nb, int length);
-struct line *cursor_line(void);
-void free_lines(void);
-void shift_lines(struct line *starting_line, int delta);
+struct line *get_line(int delta_from_first_line_on_screen);
+void free_lines(struct line *starting);
 void link_lines(struct line *l1, struct line *l2);
-void move_line(struct line *line, int delta);
-void copy_to_clip(struct line *starting_line, int nb);
-void move_to_clip(struct line *starting_line, int nb);
+void shift_line_nb(int starting_line_nb, int ending_line_nb, int shift);
+int insert_line(int asked_line_nb, const char *chars);
+int move_line(int delta);
+void copy_to_clip(int starting_line_nb, int nb);
+void move_to_clip(int starting_line_nb, int nb);
 void insert_clip(struct line *starting_line, int below);
 
 // file management
@@ -67,18 +64,23 @@ int load_file(char *file_name, int first_line_on_screen_nb);
 int write_file(char *file_name);
 
 // moving
+struct pos pos_of(int l, int x);
 struct pos find_first_non_blanck(void);
 struct pos find_matching_bracket(void);
-struct pos find_start_of_block(void);
-struct pos find_end_of_block(int nb);
 struct pos find_next_selection(int delta);
-void move_first_line_on_screen(int delta);
+int find_start_of_block(int starting_line_nb, int nb);
+int find_end_of_block(int starting_line_nb, int nb);
 void go_to(struct pos p);
 
 // selections
-void comp(struct pos p1, struct pos p2);
+int is_inf(struct selection *s1, struct selection *s2);
 void empty_sel(void);
+struct selection *find_last_before(
+        struct selection *starting, struct selection *value); 
+int closest_nb(struct selection *cursor);
+struct selection *get_sel(int nb);
 void add_sel(int l, int x, int n);
+void add_range(int start, int end);
 void shift_sels(struct pos starting, struct pos delta);
 void search(void);
 int nb_sels(void);
@@ -96,14 +98,15 @@ void replace(void);
 
 // graphical
 int resize(int width, int height);
-void print_line(const char *chars, int screen_line, int length);
 void echo(const char *str);
+void print_line(struct line *line, int screen_line);
+void print_dialog(void);
 void print_ruler(void);
 void print_all(void);
 
 // interaction
 int dialog(const char *prompt, const char *specifics, int writable);
-int display_help(void);
+void display_help(void);
 
 
 
@@ -117,13 +120,15 @@ struct {
     int replace_tabs;
     char field_separator;
     int tab_width;
-    char language[4];
+    char language[5];
 } settings;
 
-int in_insert_mode;                 // default: 0
-int has_been_changes;               // default: 0
+int anchored;
+int in_insert_mode;
+int has_been_changes;
+int read_only;
 
-int multiplier;                     // default: 0
+int m;                              // multiplier
 char dialog_chars[INTERFACE_WIDTH]; // dialog interface buffer
 int prompt_length, dialog_x;        // prompt length, cursor column in interface
 
@@ -141,8 +146,11 @@ struct substring subpatterns[9];
 int nb_line;                        // number of lines in file
 struct line *first_line;
 struct line *first_line_on_screen;
+struct {
+    struct line *start;
+    int nb_line;
+} clipboard;
 
-int anchored;
 struct pos anchor;                  // anchor line and column
 int y, x;                           // cursor position in file area
 int screen_height, screen_width;    // terminal dimensions
@@ -155,24 +163,57 @@ struct tb_event ev;                 // struct to retrieve events
 int
 main(int argc, char *argv[])
 {
-    int a; /* answer to dialog */
-    int i;
+    int a, l1, l2, l3, i, old_line_nb;
     uint32_t c;
+    struct pos p;
 
-    // parse arguments
+
+    // PARSING ARGUMENTS *******************************************************
+
     if (argc == 1) {
-        fprintf(stderr, "Missing file name.");
-        return ERR_MISSING_FILE_NAME;
+        printf("Refer to https://jacquin.xyz/edit for complete help.\n");
+        return 0;
+    } else if (argc == 2) {
+        if (!(strcmp(argv[1], "--version") && strcmp(argv[1], "-v"))) {
+            printf("%s\n", VERSION);
+            return 0;
+        } else if (!(strcmp(argv[1], "--help") && strcmp(argv[1], "-h"))) {
+            printf("Refer to https://jacquin.xyz/edit for complete help.\n");
+            return 0;
+        } else {
+            strcpy(file_name, argv[1]);
+            read_only = 0;
+        }
+    } else if (argc == 3) {
+        if (!(strcmp(argv[2], "--read-only") && strcmp(argv[1], "-r"))) {
+            strcpy(file_name, argv[1]);
+            read_only = 1;
+        }
     } else {
-        // TODO: manage options
-        strcpy(file_name, argv[argc - 1]);
+        return ERR_BAD_ARGUMENTS;
     }
 
-    // load file
-    first_line = first_line_on_screen = NULL;
-    has_been_changes = 0;
-    load_file(file_name, 1);
-    printf("File %s loaded.\n", file_name);
+
+    // INIT VARIABLES **********************************************************
+
+    // default settings
+    settings.autoindent             = AUTOINDENT;
+    settings.syntax_highlight       = SYNTAX_HIGHLIGHT;
+    settings.highlight_selections   = HIGHLIGHT_SELECTIONS;
+    settings.case_sensitive         = CASE_SENSITIVE;
+    settings.replace_tabs           = REPLACE_TABS;
+    settings.field_separator        = FIELD_SEPARATOR;
+    settings.tab_width              = TAB_WIDTH;
+    strcpy(settings.language, LANGUAGE);
+
+    // editor variables
+    m = in_insert_mode = anchored = 0;
+    strcpy(spattern, "");
+    strcpy(pspattern, "");
+    strcpy(rpattern, "");
+    strcpy(prpattern, "");
+    sel = NULL;
+    clipboard.start = NULL;
 
     // initialise termbox
     x = y = 0;
@@ -183,242 +224,421 @@ main(int argc, char *argv[])
         return ERR_TERM_NOT_BIG_ENOUGH;
     echo("Welcome to edit!");
 
-    // main loop
+    // load file
+    load_file(file_name, 1);
+
+
+    // MAIN LOOP ***************************************************************
+    
     while (1) {
-        print_screen(); // TODO: be smarter
+        print_all();
         tb_present();
         tb_poll_event(&ev);
-        /*switch (ev.type) {
+        switch (ev.type) {
         case TB_EVENT_KEY:
-
-            break;
-        case TB_EVENT_MOUSE:
-
-            break;
-        case TB_EVENT_RESIZE:
-
-            break
-        }*/
-        if (ev.type == TB_EVENT_KEY) {
-            // TODO: manage modifiers
-            //  (key XOR ch, one will be zero), mod. Note there is
-            //  overlap between TB_MOD_CTRL and TB_KEY_CTRL_*.
-            //  TB_MOD_CTRL and TB_MOD_SHIFT are only set as
-            //  modifiers to TB_KEY_ARROW_*.
-            if (c = ev.ch) {
-                // TODO; c = ev.ch, ev.mod usable
-                if (state == DEFAULT_MODE) {
-                    // control key
-                    if (c == 'q') { // QUIT
-                        if (has_been_changes) {
-                            if (a = dialog("Lose changes ? (q: quit, w: write and quit, ESC: cancel)", "qw", 0)) {
-                                if (a == 'w')
-                                    write_file(file_name);
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    } else if (c == 'w') { // WRITE
-                        if (has_been_changes) {
-                            write_file(file_name);
-                            has_been_changes = 0;
-                            echo("File saved.");
-                        } else {
-                            echo("No changes to write.");
-                        }
-                    } else if (c == 'W') { // WRITE AS
-                        if (dialog("Save as (ESC to cancel): ", "", 1)) {
-                            for (i = interface_x; i >= prompt_length; i--)
-                                file_name[i-prompt_length] = interface[i];
-                            write_file(file_name);
-                            has_been_changes = 0;
-                            echo("File saved.");
-                        }
-                    } else if (c == 'r') { // RELOAD
-                        if (has_been_changes) {
-                            free_lines();
-                            load_file(file_name, first_line_on_screen->line_nb, y);
-                            has_been_changes = 0;
-                            echo("File reloaded.");
-                        } else {
-                            echo("No changes to revert.");
-                        }
-
-                    } else if (c == 'i') { // INSERT MODE
-                        state = INSERT_MODE;
-                        echo("INSERT (ESC to exit)");
-
-                    } else if (c == 'S') { // CHANGE PARAMETER
-                        if (dialog("Change parameter: ", "", 1)) {
-                            for (i = interface_x; i >= prompt_length; i--)
-                                file_name[i-prompt_length] = interface[i];
-                            // TODO: parameter modif, echoes if not succesful
-
-                        }
-
-                    } else if (c == 't') { // TESTING
-                        echo(file_name);
-                    } else if (c == 'd') {
-                        move_screen(1);
-                    } else if (c == 'u') {
-                        move_screen(-1);
-                    }
-
-                } else if (state == INSERT_MODE) {
-                    // character insertion
-                    insert(c, x, cursor_line);
-                    has_been_changes = 1;
-                    print_line(cursor_line->chars, y, cursor_line->length);
-                    if (x < screen_width - 1) {
-                        x++;
-                        tb_set_cursor(x, y);
-                    }
-
-                }
-
-            } else {
-                // much TODO; ev.key, ev.mod usable
-                if (ev.key == TB_KEY_ESC) {
-                    state = DEFAULT_MODE;
-                    echo("");
-                } else if (ev.key == TB_KEY_ENTER) {
-                    if (state == DEFAULT_MODE) { 
-                        // TODO
-                    } else if (state == INSERT_MODE) {
-                        break_line(x, cursor_line);
-                        has_been_changes = 1;
-                    }
-                } else if (ev.key == 127) { // RETURN (TODO: change code)
-                    if (state == DEFAULT_MODE) { 
-                        // TODO
-                    } else if (state == INSERT_MODE) {
-                        // character deletion
-                        if (x == 0) {
-                            if (cursor_line->prev == NULL) {
-                            } else {
-                                // TODO
-                                if (first_line_on_screen == cursor_line) {
-                                    first_line_on_screen = first_line_on_screen->prev;
-                                } else {
-                                    y--;
-                                }
-                                cursor_line = cursor_line->prev;
-                                x = cursor_line->length - 1;
-                                move_line_after_upper_line(cursor_line->next);
-                            }
-                        } else {
-                            delete(--x, cursor_line);
-                            has_been_changes = 1;
-                            print_line(cursor_line->chars, y, cursor_line->length);
-                            tb_set_cursor(x, y);
-                        }
-                    }
+            if (ev.ch && in_insert_mode) {
+                // insert(c, x, cursor_line);
+                has_been_changes = 1;
+                go_to(pos_of(first_line_on_screen->line_nb, x + 1));
+            } else if (ev.ch && !in_insert_mode) {
+                if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
+                    m = 10*m + ev.ch - '0';
+                    sprintf(dialog_chars, "Multiplier: %d", m);
+                    break;
                 } else {
-                    // arrows movement
-                    if (ev.key == TB_KEY_ARROW_UP) {
-                        if (y > 0) {
-                            y--;
-                            cursor_line = cursor_line->prev;
-                        } else if (cursor_line->prev != NULL) {
-                            first_line_on_screen = cursor_line = cursor_line->prev;
+                if (m == 0)
+                    m = 1;
+                switch (ev.ch) {
+                case KB_HELP:
+                    display_help();
+                    break;
+                case KB_QUIT:
+                    /*TODO if (has_been_changes) {
+                        if (a = dialog("Lose changes ? (q: quit, w: write and quit, ESC: cancel)", "qw", 0)) {
+                            if (a == 'w')
+                                write_file(file_name);
+                            tb_shutdown();
+                            return 0;
                         }
-                        set_x(x);
-                    } else if (ev.key == TB_KEY_ARROW_DOWN) {
-                        if (cursor_line->next != NULL) {
-                            cursor_line = cursor_line->next;
-                            if (y < screen_height - 2) {
-                                y++;
-                            } else {
-                                first_line_on_screen = first_line_on_screen->next;
-                            }
-                            set_x(x);
-                        }
-                    } else if (ev.key == TB_KEY_ARROW_LEFT) {
-                        set_x(x - 1);
-                    } else if (ev.key == TB_KEY_ARROW_RIGHT) {
-                        set_x(x + 1);
-                    }
-                }
-            }
-
-        } else if (ev.type == TB_EVENT_MOUSE) {
-            if (ev.key == TB_KEY_MOUSE_LEFT) {
-                // left mouse click
-                if (ev.y < screen_height - 1) {
-                    if ((cursor_line->line_nb + ev.y - y) >= nb_line) {
-                        move_cursor_line(nb_line - 1);
-                        y = y + nb_line - 1 - cursor_line->line_nb;
+                    } else {*/
+                        tb_shutdown();
+                        return 0;
+                    /*}*/
+                    break;
+                case KB_WRITE:
+                    if (has_been_changes) {
+                        write_file(file_name);
+                        has_been_changes = 0;
+                        echo("File saved.");
                     } else {
-                        move_cursor_line(cursor_line->line_nb + ev.y - y);
-                        y = ev.y;
+                        echo("No changes to write.");
                     }
-                    set_x(ev.x);
+                    break;
+                case KB_WRITE_AS:
+                    /*TODO if (dialog("Save as (ESC to cancel): ", "", 1)) {
+                        for (i = interface_x; i >= prompt_length; i--)
+                            file_name[i-prompt_length] = interface[i];
+                        write_file(file_name);
+                        has_been_changes = 0;
+                        echo("File saved.");
+                    }*/
+                    break;
+                case KB_RELOAD:
+                    if (has_been_changes) {
+                        old_line_nb = first_line_on_screen->line_nb + y;
+                        load_file(file_name, first_line_on_screen->line_nb);
+                        go_to(pos_of(old_line_nb, x));
+                        echo("File reloaded.");
+                    } else {
+                        echo("No changes to revert.");
+                    }
+                    break;
+                case KB_INSERT_MODE:
+                    in_insert_mode = 1;
+                    echo("INSERT (ESC to exit)");
+                    break;
+                case KB_CHANGE_SETTING:
+                    /* TODO if (dialog("Change parameter: ", "", 1)) {
+                        for (i = interface_x; i >= prompt_length; i--)
+                            file_name[i-prompt_length] = interface[i];
+                        // TODO: parameter modif, echoes if not succesful
+                    }*/
+                    break;
+                case KB_INSERT_START_LINE:
+                    empty_sel();
+                    go_to(pos_of(first_line_on_screen->line_nb + y, 0));
+                    in_insert_mode = 1;
+                    echo("INSERT (ESC to exit)");
+                    break;
+                case KB_INSERT_END_LINE:
+                    empty_sel();
+                    go_to(pos_of(first_line_on_screen->line_nb + y,
+                        get_line(y)->length - 1));
+                    in_insert_mode = 1;
+                    echo("INSERT (ESC to exit)");
+                    break;
+                case KB_INSERT_LINE_BELOW:
+                    empty_sel();
+                    go_to(pos_of(insert_line(
+                        first_line_on_screen->line_nb + y + 1, ""), 0));
+                    in_insert_mode = 1;
+                    echo("INSERT (ESC to exit)");
+                    break;
+                case KB_INSERT_LINE_ABOVE:
+                    empty_sel();
+                    go_to(pos_of(insert_line(
+                        first_line_on_screen->line_nb + y, ""), 0));
+                    in_insert_mode = 1;
+                    echo("INSERT (ESC to exit)");
+                    break;
+                case KB_CLIP_YANK_LINE:
+                    copy_to_clip(first_line_on_screen->line_nb + y, m);
+                    break;
+                case KB_CLIP_YANK_BLOCK:
+                    l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
+                    copy_to_clip(l1, find_end_of_block(l1, m) - l1 + 1);
+                    break;
+                case KB_CLIP_DELETE_LINE:
+                    move_to_clip(first_line_on_screen->line_nb + y, m);
+                    go_to(pos_of(first_line_on_screen->line_nb + y, x));
+                    has_been_changes = 1;
+                    break;
+                case KB_CLIP_DELETE_BLOCK:
+                    l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
+                    move_to_clip(l1, find_end_of_block(l1, m) - l1 + 1);
+                    go_to(pos_of(l1, x));
+                    has_been_changes = 1;
+                    break;
+                case KB_CLIP_PASTE_AFTER:
+                    while (m--)
+                        insert_clip(get_line(y), 1);
+                    has_been_changes = 1;
+                    break;
+                case KB_CLIP_PASTE_BEFORE:
+                    while (m--)
+                        insert_clip(get_line(y), 0);
+                    has_been_changes = 1;
+                    break;
+                case KB_MOVE_MATCHING:
+                    go_to(find_matching_bracket());
+                    break;
+                case KB_MOVE_START_LINE:
+                    go_to(pos_of(first_line_on_screen->line_nb + y, 0));
+                    break;
+                case KB_MOVE_NON_BLANCK:
+                    go_to(find_first_non_blanck());
+                    break;
+                case KB_MOVE_END_LINE:
+                    go_to(pos_of(first_line_on_screen->line_nb + y,
+                        get_line(y)->length - 1));
+                    break;
+                case KB_MOVE_SPECIFIC_LINE:
+                    go_to(pos_of(m, x));
+                    break;
+                case KB_MOVE_END_FILE:
+                    go_to(pos_of(nb_line, x));
+                    break;
+                case KB_MOVE_NEXT_CHAR:
+                    go_to(pos_of(first_line_on_screen->line_nb + y, x + m));
+                    break;
+                case KB_MOVE_PREV_CHAR:
+                    go_to(pos_of(first_line_on_screen->line_nb + y, x - m));
+                    break;
+                case KB_MOVE_NEXT_LINE:
+                    go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
+                    break;
+                case KB_MOVE_PREV_LINE:
+                    go_to(pos_of(first_line_on_screen->line_nb + y - m, x));
+                    break;
+                case KB_MOVE_NEXT_WORD:
+                    // TODO
+                    break;
+                case KB_MOVE_PREV_WORD:
+                    // TODO
+                    break;
+                case KB_MOVE_NEXT_BLOCK:
+                    go_to(pos_of(find_end_of_block(
+                        first_line_on_screen->line_nb + y, m), x));
+                    break;
+                case KB_MOVE_PREV_BLOCK:
+                    go_to(pos_of(find_start_of_block(
+                        first_line_on_screen->line_nb + y, m), x));
+                    break;
+                case KB_MOVE_NEXT_SEL:
+                    // if ((p = find_next_selection(m)).l) {
+                    //     go_to(p);
+                    // } else {
+                    //     echo("No more selections downwards.");
+                    // }
+                    break;
+                case KB_MOVE_PREV_SEL:
+                    // if ((p = find_next_selection(-m)).l) {
+                    //     go_to(p);
+                    // } else {
+                    //     echo("No more selections upwards.");
+                    // }
+                    break;
+                case KB_SEL_DISPLAY_COUNT:
+                    sprintf(dialog_chars, "%d selections.", nb_sels());
+                    break;
+                case KB_SEL_CURSOR_LINE:
+                    add_range(first_line_on_screen->line_nb + y,
+                        first_line_on_screen->line_nb + y);
+                    break;
+                case KB_SEL_CUSTOM_RANGE:
+                    // TODO
+                    break;
+                case KB_SEL_ALL_LINES:
+                    add_range(1, nb_line);
+                    break;
+                case KB_SEL_LINES_BLOCK:
+                    l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
+                    add_range(l1, find_end_of_block(l1, m));
+                    break;
+                case KB_SEL_FIND:
+                case KB_SEL_SEARCH:
+                    // TODO
+                    break;
+                case KB_SEL_ANCHOR:
+                    // TODO
+                    break;
+                case KB_SEL_APPEND:
+                    // TODO
+                    break;
+                case KB_SEL_COLUMN:
+                    // TODO
+                    break;
+                case KB_ACT_INCREASE_INDENT:
+                    // TODO
+                    break;
+                case KB_ACT_DECREASE_INDENT:
+                    // TODO
+                    break;
+                case KB_ACT_COMMENT:
+                    // TODO
+                    break;
+                case KB_ACT_SUPPRESS:
+                    // TODO
+                    break;
+                case KB_ACT_REPLACE:
+                    // TODO
+                    break;
+                case KB_ACT_LOWERCASE:
+                    // TODO
+                    break;
+                case KB_ACT_UPPERCASE:
+                    // TODO
+                    break;
                 }
-            } else if (ev.key == TB_KEY_MOUSE_WHEEL_UP) {
-                // scrolling up
-                move_screen(-SCROLL_LINE_NUMBER);
-
-            } else if (ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
-                // scrolling down
-                move_screen(SCROLL_LINE_NUMBER);
+                m = 0;
+                }
+            } else if (ev.key) {
+                switch (ev.key) {
+                case TB_KEY_ARROW_RIGHT:
+                    m = (m == 0) ? 1 : m;
+                    go_to(pos_of(first_line_on_screen->line_nb + y, x + m));
+                    m = 0;
+                    break;
+                case TB_KEY_ARROW_LEFT:
+                    m = (m == 0) ? 1 : m;
+                    go_to(pos_of(first_line_on_screen->line_nb + y, x - m));
+                    m = 0;
+                    break;
+                case TB_KEY_ARROW_DOWN:
+                    m = (m == 0) ? 1 : m;
+                    if (ev.mod == TB_MOD_SHIFT) {
+                        go_to(pos_of(move_line(m), x));
+                        has_been_changes = 1;
+                    } else {
+                        go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
+                    }
+                    m = 0;
+                    break;
+                case TB_KEY_ARROW_UP:
+                    m = (m == 0) ? 1 : m;
+                    if (ev.mod == TB_MOD_SHIFT) {
+                        go_to(pos_of(move_line(-m), x));
+                        has_been_changes = 1;
+                    } else {
+                        go_to(pos_of(first_line_on_screen->line_nb + y - m, x));
+                    }
+                    m = 0;
+                    break;
+                case TB_KEY_ESC:
+                    if (in_insert_mode) {
+                        in_insert_mode = 0;
+                    } else {
+                        empty_sel();
+                        m = 0;
+                    }
+                    echo("");
+                    break;
+                case TB_KEY_ENTER:
+                    if (in_insert_mode) {
+                        // TODO
+                        // break_line(x, cursor_line);
+                        // has_been_changes = 1;
+                    } else {
+                        go_to(pos_of(first_line_on_screen->line_nb + y + 1, x));
+                    }
+                    break;
+                case TB_KEY_BACKSPACE:
+                    if (in_insert_mode) {
+                        // TODO
+                    } else {
+                        // TODO
+                    }
+                    break;
+                // TODO: tab, ², SUPPR
+                }
             }
+            break;
 
-        } else if (ev.type == TB_EVENT_RESIZE) {
-            // terminal is resized
+        case TB_EVENT_MOUSE:
+            switch (ev.key) {
+                case TB_KEY_MOUSE_LEFT:
+                    if (ev.y < screen_height - 1)
+                        go_to(pos_of(first_line_on_screen->line_nb + ev.y, ev.x));
+                    break;
+                case TB_KEY_MOUSE_WHEEL_UP:
+                    old_line_nb = first_line_on_screen->line_nb + y;
+                    first_line_on_screen = get_line(-SCROLL_LINE_NUMBER);
+                    if (old_line_nb - first_line_on_screen->line_nb > screen_height - 2) {
+                        go_to(pos_of(first_line_on_screen->line_nb + screen_height - 2, x));
+                    } else {
+                        go_to(pos_of(old_line_nb, x));
+                    }
+                    break;
+                case TB_KEY_MOUSE_WHEEL_DOWN:
+                    old_line_nb = first_line_on_screen->line_nb + y;
+                    first_line_on_screen = get_line(SCROLL_LINE_NUMBER);
+                    if (old_line_nb < first_line_on_screen->line_nb) {
+                        go_to(pos_of(first_line_on_screen->line_nb, x));
+                    } else {
+                        go_to(pos_of(old_line_nb, x));
+                    }
+                    break;
+            }
+            break;
+
+        case TB_EVENT_RESIZE:
             if (resize(ev.w, ev.h)) {
-                if (has_been_changes) {
+                if (has_been_changes)
                     write_file(BACKUP_FILE_NAME);
-                    fprintf(stderr, "%s as been wrote as backup.\n", BACKUP_FILE_NAME);
-                }
                 return ERR_TERM_NOT_BIG_ENOUGH;
             } else {
-                if (y >= screen_height - 1)
-                    move_cursor_line(first_line_on_screen->line_nb + screen_height - 2);
-                    y = screen_height - 2;
-                set_x(x);
+                go_to(pos_of(first_line_on_screen->line_nb + y, x));
             }
+            break;
         }
     }
-
-    // close
-    tb_shutdown();
-
-    return 0;
 }
 
 
+// UTILS ***********************************************************************
 
-/* MEMORY MANAGEMENT ***********************************************************/
+int
+is_blank(char c)
+{
+    return (c == ' ');
+}
+
+int
+is_word_char(char c)
+{
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_');
+}
+
+
+// LINES MANAGEMENT ************************************************************
 
 struct line *
-new_line(int line_nb, int length, int was_modified)
+new_line(int line_nb, int length)
 {
     struct line *res;
 
-    printf("Asking for a line... ");
     res = (struct line *) malloc(sizeof(struct line));
-    printf("got %p (line %d, length %d)\n", res, line_nb, length);
     res->line_nb = line_nb;
     res->length = length;
-    res->was_modified = was_modified;
     res->prev = res->next = NULL;
-    printf("Asking for %d characters... \n", length);
-    res->chars = (char *) malloc(length * sizeof(char));
+    res->chars = (char *) malloc(length);
 
     return res;
 }
 
-void
-free_lines(void)
+struct line *
+get_line(int delta_from_first_line_on_screen)
 {
-
-    struct line *old_ptr;
     struct line *ptr;
+    int n;
 
-    if (first_line != NULL) {
-        printf("First line at %p.\n", first_line);
-        ptr = first_line;
+    n = delta_from_first_line_on_screen;
+    ptr = first_line_on_screen;
+    if (n > 0) {
+        while (n--) {
+            if (ptr->next == NULL)
+                break;
+            ptr = ptr->next;
+        }
+    } else {
+        while (n++) {
+            if (ptr->prev == NULL)
+                break;
+            ptr = ptr->prev;
+        }
+    }
+
+    return ptr;
+}
+
+void
+free_lines(struct line *starting)
+{
+    struct line *ptr;
+    struct line *old_ptr;
+
+    if (starting != NULL) {
+        ptr = starting;
         while (ptr->next != NULL) {
             old_ptr = ptr;
             ptr = ptr->next;
@@ -428,44 +648,286 @@ free_lines(void)
         free(ptr->chars);
         free(ptr);
     }
+}
 
-    /* first_line, cursor_line and first_line_on_screen points to nowhere */
-    nb_line = 0;
+void
+link_lines(struct line *l1, struct line *l2)
+{
+    l1->next = l2;
+    l2->prev = l1;
+}
+
+void
+shift_line_nb(int starting_line_nb, int ending_line_nb, int shift)
+{
+    struct line *ptr;
+
+    if (first_line != NULL) {
+        ptr = first_line;
+        while (ptr->next != NULL) {
+            if (ptr->line_nb >= starting_line_nb && ptr->line_nb <= ending_line_nb)
+                ptr->line_nb += shift;
+            ptr = ptr->next;
+        }
+        if (ptr->line_nb >= starting_line_nb && ptr->line_nb <= ending_line_nb)
+            ptr->line_nb += shift;
+    }
+}
+
+int
+insert_line(int asked_line_nb, const char *chars)
+{
+    struct line *replaced_line;
+    struct line *new;
+
+    if (asked_line_nb > nb_line + 1)
+        asked_line_nb = nb_line + 1;
+
+    if (asked_line_nb <= nb_line) {
+        replaced_line = get_line(asked_line_nb - first_line_on_screen->line_nb);
+        shift_line_nb(asked_line_nb, nb_line, 1);
+        new = new_line(asked_line_nb, strlen(chars));
+        strcpy(new->chars, chars);
+        if (replaced_line->prev != NULL) {
+            link_lines(replaced_line->prev, new);
+        } else {
+            new->prev = NULL;
+        }
+        link_lines(new, replaced_line);
+    } else {
+        new = new_line(asked_line_nb, strlen(chars));
+        strcpy(new->chars, chars);
+        new->prev = get_line(nb_line - first_line_on_screen->line_nb);
+        new->next = NULL;
+    }
+
+    nb_line++;
+    return asked_line_nb;
+}
+
+int
+move_line(int delta)
+{
+    int new_line_nb;
+    struct line *src;
+    struct line *dest;
+
+    new_line_nb = first_line_on_screen->line_nb + y + delta;
+    if (new_line_nb < 1)
+        new_line_nb = 1;
+    if (new_line_nb > nb_line)
+        new_line_nb = nb_line;
+    if (new_line_nb == first_line_on_screen->line_nb + y)
+        return new_line_nb;
+
+    src = get_line(y);
+    dest = get_line(new_line_nb - first_line_on_screen->line_nb);
+
+    if (delta > 0) {
+        shift_line_nb(first_line_on_screen->line_nb + y + 1, new_line_nb, -1);
+        if (src == first_line_on_screen)
+            first_line_on_screen = first_line_on_screen->next;
+        if (src->prev != NULL) {
+            link_lines(src->prev, src->next);
+        } else {
+            (src->next)->prev = NULL;
+            first_line = src->next;
+        }
+        if (dest->next != NULL) {
+            link_lines(src, dest->next);
+        } else {
+            src->next = NULL;
+        }
+        link_lines(dest, src);
+    } else {
+        shift_line_nb(new_line_nb, first_line_on_screen->line_nb + y - 1, 1);
+        if (src->next != NULL) {
+            link_lines(src->prev, src->next);
+        } else {
+            (src->prev)->next = NULL;
+        }
+        if (dest->prev != NULL) {
+            link_lines(dest->prev, src);
+        } else {
+            src->prev = NULL;
+        }
+        link_lines(src, dest);
+    }
+    src->line_nb = new_line_nb;
+    
+    return new_line_nb;
+}
+
+void
+copy_to_clip(int starting_line_nb, int nb)
+{
+    int i;
+    struct line *ptr;
+    struct line *cp_ptr;
+    struct line *old_cp_ptr;
+
+    free_lines(clipboard.start);
+    clipboard.start = NULL;
+
+    if (starting_line_nb + nb - 1 > nb_line)
+        nb = nb_line + 1 - starting_line_nb;
+
+    ptr = get_line(starting_line_nb - first_line_on_screen->line_nb);
+    for (i = 0; i < nb; i++) {
+        cp_ptr = new_line(0, ptr->length);
+        strcpy(cp_ptr->chars, ptr->chars);
+        if (i == 0) {
+            cp_ptr->prev = NULL;
+            clipboard.start = cp_ptr;
+        } else {
+            link_lines(old_cp_ptr, cp_ptr);
+        }
+        old_cp_ptr = cp_ptr;
+        if (ptr->next != NULL)
+            ptr = ptr->next;
+    }
+    cp_ptr->next = NULL;
+    clipboard.nb_line = nb;
+}
+
+void
+move_to_clip(int starting_line_nb, int nb)
+{
+    struct line *starting;
+    struct line *ending;
+
+    free_lines(clipboard.start);
+    clipboard.start = NULL;
+
+    if (starting_line_nb + nb - 1 > nb_line)
+        nb = nb_line + 1 - starting_line_nb;
+    nb_line -= nb;
+
+    starting = get_line(starting_line_nb - first_line_on_screen->line_nb);
+    ending = get_line(starting_line_nb + nb-1 - first_line_on_screen->line_nb);
+
+    if (ending->next == NULL) {
+        if (starting->prev == NULL) {
+            first_line = first_line_on_screen = new_line(1, 1);
+            first_line->chars;
+            first_line->prev = first_line->next = NULL;
+            strcpy(first_line->chars, "");
+            nb_line = 1;
+        } else {
+            (starting->prev)->next = NULL;
+        }
+    } else {
+        if (starting->prev == NULL) {
+            first_line = first_line_on_screen = ending->next;
+            (ending->next)->prev = NULL;
+        } else {
+            link_lines(starting->prev, ending->next);
+        }
+        shift_line_nb(ending->line_nb + 1, nb_line + nb, -nb);
+    }
+
+    starting->prev = ending->next = NULL;
+    clipboard.start = starting;
+    clipboard.nb_line = nb;
+}
+
+void
+insert_clip(struct line *starting_line, int below)
+{
+    int i, old_starting_line_nb;
+    struct line *cp_ptr;
+    struct line *ptr;
+    struct line *old_ptr;
+    struct line *next_starting_line;
+
+    if (clipboard.start != NULL) {
+        if (below) {
+            next_starting_line = starting_line->next;
+        } else {
+            next_starting_line = starting_line->prev;
+        }
+
+        old_starting_line_nb = starting_line->line_nb;
+        shift_line_nb(old_starting_line_nb + below, nb_line, clipboard.nb_line);
+        nb_line += clipboard.nb_line;
+        
+        cp_ptr = clipboard.start;
+        for (i = 0; i < clipboard.nb_line; i++) {
+            ptr = new_line(old_starting_line_nb + i + below, cp_ptr->length);
+            strcpy(ptr->chars, cp_ptr->chars);
+            if (i == 0) {
+                if (below) {
+                    link_lines(starting_line, ptr);
+                } else if (next_starting_line != NULL) {
+                    link_lines(next_starting_line, ptr);
+                } else {
+                    ptr->prev = NULL;
+                }
+            } else {
+                link_lines(old_ptr, ptr);
+            }
+            old_ptr = ptr;
+            if (cp_ptr->next != NULL)
+                cp_ptr = cp_ptr->next;
+        }
+        
+        if (below) {
+            if (next_starting_line != NULL) {
+                link_lines(ptr, next_starting_line);
+            } else {
+                ptr->next = NULL;
+            }
+        } else {
+            link_lines(ptr, starting_line);
+        }
+    }
 }
 
 
-/* FILE MANAGEMENT *************************************************************/
+// FILE MANAGEMENT *************************************************************
 
 int
-load_file(char *src_file_name, int first_line_on_screen_nb, int asked_y)
+load_file(char *file_name, int first_line_on_screen_nb)
 {
     FILE *src_file = NULL;
-    char buf[MAX_CHARS];
+    int buf_size = DEFAULT_BUF_SIZE;
+    char *buf = NULL;
+    char *new_buf = NULL;
     struct line *ptr;
     struct line *last_line;
-    int i, j;
+    int i;
     int c;
     int line_nb;
     int reached_EOF;
 
+    // liberate lines
+    free_lines(first_line);
+    first_line = first_line_on_screen = NULL;
+
     // open connection to src_file
-    src_file = fopen(src_file_name, "r");
+    src_file = fopen(file_name, "r");
     reached_EOF = 0;
     line_nb = 1;
-    first_line = first_line_on_screen = cursor_line = NULL;
+
+    // prepare buffer
+    buf = (char *) malloc(buf_size);
 
     // read content into memory
-    while (reached_EOF == 0) {
+    while (!reached_EOF) {
         i = 0;
         while (1) {
-            c = getc(src_file);
-            if (c == EOF) {
+            if (i == buf_size - 1) {
+                buf_size <<= 1;
+                new_buf = (char *) malloc(buf_size);
+                strcpy(new_buf, buf);
+                free(buf);
+                buf = new_buf;
+            }
+            if ((c = getc(src_file)) == EOF) {
                 reached_EOF = 1;
                 break;
             } else if (c == '\n') {
                 break;
-            } else if (i == MAX_CHARS - 1) {
-                return ERR_TOO_LONG_LINE;
             } else {
                 buf[i++] = (char) c;
             }
@@ -473,52 +935,46 @@ load_file(char *src_file_name, int first_line_on_screen_nb, int asked_y)
         buf[i++] = '\0';
 
         // store line
-        ptr = new_line(line_nb, i, 0);
+        ptr = new_line(line_nb, i);
         if (first_line == NULL) {
             first_line = last_line = ptr;
             ptr->prev = NULL;
         } else {
-            last_line->next = ptr;
-            ptr->prev = last_line;
+            link_lines(last_line, ptr);
             last_line = ptr;
         }
         strcpy(ptr->chars, buf);
         if (line_nb == first_line_on_screen_nb)
             first_line_on_screen = ptr;
-        if (line_nb == first_line_on_screen_nb + asked_y)
-            cursor_line = ptr;
         line_nb++;
     }
 
+    if (first_line_on_screen == NULL)
+        first_line_on_screen = last_line;
     last_line->next = NULL;
-
-    // fall back for pointers
-    if (cursor_line == NULL) {
-        first_line_on_screen = cursor_line = ptr;
-        y = 0; // TODO: check if coherent
-    }
-    set_x(x);
+    free(buf);
 
     // close connection to src_file
-    nb_line = line_nb;
     fclose(src_file);
+
+    // refresh parameters
+    nb_line = line_nb - 1;
+    has_been_changes = 0;
 
     return 0;
 }
 
 int
-write_file(char *dest_file_name)
+write_file(char *file_name)
 {
     FILE *dest_file = NULL;
     struct line *ptr;
     char *chars;
     int c;
 
-    // open connection to dest_file
-    dest_file = fopen(dest_file_name, "w");
-
-    // write content to dest_file
     if (first_line != NULL) {
+        dest_file = fopen(file_name, "w");
+
         ptr = first_line;
         while (1) {
             chars = ptr->chars;
@@ -531,253 +987,440 @@ write_file(char *dest_file_name)
                 ptr = ptr->next;
             }
         }
-    }
 
-    // close connection to dest_file
-    fclose(dest_file);
+        fclose(dest_file);
+    }
 
     return 0;
 }
 
 
-/* LINE MANAGEMENT *************************************************************/
+// MOVING **********************************************************************
 
-void
-move_cursor_line(int line_nb)
+struct pos
+pos_of(int l, int x)
 {
-    int mov;
+    struct pos res;
 
-    mov = line_nb - cursor_line->line_nb;
-    if (mov > 0) {
-        while (mov--)
-            cursor_line = cursor_line->next;
+    res.l = l;
+    res.x = x;
+
+    return res;
+}
+
+struct pos
+find_first_non_blanck(void)
+{
+    int i, x;
+    struct line *cursor_line;
+
+    cursor_line = get_line(y);
+    for (i = x = cursor_line->length - 1; i >= 0; i--)
+        if (!(is_blank(cursor_line->chars[i])))
+            x = i;
+
+    return pos_of(cursor_line->line_nb, x);
+}
+
+struct pos
+find_matching_bracket(void)
+{
+    // TODO
+
+}
+
+/*struct pos
+find_next_selection(int delta)
+{
+    int asked_nb, closest, n;
+    struct selection *cursor;
+    struct pos res;
+        
+    if (sel == NULL) {
+        return pos_of(0, 0);
     } else {
-        while (mov++)
-            cursor_line = cursor_line->prev;
+        cursor = (struct selection *) malloc(sizeof(struct selection));
+        cursor->l = first_line_on_screen->line_nb + y;
+        cursor->x = x;
+        closest = closest_nb(cursor);
+        n = nb_sels();
+
+        if ((closest == 0 && delta < 0)
+            || (closest == n && delta > 0)) { // n - 1 ?
+            free(cursor);
+            return pos_of(0, 0);
+        } else {
+            asked_nb = closest + delta - 1*(delta > 0);
+            if (asked_nb < 0)
+                asked_nb = 0;
+            if (asked_nb >= n)
+                asked_nb = n - 1;
+            cursor = get_sel(asked_nb);
+            res = pos_of(cursor->l, cursor->x);
+            free(cursor);
+            return res;
+        }
     }
+}*/
+
+int
+find_start_of_block(int starting_line_nb, int nb)
+{
+    int l;
+    struct line *ptr;
+
+    l = starting_line_nb;
+    ptr = get_line(l - first_line_on_screen->line_nb);
+
+    while (nb--) {
+        while (ptr->length == 1) {
+            if (ptr->prev != NULL) {
+                ptr = ptr->prev;
+                l--;
+            } else {
+                return l;
+            }
+        }
+        while (ptr->length > 1) {
+            if (ptr->prev != NULL) {
+                ptr = ptr->prev;
+                l--;
+            } else {
+                return l;
+            }
+        }
+    }
+
+    return l + 1; 
 }
 
 int
-move_screen(int nlines)
+find_end_of_block(int starting_line_nb, int nb)
 {
-    int i;
+    int l;
+    struct line *ptr;
 
-    if (nlines > 0) {
-        for (i = 0; i < nlines; i++) {
-            if (first_line_on_screen->next == NULL) {
-                break;
+    l = starting_line_nb;
+    ptr = get_line(l - first_line_on_screen->line_nb);
+
+    while (nb--) {
+        while (ptr->length == 1) {
+            if (ptr->next != NULL) {
+                ptr = ptr->next;
+                l++;
             } else {
-                first_line_on_screen = first_line_on_screen->next;
+                return l;
             }
         }
-        if (y - i >= 0) {
-            y = y - i;
-        } else {
-            cursor_line = first_line_on_screen;
-            y = 0;
-            set_x(x);
-        }
-    } else if (nlines < 0) {
-        for (i = 0; i > nlines; i--) {
-            if (first_line_on_screen->prev == NULL) {
-                break;
+        while (ptr->length > 1) {
+            if (ptr->next != NULL) {
+                ptr = ptr->next;
+                l++;
             } else {
-                first_line_on_screen = first_line_on_screen->prev;
+                return l;
             }
-        }
-        if (y - i < screen_height - 1) {
-            y = y - i;
-        } else {
-            cursor_line = first_line_on_screen;
-            for (i = 0; i < screen_height - 2; i++)
-                cursor_line = cursor_line->next;
-            y = screen_height - 2;
-            set_x(x);
         }
     }
 
-    return 0;
+    return l; 
 }
 
 void
-insert(char c, int pos, struct line *line)
+go_to(struct pos p)
 {
-    int i;
-    char *old_chars_start;
-    char *old_chars;
-    char *chars;
+    int delta, n;
 
-    old_chars_start = old_chars = line->chars;
-    line->chars = chars = (char *) malloc((line->length + 1) * sizeof(char));
+    // reach line
+    if (p.l > nb_line)
+        p.l = nb_line;
+    if (p.l < 1)
+        p.l = 1;
 
-    for (i = 0; i < pos; i++)
-        *chars++ = *old_chars++;
-    *chars++ = c;
-    strcpy(chars, old_chars);
+    delta = p.l - first_line_on_screen->line_nb;
+    if (0 <= delta && delta < screen_height - 1) {
+        y = delta;
+    } else if (delta >= screen_height - 1) {
+        first_line_on_screen = get_line(delta - (screen_height - 2));
+        y = screen_height - 2;
+    } else {
+        first_line_on_screen = get_line(delta);
+        y = 0;
+    }
 
-    line->length++;
-    line->was_modified = 1;
+    // adjust x
+    if (p.x >= (n = get_line(y)->length))
+        p.x = n - 1;
+    if (p.x < 0)
+        p.x = 0;
+    x = p.x;
+}
 
-    free(old_chars_start);
+
+// SELECTIONS ******************************************************************
+
+int
+is_inf(struct selection *s1, struct selection *s2)
+{
+    // 1 if s1 < s2, else 0
+    return (s1->l < s2->l || (s1->l == s2->l && s1->x < s2->x));
 }
 
 void
-delete(int pos, struct line *line)
+empty_sel(void)
 {
-    int i;
-    char *old_char;
-    char *chars;
+    struct selection *ptr;
+    struct selection *old_ptr;
 
-    chars = line->chars;
+    if (sel != NULL) {
+        ptr = sel;
+        while (ptr->next != NULL) {
+            old_ptr = ptr;
+            ptr = ptr->next;
+            free(old_ptr);
+        }
+        free(ptr);
+    }
+
+    sel = NULL;
+}
+
+// TODO: add_anchor_cursor_sels(), execute_on_sels(only_once_per_line, f)
+
+struct selection *
+find_last_before(struct selection *starting, struct selection *value)
+{
+    // return NULL if value < starting else return res so that:
+    //  (res < value) && ((res->next == NULL) || (value < res->next))
+
+    struct selection *ptr;
+
+    if (is_inf(value, starting)) {
+        return NULL;
+    } else {
+        ptr = starting;
+        while (ptr->next != NULL) {
+            if (is_inf(value, ptr->next))
+                break;
+            ptr = ptr->next;
+        }
+        return ptr;
+    }
+}
     
-    for (i = 0; i < pos; i++)
-        chars++;
-    old_char = chars;
-    chars++;
-
-    while (*old_char++ = *chars++)
-        ;
-
-    line->length--;
-    line->was_modified = 1;
-}
-
-void
-break_line(int pos, struct line *line)
+/*int
+closest_nb(struct selection *cursor)
 {
     int i;
-    struct line *new;
-    struct line *ptr;
-    char *breaking_point;
-    char *chars;
-    char *new_chars;
+    struct selection *ptr;
 
-    chars = line->chars;
-    for (i = 0; i < pos; i++)
-        chars++;
-    breaking_point = chars;
-
-    new = new_line(line->line_nb + 1, line->length - pos, 1);
-    new_chars = new->chars;
-    while (*new_chars++ = *chars++)
-        ;
-    *breaking_point = '\0';
-
-    line->length = pos + 1;
-    line->was_modified = 1;
-
-    if (line->next == NULL) {
-        line->next = new;
-        new->prev = line;
+    if (is_inf(cursor, sel)) {
+        return 0;
     } else {
-        (line->next)->prev = new;
-        new->next = line->next;
-        line->next = new;
-        new->prev = line;
-        
-        // get next line numbers right
-        ptr = new;
-        while (1) {
-            ptr = ptr->next;
-            ptr->line_nb++;
-            if (ptr->next == NULL)
+        ptr = sel;
+        i = 1;
+        while (ptr->next != NULL) {
+            if (is_inf(cursor, ptr->next))
                 break;
+            ptr = ptr->next;
+            i++;
         }
+        return i;
     }
+}*/
 
-    if (y < screen_height - 2) {
-        y++;
+/*struct selection *
+get_sel(int nb)
+{
+    int i;
+    struct selection *ptr;
+
+    ptr = sel;
+    while (nb--)
+        ptr = ptr->next;
+
+    return ptr;
+}*/
+
+void
+add_sel(int l, int x, int n)
+{
+    struct selection *new;
+    struct selection *ptr;
+
+    new = (struct selection *) malloc(sizeof(struct selection));
+    new->l = l;
+    new->x = x;
+    new->n = n;
+
+    if (sel != NULL) {
+        if ((ptr = find_last_before(sel, new)) == NULL) {
+            new->next = sel;
+            sel = new;
+        } else {
+            new->next = ptr->next;
+            ptr->next = new;
+        }
     } else {
-        first_line_on_screen = first_line_on_screen->next;
+        new->next = NULL;
+        sel = new;
     }
-    x = 0;
-    cursor_line = new;
-    nb_line++;
 }
 
 void
-move_line_after_upper_line(struct line *line)
+add_range(int start, int end)
 {
-    char *new_chars;
-    struct line *ptr;
-    int new_length;
+    int i;
+    struct line *line;
+    struct selection *new;
+    struct selection *old;
 
-    new_length = line->length + (line->prev)->length - 1;
-    new_chars = (char *) malloc(new_length * sizeof(char));
-    strcpy(new_chars, (line->prev)->chars);
-    strcat(new_chars, line->chars);
-    (line->prev)->chars = new_chars;
-    (line->prev)->length = new_length;
-    (line->prev)->was_modified = 1;
+    empty_sel();
+    line = get_line(start - first_line_on_screen->line_nb);
 
-    if (line->next == NULL) {
-        (line->prev)->next = NULL;
-    } else {
-        (line->prev)->next = line->next;
+    for (i = start; i <= end; i++) {
+        new = (struct selection *) malloc(sizeof(struct selection));
+        new->l = i;
+        new->x = 0;
+        new->n = line->length;
 
-        // adjust line number
-        ptr = line->prev;
-        while (1) {
-            ptr = ptr->next;
-            ptr->line_nb--;
-            if (ptr->next == NULL)
-                break;
+        if (i == start) {
+            sel = new;
+        } else {
+            old->next = new;
         }
-    }
+        old = new;
 
-    free(line->chars);
-    free(line);
-    nb_line--;
+        if (line->next != NULL)
+            line = line->next;
+    }
+    new->next = NULL;
+}
+
+void
+shift_sels(struct pos starting, struct pos delta)
+{
+
+}
+
+void
+search(void)
+{
+
+}
+
+int
+nb_sels(void)
+{
+    int nb;
+    struct selection *ptr;
+
+    if (sel != NULL) {
+        nb = 1;
+        ptr = sel;
+        while (ptr->next != NULL) {
+            ptr = ptr->next;
+            nb++;
+        }
+        return nb;
+    } else {
+        return 0;
+    }
 }
 
 
-/* GRAPHICAL ******************************************************************/
+// ACTIONS ON SELECTIONS *******************************************************
+
+void
+insert(char c)
+{
+
+}
+
+void
+split_lines(void)
+{
+
+}
+
+void
+suppress(void)
+{
+
+}
+
+void
+concatenate_lines(void)
+{
+
+}
+
+void
+indent(int nb)
+{
+
+}
+
+void
+comment(void)
+{
+
+}
+
+void
+lower(void)
+{
+
+}
+
+void
+upper(void)
+{
+
+}
+
+void
+replace(void)
+{
+
+}
+
+
+// GRAPHICAL *******************************************************************
 
 int
 resize(int width, int height)
 {
-    if ((screen_width = width) < MIN_WIDTH) {
-        fprintf(stderr, "Terminal is not wide enough: %d\n", screen_width);
+    if ((screen_width = width) < MIN_WIDTH ||
+        (screen_height = height) < MIN_HEIGHT)
         return ERR_TERM_NOT_BIG_ENOUGH;
-    } else if ((screen_height = height) < MIN_HEIGHT) {
-        fprintf(stderr, "Terminal is not high enough: %d\n", screen_height);
-        return ERR_TERM_NOT_BIG_ENOUGH;
-    }
 
     return 0;
 }
 
 void
-print_line(const char *chars, int screen_line, int length)
+echo(const char *str)
+{
+    strcpy(dialog_chars, str);
+}
+
+void
+print_line(struct line *line, int screen_line)
 {
     int i;
 
-    tb_printf(0, screen_line, 0, 0, chars);
-    for (i = length - 1; i < screen_width; i++)
+    tb_print(0, screen_line, 0, 0, line->chars);
+    for (i = line->length - 1; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', 0, 0);
 }
 
 void
-print_screen(void)
+print_dialog(void)
 {
-    // write everything but interface
-    
-    struct line *ptr;
-    int sc_line;
+    int i;
 
-    tb_clear();
-
-    ptr = first_line_on_screen;
-    for (sc_line = 0; sc_line < screen_height - 1; sc_line++) {
-        print_line(ptr->chars, sc_line, ptr->length);
-        if (ptr->next == NULL)
-            break;
-        ptr = ptr->next;
-    }
-
-    tb_set_cursor(x, y);
-    print_ruler();
-    echo(message_archive);
+    tb_print(0, screen_height - 1, 0, 0, dialog_chars);
+    for (i = strlen(dialog_chars); i < screen_width - RULER_WIDTH; i++)
+        tb_set_cell(i, screen_height - 1, ' ', 0, 0);
 }
 
 void
@@ -788,122 +1431,43 @@ print_ruler(void)
     for (i = 0; i < RULER_WIDTH; i++)
         tb_set_cell(screen_width - RULER_WIDTH + i, screen_height - 1, ' ', 0, 0);
     tb_printf(screen_width - RULER_WIDTH, screen_height - 1, 0, 0,
-        "%d,%d", cursor_line->line_nb, x);
+        "%d,%d", first_line_on_screen->line_nb + y, x);
 }
 
 void
-echo(const char *str)
+print_all(void)
 {
-    int i;
+    struct line *ptr;
+    int sc_line;
 
-    strcpy(message_archive, str);
-    tb_print(0, screen_height - 1, 0, 0, str);
-    for (i = strlen(str); i < screen_width - RULER_WIDTH; i++)
-        tb_set_cell(i, screen_height - 1, ' ', 0, 0);
-}
+    tb_clear();
 
-void
-set_x(int value)
-{
-    x = (value >= cursor_line->length) ?
-        (cursor_line->length - 1) :
-        ((value >= 0) ? value : 0);
-}
-
-
-/* INTERACTION ****************************************************************/
-
-int
-is_in(const char *chars, char x)
-{
-    char c;
-
-    while (c = *chars++)
-        if (c == x)
-            return 1;
-
-    return 0;
-}
-
-int
-dialog(const char *prompt, const char *specific_chars, int writable_dialog)
-{ 
-    int available_width;
-    int i;
-    char c;
-
-    prompt_length = strlen(prompt);
-    interface_x = prompt_length;
-    strcpy(interface, prompt);
-    echo(interface);
-
-    while (1) {
-        print_screen(); // TODO: be smarter
-        tb_present();
-        tb_poll_event(&ev);
-        if (ev.type == TB_EVENT_KEY) {
-            // TODO: manage modifiers
-            //  (key XOR ch, one will be zero), mod. Note there is
-            //  overlap between TB_MOD_CTRL and TB_KEY_CTRL_*.
-            //  TB_MOD_CTRL and TB_MOD_SHIFT are only set as
-            //  modifiers to TB_KEY_ARROW_*.
-            if (c = ev.ch) {
-                if (is_in(specific_chars, c)) {
-                    return c;
-                } else if (writable_dialog
-                    && interface_x < INTERFACE_WIDTH - 1) {
-                    // TODO: manage deletes, cursor click, arrow movement
-                    interface[interface_x++] = c;
-                    interface[interface_x] = '\0';
-                    echo(interface);
-                }
-            } else {
-                // much TODO; ev.key, ev.mod usable
-                if (ev.key == TB_KEY_ESC) { // cancel
-                    echo("");
-                    return 0;
-                } else if (writable_dialog && ev.key == TB_KEY_ENTER) {
-                    return -1;
-                } /*else if (ev.key == 127) { // RETURN (TODO: change code)
-                    // TODO
-                } else {
-                    // arrows movement
-                    if (ev.key == TB_KEY_ARROW_UP) {
-                    } else if (ev.key == TB_KEY_ARROW_DOWN) {
-                    } else if (ev.key == TB_KEY_ARROW_LEFT) {
-                    } else if (ev.key == TB_KEY_ARROW_RIGHT) {
-                    }
-                }*/
-            }
-    
-        } /*else if (ev.type == TB_EVENT_MOUSE) {
-            if (ev.key == TB_KEY_MOUSE_LEFT
-                // left mouse click
-                && ev.y = screen_height - 1
-                && prompt_length <= ev.x && ev.x < INTERFACE_WIDTH) {
-                interface_x = ev.x;
-                tb_set_cursor(interface_x, screen_height - 1);
-            } else if (ev.key == TB_KEY_MOUSE_WHEEL_UP) {
-                // scrolling up
-                move_screen(-SCROLL_LINE_NUMBER);
-    
-            } else if (ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
-                // scrolling down
-                move_screen(SCROLL_LINE_NUMBER);
-            }
-    
-        } else if (ev.type == TB_EVENT_RESIZE) {
-            // terminal is resized
-            if (resize(ev.w, ev.h)) {
-                write_file(BACKUP_FILE_NAME);
-                fprintf(stderr, "%s as been wrote as backup.\n", BACKUP_FILE_NAME);
-            return ERR_TERM_NOT_BIG_ENOUGH;
-            } else {
-                if (y >= screen_height - 1)
-                    move_cursor_line(first_line_on_screen->line_nb + screen_height - 2);
-                    y = screen_height - 2;
-                set_x(x);
-            }
-        }*/
+    ptr = first_line_on_screen;
+    for (sc_line = 0; sc_line < screen_height - 1; sc_line++) {
+        print_line(ptr, sc_line);
+        if (ptr->next == NULL)
+            break;
+        ptr = ptr->next;
     }
+
+    tb_set_cursor(x, y);
+    print_dialog();
+    print_ruler();
+}
+
+
+// INTERACTION *****************************************************************
+
+int
+dialog(const char *prompt, const char *specifics, int writable)
+{
+    // TODO
+
+}
+
+void
+display_help(void)
+{
+    // TODO: do better
+    echo("Quit the editor and run `edit --help` for complete help.");
 }

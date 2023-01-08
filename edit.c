@@ -18,8 +18,8 @@
 struct line {
     int line_nb;
     int length;
-    struct line *prev;                  // pointer to prev line struct
-    struct line *next;                  // pointer to next line struct
+    struct line *prev;
+    struct line *next;
     char *chars;
 };
 
@@ -31,7 +31,8 @@ struct pos {
 struct selection {
     int l, x;                           // line and column
     int n;                              // number of characters
-    struct selection *next;             // pointer to next selection
+    int temp;
+    struct selection *next;
 };
 
 struct substring {
@@ -74,27 +75,30 @@ void go_to(struct pos p);
 
 // selections
 int is_inf(struct selection *s1, struct selection *s2);
-void empty_sel(void);
-struct selection *find_last_before(
-        struct selection *starting, struct selection *value); 
-int closest_nb(struct selection *cursor);
-struct selection *get_sel(int nb);
-void add_sel(int l, int x, int n);
-void add_range(int start, int end);
-void shift_sels(struct pos starting, struct pos delta);
-void search(void);
+struct selection *sel_of_pos(struct pos p, int temp);
+struct pos pos_of_curs(void);
+int closest_after_nb(void);
+struct pos get_pos_sel(int nb);
 int nb_sels(void);
+void empty_sels(void);
+void merge_sels(struct selection *starting);
+void add_running_sels(int temp);
+void add_range_sels(int start, int end, int temp);
+void shift_sels(struct pos starting, struct pos ending, struct pos delta);
+void delete_temp_sels(void);
+void search(void);
 
 // actions on selections
-void insert(char c);
-void split_lines(void);
-void suppress(void);
-void concatenate_lines(void);
-void indent(int nb);
-void comment(void);
-void lower(void);
-void upper(void);
-void replace(void);
+void act(void (*process)(struct line *, struct selection *), int line_op);
+void insert(struct line *l, struct selection *s);
+void split_lines(struct line *l, struct selection *s);
+void suppress(struct line *l, struct selection *s);
+void concatenate_lines(struct line *l, struct selection *s);
+void indent(struct line *l, struct selection *s);
+void comment(struct line *l, struct selection *s);
+void lower(struct line *l, struct selection *s);
+void upper(struct line *l, struct selection *s);
+void replace(struct line *l, struct selection *s);
 
 // graphical
 int resize(int width, int height);
@@ -129,6 +133,7 @@ int has_been_changes;
 int read_only;
 
 int m;                              // multiplier
+int asked_indent;
 char dialog_chars[INTERFACE_WIDTH]; // dialog interface buffer
 int prompt_length, dialog_x;        // prompt length, cursor column in interface
 
@@ -237,9 +242,9 @@ main(int argc, char *argv[])
         switch (ev.type) {
         case TB_EVENT_KEY:
             if (ev.ch && in_insert_mode) {
-                // insert(c, x, cursor_line);
+                act(insert, 0);
                 has_been_changes = 1;
-                go_to(pos_of(first_line_on_screen->line_nb, x + 1));
+                go_to(pos_of(first_line_on_screen->line_nb + y, x + 1));
             } else if (ev.ch && !in_insert_mode) {
                 if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
                     m = 10*m + ev.ch - '0';
@@ -305,27 +310,27 @@ main(int argc, char *argv[])
                     }*/
                     break;
                 case KB_INSERT_START_LINE:
-                    empty_sel();
+                    empty_sels();
                     go_to(pos_of(first_line_on_screen->line_nb + y, 0));
                     in_insert_mode = 1;
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_INSERT_END_LINE:
-                    empty_sel();
+                    empty_sels();
                     go_to(pos_of(first_line_on_screen->line_nb + y,
                         get_line(y)->length - 1));
                     in_insert_mode = 1;
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_INSERT_LINE_BELOW:
-                    empty_sel();
+                    empty_sels();
                     go_to(pos_of(insert_line(
                         first_line_on_screen->line_nb + y + 1, ""), 0));
                     in_insert_mode = 1;
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_INSERT_LINE_ABOVE:
-                    empty_sel();
+                    empty_sels();
                     go_to(pos_of(insert_line(
                         first_line_on_screen->line_nb + y, ""), 0));
                     in_insert_mode = 1;
@@ -422,40 +427,48 @@ main(int argc, char *argv[])
                     sprintf(dialog_chars, "%d selections.", nb_sels());
                     break;
                 case KB_SEL_CURSOR_LINE:
-                    add_range(first_line_on_screen->line_nb + y,
-                        first_line_on_screen->line_nb + y);
+                    add_range_sels(first_line_on_screen->line_nb + y,
+                        first_line_on_screen->line_nb + y, 0);
                     break;
                 case KB_SEL_CUSTOM_RANGE:
                     // TODO
                     break;
                 case KB_SEL_ALL_LINES:
-                    add_range(1, nb_line);
+                    add_range_sels(1, nb_line, 0);
                     break;
                 case KB_SEL_LINES_BLOCK:
                     l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
-                    add_range(l1, find_end_of_block(l1, m));
+                    add_range_sels(l1, find_end_of_block(l1, m),0);
                     break;
                 case KB_SEL_FIND:
                 case KB_SEL_SEARCH:
                     // TODO
                     break;
                 case KB_SEL_ANCHOR:
-                    // TODO
+                    if (anchored) {
+                        anchored = 0;
+                    } else {
+                        anchor = pos_of_curs();
+                        anchored = 1;
+                    }
                     break;
                 case KB_SEL_APPEND:
-                    // TODO
+                    add_running_sels(0);
+                    anchored = 0;
                     break;
                 case KB_SEL_COLUMN:
                     // TODO
                     break;
                 case KB_ACT_INCREASE_INDENT:
-                    // TODO
+                    asked_indent = m * settings.tab_width;
+                    act(indent, 1);
                     break;
                 case KB_ACT_DECREASE_INDENT:
-                    // TODO
+                    asked_indent = - m * settings.tab_width;
+                    act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
-                    // TODO
+                    act(comment, 1);
                     break;
                 case KB_ACT_SUPPRESS:
                     // TODO
@@ -464,10 +477,10 @@ main(int argc, char *argv[])
                     // TODO
                     break;
                 case KB_ACT_LOWERCASE:
-                    // TODO
+                    act(lower, 0);
                     break;
                 case KB_ACT_UPPERCASE:
-                    // TODO
+                    act(upper, 0);
                     break;
                 }
                 m = 0;
@@ -508,7 +521,7 @@ main(int argc, char *argv[])
                     if (in_insert_mode) {
                         in_insert_mode = 0;
                     } else {
-                        empty_sel();
+                        empty_sels();
                         m = 0;
                     }
                     echo("");
@@ -1165,147 +1178,56 @@ is_inf(struct selection *s1, struct selection *s2)
     return (s1->l < s2->l || (s1->l == s2->l && s1->x < s2->x));
 }
 
-void
-empty_sel(void)
-{
-    struct selection *ptr;
-    struct selection *old_ptr;
-
-    if (sel != NULL) {
-        ptr = sel;
-        while (ptr->next != NULL) {
-            old_ptr = ptr;
-            ptr = ptr->next;
-            free(old_ptr);
-        }
-        free(ptr);
-    }
-
-    sel = NULL;
-}
-
-// TODO: add_anchor_cursor_sels(), execute_on_sels(only_once_per_line, f)
-
 struct selection *
-find_last_before(struct selection *starting, struct selection *value)
+sel_of_pos(struct pos p, int temp)
 {
-    // return NULL if value < starting else return res so that:
-    //  (res < value) && ((res->next == NULL) || (value < res->next))
+    struct selection *res;
 
-    struct selection *ptr;
+    res = (struct selection *) malloc(sizeof(struct selection));
+    res->l = p.l;
+    res->x = p.x;
+    res->n = 0;
+    res->temp = temp;
+    res->next = NULL;
 
-    if (is_inf(value, starting)) {
-        return NULL;
-    } else {
-        ptr = starting;
-        while (ptr->next != NULL) {
-            if (is_inf(value, ptr->next))
-                break;
-            ptr = ptr->next;
-        }
-        return ptr;
-    }
+    return res;
 }
-    
-/*int
-closest_nb(struct selection *cursor)
-{
-    int i;
-    struct selection *ptr;
 
-    if (is_inf(cursor, sel)) {
-        return 0;
-    } else {
-        ptr = sel;
-        i = 1;
-        while (ptr->next != NULL) {
-            if (is_inf(cursor, ptr->next))
-                break;
-            ptr = ptr->next;
-            i++;
-        }
-        return i;
-    }
-}*/
-
-/*struct selection *
-get_sel(int nb)
+struct pos
+pos_of_curs(void)
 {
+    struct pos res;
+
+    res.l = first_line_on_screen->line_nb + y;
+    res.x = x;
+
+    return res;
+}
+
+int
+closest_after_nb(void)
+{
+    // only consider non temporary selections
+    // TODO
+}
+
+struct pos
+get_pos_sel(int nb)
+{
+    // only consider non temporary selections
     int i;
     struct selection *ptr;
 
     ptr = sel;
-    while (nb--)
+    while (ptr->temp)
         ptr = ptr->next;
-
-    return ptr;
-}*/
-
-void
-add_sel(int l, int x, int n)
-{
-    struct selection *new;
-    struct selection *ptr;
-
-    new = (struct selection *) malloc(sizeof(struct selection));
-    new->l = l;
-    new->x = x;
-    new->n = n;
-
-    if (sel != NULL) {
-        if ((ptr = find_last_before(sel, new)) == NULL) {
-            new->next = sel;
-            sel = new;
-        } else {
-            new->next = ptr->next;
-            ptr->next = new;
-        }
-    } else {
-        new->next = NULL;
-        sel = new;
+    while (nb--) {
+        ptr = ptr->next;
+        while (ptr->temp)
+            ptr = ptr->next;
     }
-}
 
-void
-add_range(int start, int end)
-{
-    int i;
-    struct line *line;
-    struct selection *new;
-    struct selection *old;
-
-    empty_sel();
-    line = get_line(start - first_line_on_screen->line_nb);
-
-    for (i = start; i <= end; i++) {
-        new = (struct selection *) malloc(sizeof(struct selection));
-        new->l = i;
-        new->x = 0;
-        new->n = line->length;
-
-        if (i == start) {
-            sel = new;
-        } else {
-            old->next = new;
-        }
-        old = new;
-
-        if (line->next != NULL)
-            line = line->next;
-    }
-    new->next = NULL;
-}
-
-void
-shift_sels(struct pos starting, struct pos delta)
-{
-
-}
-
-void
-search(void)
-{
-
+    return pos_of(ptr->l, ptr->x);
 }
 
 int
@@ -1327,61 +1249,394 @@ nb_sels(void)
     }
 }
 
+void
+empty_sels(void)
+{
+    struct selection *ptr;
+    struct selection *old_ptr;
+
+    if (sel != NULL) {
+        ptr = sel;
+        while (ptr->next != NULL) {
+            old_ptr = ptr;
+            ptr = ptr->next;
+            free(old_ptr);
+        }
+        free(ptr);
+    }
+
+    sel = NULL;
+}
+
+void
+merge_sels(struct selection *starting)
+{
+    // TODO: check for covering
+    struct selection *new_sel;
+    struct selection *old;
+    struct selection *new;
+
+    if (sel == NULL) {
+        sel = starting;
+    } else if (starting != NULL) {
+        new_sel = NULL;
+        old = sel;
+        new = starting;
+
+        if (is_inf(old, new)) {
+            new_sel = sel = old;
+            old = old->next;
+        } else {
+            new_sel = sel = new;
+            new = new->next;
+        }
+
+        while (1) {
+            if (new == NULL) {
+                break;
+            } else if (old == NULL) {
+                break;
+            } else if (is_inf(old, new)) {
+                new_sel->next = old;
+                old = old->next;
+            } else {
+                new_sel->next = new;
+                new = new->next;
+            }
+            new_sel = new_sel->next;
+        }
+
+/*         if (new_sel == NULL) */
+/*             tb_poll_event(&ev); */
+
+        if (new == NULL) {
+    //tb_poll_event(&ev);
+            new_sel->next = old;
+        } else {
+    //tb_poll_event(&ev);
+            new_sel->next = new;
+        }
+    //tb_poll_event(&ev);
+
+        /*while (old != NULL) {
+            new_sel->next = old;
+            old = old->next;
+            new_sel = new_sel->next;
+        }
+        while (new != NULL) {
+            new_sel->next = new;
+            new = new->next;
+            new_sel = new_sel->next;
+        }
+        new_sel->next = NULL;*/
+    }
+}
+
+void
+add_running_sels(int temp)
+{
+    struct pos cursor_pos;
+    struct selection *anchor_sel;
+    struct selection *cursor_sel;
+    int line_delta;
+
+    cursor_pos = pos_of_curs();
+
+    if (anchored) {
+        anchor_sel = sel_of_pos(anchor, temp);
+        cursor_sel = sel_of_pos(cursor_pos, temp);
+
+        line_delta = cursor_pos.l - anchor.l;
+
+        if (line_delta < 0) {
+            if (line_delta < -1)
+                add_range_sels(cursor_pos.l + 1, anchor.l - 1, temp);
+            cursor_sel->n = get_line(y)->length - x;
+            cursor_sel->next = anchor_sel;
+            anchor_sel->n = anchor.x;
+            anchor_sel->x = 0;
+            merge_sels(cursor_sel);
+        } else if (line_delta > 0) {
+            if (line_delta > 1)
+                add_range_sels(anchor.l + 1, cursor_pos.l - 1, temp);
+            anchor_sel->n = get_line(anchor.l -
+                first_line_on_screen->line_nb)->length - anchor.x;
+            anchor_sel->next = cursor_sel;
+            cursor_sel->n = x;
+            cursor_sel->x = 0;
+            merge_sels(anchor_sel);
+        } else {
+            if (cursor_pos.x <= anchor.x) {
+                cursor_sel->n = anchor.x - cursor_pos.x;
+                free(anchor_sel);
+                merge_sels(cursor_sel);
+            } else {
+                anchor_sel->n = cursor_pos.x - anchor.x;
+                free(cursor_sel);
+                merge_sels(anchor_sel);
+            }
+        }
+    } else {
+        merge_sels(sel_of_pos(cursor_pos, temp));
+    }
+}
+
+void
+add_range_sels(int start, int end, int temp)
+{
+    int i;
+    struct line *line;
+    struct selection *new;
+    struct selection *old;
+
+    line = get_line(start - first_line_on_screen->line_nb);
+
+    for (i = start; i <= end; i++) {
+        new = (struct selection *) malloc(sizeof(struct selection));
+        new->l = i;
+        new->x = 0;
+        new->n = line->length;
+        new->temp = temp;
+
+        if (i == start) {
+            sel = new;
+        } else {
+            old->next = new;
+        }
+        old = new;
+
+        if (line->next != NULL)
+            line = line->next;
+    }
+    new->next = NULL;
+}
+
+void
+shift_sels(struct pos starting, struct pos ending, struct pos delta)
+{
+    struct selection *s;
+    struct selection *start;
+    struct selection *end;
+
+    start = sel_of_pos(starting, 1); 
+    end = sel_of_pos(ending, 1);
+
+    s = sel;
+    while (s) {
+        if (is_inf(start, s) && is_inf(s, end)) {
+            s->l += delta.l;
+            s->x += delta.x;
+        }
+        s = s->next;
+    }
+
+    free(start);
+    free(end);
+}
+
+void
+delete_temp_sels(void)
+{
+    struct selection *old;
+    struct selection *new;
+    
+    old = NULL;
+
+    new = sel;
+    while (new != NULL) {
+        if (new->temp == 0) {
+            if (old == NULL) {
+                old = sel = new;
+            } else {
+                old->next = new;
+                old = new;
+            }
+        }
+        new = new->next;
+    }
+        
+    if (old == NULL)
+        sel = NULL;
+}
+
+void
+search(void)
+{
+    // TODO
+}
+
 
 // ACTIONS ON SELECTIONS *******************************************************
 
 void
-insert(char c)
+act(void (*process)(struct line *, struct selection *), int line_op)
 {
+    struct selection *s;
+    struct line *l;
+    int old_line_nb;
 
+    delete_temp_sels();
+    add_running_sels(1);
+
+    s = sel;
+    l = get_line(s->l - first_line_on_screen->line_nb);
+    old_line_nb = 0;
+    while (s != NULL) {
+        while (l->line_nb < s->l)
+            l = l->next;
+        if (!line_op || s->l > old_line_nb) {
+            process(l, s);
+        }
+        old_line_nb = s->l;
+        s = s->next;
+    }
 }
 
 void
-split_lines(void)
+insert(struct line *l, struct selection *s)
 {
+    char *new_chars;
+    char *old_chars;
+    int i;
 
+    new_chars = (char *) malloc(l->length + 1);
+    for (i = 0; i < s->x; i++)
+        new_chars[i] = l->chars[i];
+    new_chars[s->x] = ev.ch;
+    for (i = s->x; i < l->length; i++)
+        new_chars[i+1] = l->chars[i];
+    old_chars = l->chars;
+    l->chars = new_chars;
+    free(old_chars);
+    l->length++;
+
+    // TODO: shift x for selections of the same line
 }
 
 void
-suppress(void)
+split_lines(struct line *l, struct selection *s)
 {
-
+    // TODO
 }
 
 void
-concatenate_lines(void)
+suppress(struct line *l, struct selection *s)
 {
-
+    // TODO
 }
 
 void
-indent(int nb)
+concatenate_lines(struct line *l, struct selection *s)
 {
-
+    // TODO
 }
 
 void
-comment(void)
+indent(struct line *l, struct selection *s)
 {
+    // TODO: change selections length, and x
+    int i, j;
+    char *new_chars;
+    char *old_chars;
 
+    if (l->length == 1)
+        return;
+
+    if (asked_indent > 0) {
+        new_chars = (char *) malloc(l->length + asked_indent);
+        for (i = 0; i < asked_indent; i++)
+            new_chars[i] = ' ';
+        for (i = 0; i < l->length; i++)
+            new_chars[i + asked_indent] = l->chars[i];
+        l->length += asked_indent;
+    } else {
+        for (i = 0; i < (-asked_indent) && l->chars[i] == ' '; i++)
+            ;
+        printf("%d\n", i);
+        new_chars = (char *) malloc(l->length - i);
+        for (j = 0; j < l->length - i; j++)
+            new_chars[j] = l->chars[j + i];
+        l->length -= i;
+    }
+    old_chars = l->chars;
+    l->chars = new_chars;
+    free(old_chars);
 }
 
 void
-lower(void)
+comment(struct line *l, struct selection *s)
 {
+    // TODO: better manage langages
+    // TODO: change selections length, and x
+    char comment_syntax[] = "// ";
 
+    int d, i, j, syntax_length;
+    char *new_chars;
+    char *old_chars;
+
+    if (l->length == 1)
+        return;
+    
+    for (i = 0; i < l->length && l->chars[i] == ' '; i++)
+        ;
+    if (i < l->length) {
+        syntax_length = strlen(comment_syntax);
+
+        d = -1;
+        for (j = 0; j < syntax_length; j++)
+            if (i + j < l->length && l->chars[i+j] != comment_syntax[j])
+                d = 1;
+        
+        new_chars = (char *) malloc(l->length + d * syntax_length);
+        for (j = 0; j < i; j++)
+            new_chars[j] = ' ';
+        if (d == 1) {
+            for (j = 0; j < syntax_length; j++)
+                new_chars[i + j] = comment_syntax[j];
+            for (j = i; j < l->length; j++)
+                new_chars[j + syntax_length] = l->chars[j];
+        } else {
+            for (j = i; j < l->length - syntax_length; j++)
+                new_chars[j] = l->chars[j + syntax_length];
+        }
+        
+        old_chars = l->chars;
+        l->chars = new_chars;
+        free(old_chars);
+        l->length += d * syntax_length;
+    }
 }
 
 void
-upper(void)
+lower(struct line *l, struct selection *s)
 {
+    int i;
+    char c;
 
+    for (i = s->x; i < s->x + s->n; i++) {
+        if ('A' <= (c = l->chars[i]) && c <= 'Z') {
+            l->chars[i] += 'a' - 'A';
+        }
+    }
 }
 
 void
-replace(void)
+upper(struct line *l, struct selection *s)
 {
+    int i;
+    char c;
 
+    for (i = s->x; i < s->x + s->n; i++) {
+        if ('a' <= (c = l->chars[i]) && c <= 'z') {
+            l->chars[i] += 'A' - 'a';
+        }
+    }
+}
+
+void
+replace(struct line *l, struct selection *s)
+{
+    // TODO
 }
 
 

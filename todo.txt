@@ -5,15 +5,13 @@ Notes:
 * add dialog mode, with click, arrows, return
 * add read-only mode
 
-* how act sels on line management ????
+* how act sels on line management/actions ????
 * highlight syntax, selections
-* acts on selections
 * search and replace engine
 * add UTF-8 support
 
 * parse tabs ?
-* indent/comment empty line ?
-* better position after pasting/deleting ?
+* better position after pasting/deleting/selecting ?
 * store optimal x ?
 * check for n-extensivity
 * check for has_been_changes
@@ -21,16 +19,8 @@ Notes:
 * better help
 
               n/N   <n> next/previous selection
-
-                v   anchor/unanchor
-                a   push running selection to pile; unanchor
                 z   duplicate the current selection on the next <n> lines
-
-                    insert char
-              </>   <n> decrease/increase line indent
-                K   comment/uncomment line
                 x   suppress
-              u/U   switch to lowercase/uppercase
 
                 m   matching bracket
               t/T   <n> next/previous word

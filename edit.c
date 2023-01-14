@@ -105,7 +105,8 @@ void replace(struct line *l, struct selection *s);
 // graphical
 int resize(int width, int height);
 void echo(const char *str);
-void print_line(const char *chars, int length, int screen_line);
+struct selection *print_line(const char *chars, int length, int line_nb,
+    struct selection *s, int screen_line);
 void print_dialog(void);
 void print_ruler(void);
 void print_all(void);
@@ -172,7 +173,7 @@ struct lang *syntax = &languages[0]; // TODO manage language dynamically
 int
 main(int argc, char *argv[])
 {
-    int a, l1, l2, l3, i, old_line_nb;
+    int a, l1, i, old_line_nb;
     uint32_t c;
     struct pos p;
 
@@ -213,7 +214,7 @@ main(int argc, char *argv[])
     settings.replace_tabs           = REPLACE_TABS;
     settings.field_separator        = FIELD_SEPARATOR;
     settings.tab_width              = TAB_WIDTH;
-    strcpy(settings.language, LANGUAGE);
+    strcpy(settings.language, "none"); // TODO: detect language
 
     // editor variables
     m = in_insert_mode = anchored = 0;
@@ -227,6 +228,7 @@ main(int argc, char *argv[])
     // initialise termbox
     x = y = 0;
     tb_init();
+    tb_set_output_mode(OUTPUT_MODE);
     if (MOUSE_SUPPORT)
         tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
     if (resize(tb_width(), tb_height()))
@@ -240,6 +242,8 @@ main(int argc, char *argv[])
     // MAIN LOOP ***************************************************************
     
     while (1) {
+        delete_temp_sels();
+        add_running_sels(1);
         print_all();
         tb_present();
         tb_poll_event(&ev);
@@ -297,6 +301,7 @@ main(int argc, char *argv[])
                         old_line_nb = first_line_on_screen->line_nb + y;
                         load_file(file_name, first_line_on_screen->line_nb);
                         go_to(pos_of(old_line_nb, x));
+                        has_been_changes = 0;
                         echo("File reloaded.");
                     } else {
                         echo("No changes to revert.");
@@ -331,6 +336,7 @@ main(int argc, char *argv[])
                     go_to(pos_of(insert_line(
                         first_line_on_screen->line_nb + y + 1, ""), 0));
                     in_insert_mode = 1;
+                    has_been_changes = 1;
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_INSERT_LINE_ABOVE:
@@ -338,6 +344,7 @@ main(int argc, char *argv[])
                     go_to(pos_of(insert_line(
                         first_line_on_screen->line_nb + y, ""), 0));
                     in_insert_mode = 1;
+                    has_been_changes = 1;
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_CLIP_YANK_LINE:
@@ -526,6 +533,7 @@ main(int argc, char *argv[])
                         in_insert_mode = 0;
                     } else {
                         empty_sels();
+                        anchored = 0;
                         m = 0;
                     }
                     echo("");
@@ -1509,9 +1517,6 @@ act(void (*process)(struct line *, struct selection *), int line_op)
     struct line *l;
     int old_line_nb;
 
-    delete_temp_sels();
-    add_running_sels(1);
-
     s = sel;
     l = get_line(s->l - first_line_on_screen->line_nb);
     old_line_nb = 0;
@@ -1524,6 +1529,8 @@ act(void (*process)(struct line *, struct selection *), int line_op)
         old_line_nb = s->l;
         s = s->next;
     }
+    
+    has_been_changes = 1;
 }
 
 void
@@ -1600,13 +1607,11 @@ indent(struct line *l, struct selection *s)
 void
 comment(struct line *l, struct selection *s)
 {
-    // TODO: better manage langages
-    // TODO: change selections length, and x
-    char comment_syntax[] = "// ";
-
+    // TODO: change selections length ?, and x
     int d, i, j, syntax_length;
     char *new_chars;
     char *old_chars;
+    char *comment_syntax = *(syntax->comment);
 
     if (l->length == 1)
         return;
@@ -1692,11 +1697,11 @@ echo(const char *str)
     strcpy(dialog_chars, str);
 }
 
-void
-print_line(const char *chars, int length, int screen_line)
+struct selection *
+print_line(const char *chars, int length, int line_nb, struct selection *s, int screen_line)
 {
     // variables
-    int x, i, color, nb_to_color;
+    int i, j, color, nb_to_color;
     char c, nc;
     int *fg;
     int *bg;
@@ -1704,57 +1709,72 @@ print_line(const char *chars, int length, int screen_line)
     bg = (int *) malloc(length * sizeof(int));
 
     // foreground
-    x = 0;
-    while (x < length) {
-        color = COLOR_DEFAULT_FG;
-        nb_to_color = 1;
-        if (is_word_char(c = chars[x])) {
-            for (i = 0; is_word_char(chars[x+i]); i++)
-                ;
-            if (is_in(*(syntax->keywords), chars, x, i)) {
-                color = COLOR_KEYWORD;
-            } else if (is_in(*(syntax->flow_control), chars, x, i)) {
-                color = COLOR_FLOW_CONTROL;
-            } else if (is_in(*(syntax->built_ins), chars, x, i)) {
-                color = COLOR_BUILT_IN;
+    if (settings.syntax_highlight) {
+        i = 0;
+        while (i < length) {
+            color = COLOR_DEFAULT_FG;
+            nb_to_color = 1;
+            if (is_word_char(c = chars[i])) {
+                for (j = 0; is_word_char(nc = chars[i+j]) || is_number(nc); j++)
+                        ;
+                if (is_in(*(syntax->keywords), chars, i, j)) {
+                    color = COLOR_KEYWORD;
+                } else if (is_in(*(syntax->flow_control), chars, i, j)) {
+                    color = COLOR_FLOW_CONTROL;
+                } else if (is_in(*(syntax->built_ins), chars, i, j)) {
+                    color = COLOR_BUILT_IN;
+                }
+                nb_to_color = j;
+            } else if (is_number(c) || (i+1 < length && (c == '-' || c == '.') &&
+                (is_number(nc = chars[i+1]) || nc == '.'))) {
+                for (j = 1; j+i < length &&
+                        (is_number(nc = chars[i+j]) || nc == '.'); j++)
+                    ;
+                color = COLOR_NUMBER;
+                nb_to_color = j;
+            } else if (c == '"' || c == '\'') {
+                for (j = 1; j+i < length && chars[i+j] != c; j++)
+                    if (chars[i+j] == '\\')
+                        j++;
+                color = COLOR_STRING;
+                nb_to_color = (i+j+1 >= length) ? (length - i) : (j + 1);
+            } else if (is_in(*(syntax->comment), chars, i, strlen(*(syntax->comment)) - 1)) {
+                color = COLOR_COMMENT;
+                nb_to_color = length - i;
+            } else { // TODO: check for rules
             }
-            nb_to_color = i;
-        } else if (is_number(c) || (x+1 < length && (c == '-' || c == '.') &&
-            (is_number(nc = chars[x+1]) || nc == '.'))) {
-            for (i = 1; i+x < length &&
-                    (is_number(nc = chars[x+i]) || nc == '.'); i++)
-                ;
-            color = COLOR_NUMBER;
-            nb_to_color = i;
-        } else if (c == '"' || c == '\'') {
-            for (i = 1; i+x < length && chars[x+i] != c; i++)
-                if (chars[x+i] == '\\')
-                    i++;
-            color = COLOR_STRING;
-            nb_to_color = (x+i+1 >= length) ? (length - x) : (i + 1);
-        } else if (is_in(*(syntax->comment), chars, x, strlen(*(syntax->comment)) - 1)) {
-            color = COLOR_COMMENT;
-            nb_to_color = length - x;
-        } else { // TODO: check for rules
+    
+            for (j = 0; j < nb_to_color; j++)
+                fg[i++] = color;
         }
-
-        for (i = 0; i < nb_to_color; i++)
-            fg[x++] = color;
+    } else {
+        for (i = 0; i < length; i++)
+            fg[i] = COLOR_DEFAULT_FG;
     }
-
-    // TODO background
-    for (x = 0; x < length; x++)
-        bg[x] = COLOR_DEFAULT_BG;
+    
+    // background
+    for (i = 0; i < length; i++)
+        bg[i] = COLOR_DEFAULT_BG;
+    while (s != NULL && s->l < line_nb)
+        s = s->next;
+    while (s != NULL && s->l == line_nb) {
+        for (i = 0; i < s->n && s->x + i < length; i++)
+            bg[s->x + i] = COLOR_SELECTIONS_BG;
+        s = s->next;
+    } 
+    // TODO: highlight matching bracket
 
     // actual printing
-    for (x = 0; x < length; x++)
-        tb_set_cell(x, screen_line, chars[x], fg[x], bg[x]);
-    for (; x < screen_width; x++)
-        tb_set_cell(x, screen_line, ' ', COLOR_DEFAULT_FG, COLOR_DEFAULT_BG);
+    for (i = 0; i < length; i++)
+        tb_set_cell(i, screen_line, chars[i], fg[i], bg[i]);
+    for (; i < screen_width; i++)
+        tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT_FG, COLOR_DEFAULT_BG);
 
     // forget about fg, bg
     free(fg);
     free(bg);
+
+    return s;
 }
 
 void
@@ -1781,14 +1801,16 @@ print_ruler(void)
 void
 print_all(void)
 {
+    struct selection *s;
     struct line *ptr;
     int sc_line;
 
     tb_clear();
 
+    s = sel;
     ptr = first_line_on_screen;
     for (sc_line = 0; sc_line < screen_height - 1; sc_line++) {
-        print_line(ptr->chars, ptr->length, sc_line);
+        s = print_line(ptr->chars, ptr->length, ptr->line_nb, s, sc_line);
         if (ptr->next == NULL)
             break;
         ptr = ptr->next;

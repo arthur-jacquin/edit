@@ -6,39 +6,38 @@ Notes:
 * add read-only mode
 
 * how act sels on line management/actions ????
-* highlight selections, matching
 * search and replace engine
 * add UTF-8 support
 
-* parse tabs ?
 * better position after pasting/deleting/selecting ?
-* store optimal x ?
 * check for n-extensivity
 * check for has_been_changes
 * check for making const args
 * better help
+* highlight matching bracket 
 
-              n/N   <n> next/previous selection
-                z   duplicate the current selection on the next <n> lines
-                x   suppress
+          n/N   <n> next/previous selection
+            z   duplicate the current selection on the next <n> lines
+            x   suppress
 
-                m   matching bracket
-              t/T   <n> next/previous word
+            m   matching bracket
+          t/T   <n> next/previous word
 
-                :   select all lines of custom range
-                W   write as
-                s   change a parameter
+            :   select all lines of custom range
+            W   write as
+            s   change a parameter
 
-             f, /   search for pattern
-                R   replace with pattern elements and fields
+         f, /   search for pattern
+            R   replace with pattern elements and fields
 
 BACKSPACE, SUPPR, TAB, ENTER
 
 Maybe in a far future:
+* store optimal x ?
 * scrolloff ?
+* works with tabs ?
 * display line number ?
 * [langage] auto-indenting ?
-* load other file in current file ?
 * tab-completion ??
 * inline clipboard ??
 * visual wrap of long lines ???

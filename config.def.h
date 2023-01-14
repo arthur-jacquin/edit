@@ -17,12 +17,13 @@
 #define REPLACE_TABS                1
 #define FIELD_SEPARATOR             ','
 #define TAB_WIDTH                   4
-#define LANGUAGE                    "none"
 
 
 // COLORS **********************************************************************
 
-#define COLOR_DEFAULT_FG            0
+/*#define OUTPUT_MODE                 TB_OUTPUT_NORMAL
+
+#define COLOR_DEFAULT_FG            TB_DEFAULT
 #define COLOR_KEYWORD               TB_BLUE
 #define COLOR_FLOW_CONTROL          TB_GREEN
 #define COLOR_BUILT_IN              TB_RED
@@ -30,9 +31,29 @@
 #define COLOR_STRING                TB_MAGENTA
 #define COLOR_COMMENT               TB_CYAN
 
-#define COLOR_DEFAULT_BG            0
+#define COLOR_DEFAULT_BG            TB_DEFAULT
 #define COLOR_SELECTIONS_BG         0
-#define COLOR_MATCHING_BG           0
+#define COLOR_MATCHING_BG           0*/
+
+// TODO: get https://www.calmar.ws/vim/256-xterm-24bit-rgb-color-chart.html
+// 99    Violet
+// 32    Bleu
+// 172   Orange
+// 213   Rose
+
+#define OUTPUT_MODE                 TB_OUTPUT_256
+
+#define COLOR_DEFAULT_FG            TB_DEFAULT
+#define COLOR_KEYWORD               99
+#define COLOR_FLOW_CONTROL          32
+#define COLOR_BUILT_IN              32
+#define COLOR_NUMBER                99
+#define COLOR_STRING                99
+#define COLOR_COMMENT               172
+
+#define COLOR_DEFAULT_BG            TB_DEFAULT
+#define COLOR_SELECTIONS_BG         234
+#define COLOR_MATCHING_BG           TB_DEFAULT
 
 
 // KEYBINDS ********************************************************************

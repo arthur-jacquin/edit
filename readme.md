@@ -4,6 +4,7 @@ Simple, featured, modal text editor.
 
 ## Goals
 
+* produce a standalone executable
 * simplicity, predictability, efficiency, orthogonality
 * sane defaults, in config.def.h
 * suckless (small, idiomatic codebase, no runtime parameter...)
@@ -18,6 +19,7 @@ Simple, featured, modal text editor.
 
 ## Limitations
 
+* does not highlight multi lines strings/comments.
 * does not work well with very big files.
 * does not visually wrap lines.
 * does not work with tabs.
@@ -27,7 +29,7 @@ Simple, featured, modal text editor.
 * UTF-8 support
 * read-only mode (can act as a pager)
 * modal editor: edit, insert, dialog modes
-* syntax highlight (for some langages)
+* some syntax highlight
 * advanced navigation
 * mouse support
 * advanced line management
@@ -35,8 +37,8 @@ Simple, featured, modal text editor.
 
 Maybe in a far future:
 * scrolloff ?
+* works with tab ?
 * [langage] auto-indenting ?
-* load other file in current file ?
 * tab-completion ??
 * inline clipboard ??
 * visual wrap of long lines ???
@@ -129,6 +131,7 @@ from config.def.h
 
 ## Thanks
 
+* my brother for beta-testing and comments
 * [termbox2](https://github.com/termbox/termbox2) terminal rendering library
 
 

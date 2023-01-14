@@ -65,6 +65,8 @@ void insert_clip(struct line *starting_line, int below);
 // file management
 int load_file(char *file_name, int first_line_on_screen_nb);
 int write_file(char *file_name);
+char *get_extension(void);
+void load_lang(char *lang);
 
 // moving
 struct pos pos_of(int l, int x);
@@ -141,6 +143,7 @@ char dialog_chars[INTERFACE_WIDTH]; // dialog interface buffer
 int prompt_length, dialog_x;        // prompt length, cursor column in interface
 
 char file_name[INTERFACE_WIDTH];    // name of file to write
+char extension[INTERFACE_WIDTH];    // name of file to write
 struct lang *syntax;
 
 struct selection *sel;              // selections queue
@@ -214,10 +217,6 @@ main(int argc, char *argv[])
     settings.field_separator        = FIELD_SEPARATOR;
     settings.tab_width              = TAB_WIDTH;
  
-    // language (TODO)
-    strcpy(settings.language, "none");
-    syntax = &languages[0]; 
-
     // editor variables
     m = in_insert_mode = anchored = 0;
     strcpy(spattern, "");
@@ -239,6 +238,8 @@ main(int argc, char *argv[])
 
     // load file
     load_file(file_name, 1);
+    get_extension();
+    load_lang(extension);
 
 
     // MAIN LOOP ***************************************************************
@@ -482,7 +483,8 @@ main(int argc, char *argv[])
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
-                    act(comment, 1);
+                    if (strcmp(extension, "none"))
+                        act(comment, 1);
                     break;
                 case KB_ACT_SUPPRESS:
                     asked_remove = m;
@@ -1059,6 +1061,35 @@ write_file(char *file_name)
     }
 
     return 0;
+}
+
+char *
+get_extension(void)
+{
+    int i, j;
+
+    for (i = strlen(file_name) - 1; i >= 0 && (file_name[i] != '.'); i--)
+        ;
+    i++;
+    j = 0;
+    while (i < strlen(file_name))
+        extension[j++] = file_name[i++];
+}
+
+void
+load_lang(char *lang)
+{
+    int i;
+
+    for (i = 1; i < sizeof(languages)/sizeof(struct lang); i++) {
+        syntax = &languages[i];
+        if (is_in(*(syntax->names), extension, 0, strlen(extension))) {
+            return;
+        }
+    }
+
+    syntax = &languages[0];
+    strcpy(extension, "none");
 }
 
 
@@ -1758,7 +1789,7 @@ print_line(const char *chars, int length, int line_nb, struct selection *s, int 
     bg = (int *) malloc(length * sizeof(int));
 
     // foreground
-    if (settings.syntax_highlight) {
+    if (settings.syntax_highlight && strcmp(extension, "none")) {
         i = 0;
         while (i < length) {
             color = COLOR_DEFAULT_FG;

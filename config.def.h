@@ -24,6 +24,8 @@
 /*#define OUTPUT_MODE                 TB_OUTPUT_NORMAL
 
 #define COLOR_DEFAULT_FG            TB_DEFAULT
+#define COLOR_RULER                 COLOR_DEFAULT_FG
+#define COLOR_DIALOG                COLOR_DEFAULT_FG
 #define COLOR_KEYWORD               TB_BLUE
 #define COLOR_FLOW_CONTROL          TB_GREEN
 #define COLOR_BUILT_IN              TB_RED
@@ -44,6 +46,8 @@
 #define OUTPUT_MODE                 TB_OUTPUT_256
 
 #define COLOR_DEFAULT_FG            TB_DEFAULT
+#define COLOR_RULER                 COLOR_DEFAULT_FG
+#define COLOR_DIALOG                COLOR_DEFAULT_FG
 #define COLOR_KEYWORD               99
 #define COLOR_FLOW_CONTROL          32
 #define COLOR_BUILT_IN              32

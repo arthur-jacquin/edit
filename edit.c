@@ -56,7 +56,7 @@ struct line *get_line(int delta_from_first_line_on_screen);
 void free_lines(struct line *starting);
 void link_lines(struct line *l1, struct line *l2);
 void shift_line_nb(int starting_line_nb, int ending_line_nb, int shift);
-int insert_line(int asked_line_nb, const char *chars);
+struct line *insert_line(int asked_line_nb, int length);
 int move_line(int delta);
 void copy_to_clip(int starting_line_nb, int nb);
 void move_to_clip(int starting_line_nb, int nb);
@@ -136,11 +136,12 @@ int has_been_changes;
 int read_only;
 
 int m;                              // multiplier
-int asked_indent;
+int asked_indent, asked_remove;
 char dialog_chars[INTERFACE_WIDTH]; // dialog interface buffer
 int prompt_length, dialog_x;        // prompt length, cursor column in interface
 
 char file_name[INTERFACE_WIDTH];    // name of file to write
+struct lang *syntax;
 
 struct selection *sel;              // selections queue
 
@@ -164,8 +165,6 @@ int y, x;                           // cursor position in file area
 int screen_height, screen_width;    // terminal dimensions
 struct tb_event ev;                 // struct to retrieve events
 
-struct lang *syntax = &languages[0]; // TODO manage language dynamically
-
 
 
 // MAIN ************************************************************************
@@ -173,7 +172,7 @@ struct lang *syntax = &languages[0]; // TODO manage language dynamically
 int
 main(int argc, char *argv[])
 {
-    int a, l1, i, old_line_nb;
+    int a, l1, old_line_nb;
     uint32_t c;
     struct pos p;
 
@@ -214,7 +213,10 @@ main(int argc, char *argv[])
     settings.replace_tabs           = REPLACE_TABS;
     settings.field_separator        = FIELD_SEPARATOR;
     settings.tab_width              = TAB_WIDTH;
-    strcpy(settings.language, "none"); // TODO: detect language
+ 
+    // language (TODO)
+    strcpy(settings.language, "none");
+    syntax = &languages[0]; 
 
     // editor variables
     m = in_insert_mode = anchored = 0;
@@ -298,6 +300,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_RELOAD:
                     if (has_been_changes) {
+                        empty_sels();
                         old_line_nb = first_line_on_screen->line_nb + y;
                         load_file(file_name, first_line_on_screen->line_nb);
                         go_to(pos_of(old_line_nb, x));
@@ -333,16 +336,16 @@ main(int argc, char *argv[])
                     break;
                 case KB_INSERT_LINE_BELOW:
                     empty_sels();
-                    go_to(pos_of(insert_line(
-                        first_line_on_screen->line_nb + y + 1, ""), 0));
+                    insert_line(first_line_on_screen->line_nb + y + 1, 1);
+                    go_to(pos_of(first_line_on_screen->line_nb + y + 1, 0));
                     in_insert_mode = 1;
                     has_been_changes = 1;
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_INSERT_LINE_ABOVE:
                     empty_sels();
-                    go_to(pos_of(insert_line(
-                        first_line_on_screen->line_nb + y, ""), 0));
+                    insert_line(first_line_on_screen->line_nb + y, 1);
+                    go_to(pos_of(first_line_on_screen->line_nb + y, 0));
                     in_insert_mode = 1;
                     has_been_changes = 1;
                     echo("INSERT (ESC to exit)");
@@ -482,7 +485,8 @@ main(int argc, char *argv[])
                     act(comment, 1);
                     break;
                 case KB_ACT_SUPPRESS:
-                    // TODO
+                    asked_remove = m;
+                    act(suppress, 1);
                     break;
                 case KB_ACT_REPLACE:
                     // TODO
@@ -497,36 +501,30 @@ main(int argc, char *argv[])
                 m = 0;
                 }
             } else if (ev.key) {
+                if (m == 0)
+                    m = 1;
                 switch (ev.key) {
                 case TB_KEY_ARROW_RIGHT:
-                    m = (m == 0) ? 1 : m;
                     go_to(pos_of(first_line_on_screen->line_nb + y, x + m));
-                    m = 0;
                     break;
                 case TB_KEY_ARROW_LEFT:
-                    m = (m == 0) ? 1 : m;
                     go_to(pos_of(first_line_on_screen->line_nb + y, x - m));
-                    m = 0;
                     break;
                 case TB_KEY_ARROW_DOWN:
-                    m = (m == 0) ? 1 : m;
                     if (ev.mod == TB_MOD_SHIFT) {
                         go_to(pos_of(move_line(m), x));
                         has_been_changes = 1;
                     } else {
                         go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
                     }
-                    m = 0;
                     break;
                 case TB_KEY_ARROW_UP:
-                    m = (m == 0) ? 1 : m;
                     if (ev.mod == TB_MOD_SHIFT) {
                         go_to(pos_of(move_line(-m), x));
                         has_been_changes = 1;
                     } else {
                         go_to(pos_of(first_line_on_screen->line_nb + y - m, x));
                     }
-                    m = 0;
                     break;
                 case TB_KEY_ESC:
                     if (in_insert_mode) {
@@ -534,28 +532,42 @@ main(int argc, char *argv[])
                     } else {
                         empty_sels();
                         anchored = 0;
-                        m = 0;
                     }
                     echo("");
                     break;
                 case TB_KEY_ENTER:
                     if (in_insert_mode) {
-                        // TODO
-                        // break_line(x, cursor_line);
-                        // has_been_changes = 1;
+                        empty_sels();
+                        anchored = 0;
+                        add_running_sels(1);
+                        act(split_lines, 0);
+                        go_to(pos_of(first_line_on_screen->line_nb + y + 1, 0));
                     } else {
-                        go_to(pos_of(first_line_on_screen->line_nb + y + 1, x));
+                        go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
                     }
                     break;
                 case TB_KEY_BACKSPACE:
-                    if (in_insert_mode) {
-                        // TODO
-                    } else {
-                        // TODO
-                    }
+                case TB_KEY_BACKSPACE2:
+                    asked_remove = -m;
+                    act(suppress, 1);
+                    go_to(pos_of(first_line_on_screen->line_nb + y, x + asked_remove));
                     break;
-                // TODO: tab, ², SUPPR
+                case TB_KEY_DELETE:
+                    asked_remove = m;
+                    act(suppress, 1);
+                    break;
+                case TB_KEY_TAB:
+                    asked_indent = m * settings.tab_width;
+                    act(indent, 1);
+                    if (in_insert_mode)
+                        go_to(pos_of(first_line_on_screen->line_nb + y, x + asked_indent));
+                    break;
+                case TB_KEY_BACK_TAB:
+                    asked_indent = - m * settings.tab_width;
+                    act(indent, 1);
+                    break;
                 }
+                m = 0;
             }
             break;
 
@@ -729,8 +741,8 @@ shift_line_nb(int starting_line_nb, int ending_line_nb, int shift)
     }
 }
 
-int
-insert_line(int asked_line_nb, const char *chars)
+struct line *
+insert_line(int asked_line_nb, int length)
 {
     struct line *replaced_line;
     struct line *new;
@@ -741,8 +753,8 @@ insert_line(int asked_line_nb, const char *chars)
     if (asked_line_nb <= nb_line) {
         replaced_line = get_line(asked_line_nb - first_line_on_screen->line_nb);
         shift_line_nb(asked_line_nb, nb_line, 1);
-        new = new_line(asked_line_nb, strlen(chars));
-        strcpy(new->chars, chars);
+        new = new_line(asked_line_nb, length);
+        new->chars[length - 1] = '\0';
         if (replaced_line->prev != NULL) {
             link_lines(replaced_line->prev, new);
         } else {
@@ -750,14 +762,14 @@ insert_line(int asked_line_nb, const char *chars)
         }
         link_lines(new, replaced_line);
     } else {
-        new = new_line(asked_line_nb, strlen(chars));
-        strcpy(new->chars, chars);
+        new = new_line(asked_line_nb, length);
+        new->chars[length - 1] = '\0';
         new->prev = get_line(nb_line - first_line_on_screen->line_nb);
         new->next = NULL;
     }
 
     nb_line++;
-    return asked_line_nb;
+    return new;
 }
 
 int
@@ -1348,29 +1360,11 @@ merge_sels(struct selection *starting)
             new_sel = new_sel->next;
         }
 
-/*         if (new_sel == NULL) */
-/*             tb_poll_event(&ev); */
-
         if (new == NULL) {
-    //tb_poll_event(&ev);
             new_sel->next = old;
         } else {
-    //tb_poll_event(&ev);
             new_sel->next = new;
         }
-    //tb_poll_event(&ev);
-
-        /*while (old != NULL) {
-            new_sel->next = old;
-            old = old->next;
-            new_sel = new_sel->next;
-        }
-        while (new != NULL) {
-            new_sel->next = new;
-            new = new->next;
-            new_sel = new_sel->next;
-        }
-        new_sel->next = NULL;*/
     }
 }
 
@@ -1557,13 +1551,65 @@ insert(struct line *l, struct selection *s)
 void
 split_lines(struct line *l, struct selection *s)
 {
-    // TODO
+    struct line *new;
+    char *new_chars;
+    char *old_chars;
+    int i;
+    
+    new = insert_line(l->line_nb + 1, l->length - s->x);
+    for (i = s->x; i < l->length; i++)
+        new->chars[i-s->x] = l->chars[i];
+    new_chars = (char *) malloc(s->x + 1);
+    for (i = 0; i < s->x; i++)
+        new_chars[i] = l->chars[i];
+    new_chars[s->x] = '\0';
+    old_chars = l->chars;
+    l->chars = new_chars;
+    free(old_chars);
+    l->length = s->x + 1;
+
+    // TODO: shift selections
 }
 
 void
 suppress(struct line *l, struct selection *s)
 {
-    // TODO
+    char *new_chars;
+    char *old_chars;
+    int i, e;
+
+    if (asked_remove > 0) {
+        e = 1;
+        if (s->x + asked_remove >= l->length)
+            asked_remove = l->length - 1 - s->x;
+    } else {
+        e = -1;
+        if (s->x + asked_remove < 0)
+            asked_remove = -s->x;
+    }
+
+    if (asked_remove) {
+        new_chars = (char *) malloc(l->length - e*asked_remove);
+        if (e == 1) {
+            for (i = 0; i < s->x; i++)
+                new_chars[i] = l->chars[i];
+        } else {
+            for (i = 0; i < s->x + asked_remove; i++)
+                new_chars[i] = l->chars[i];
+        }
+        for (; i < l->length - e*asked_remove; i++)
+            new_chars[i] = l->chars[i + e*asked_remove];
+        old_chars = l->chars;
+        l->chars = new_chars;
+        free(old_chars);
+        l->length -= e*asked_remove;
+    } else if (e == 1 && l->next != NULL) {
+        // TODO: concatenate lines
+    } else if (e == -1 && l->prev != NULL) {
+        // TODO: concatenate lines
+    }
+
+    // TODO: shift x for selections of the same line
 }
 
 void
@@ -1576,7 +1622,7 @@ void
 indent(struct line *l, struct selection *s)
 {
     // TODO: change selections length, and x
-    int i, j;
+    int i, j, pos;
     char *new_chars;
     char *old_chars;
 
@@ -1585,10 +1631,13 @@ indent(struct line *l, struct selection *s)
 
     if (asked_indent > 0) {
         new_chars = (char *) malloc(l->length + asked_indent);
-        for (i = 0; i < asked_indent; i++)
-            new_chars[i] = ' ';
-        for (i = 0; i < l->length; i++)
-            new_chars[i + asked_indent] = l->chars[i];
+        pos = (in_insert_mode) ? (s->x) : 0;
+        for (i = 0; i < pos; i++)
+            new_chars[i] = l->chars[i];
+        for (j = 0; j < asked_indent; j++)
+            new_chars[pos+j] = ' ';
+        for (i = pos; i < l->length; i++)
+            new_chars[i+asked_indent] = l->chars[i];
         l->length += asked_indent;
     } else {
         for (i = 0; i < (-asked_indent) && l->chars[i] == ' '; i++)
@@ -1782,9 +1831,9 @@ print_dialog(void)
 {
     int i;
 
-    tb_print(0, screen_height - 1, 0, 0, dialog_chars);
+    tb_print(0, screen_height - 1, COLOR_DIALOG, COLOR_DEFAULT_BG, dialog_chars);
     for (i = strlen(dialog_chars); i < screen_width - RULER_WIDTH; i++)
-        tb_set_cell(i, screen_height - 1, ' ', 0, 0);
+        tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT_FG, COLOR_DEFAULT_BG);
 }
 
 void
@@ -1792,9 +1841,10 @@ print_ruler(void)
 {
     int i;
 
-    for (i = 0; i < RULER_WIDTH; i++)
-        tb_set_cell(screen_width - RULER_WIDTH + i, screen_height - 1, ' ', 0, 0);
-    tb_printf(screen_width - RULER_WIDTH, screen_height - 1, 0, 0,
+    for (i = screen_width - RULER_WIDTH; i < screen_width; i++)
+        tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT_FG, COLOR_DEFAULT_BG);
+    tb_printf(screen_width - RULER_WIDTH, screen_height - 1,
+        COLOR_RULER, COLOR_DEFAULT_BG,
         "%d,%d", first_line_on_screen->line_nb + y, x);
 }
 
@@ -1827,7 +1877,7 @@ print_all(void)
 int
 dialog(const char *prompt, const char *specifics, int writable)
 {
-    // TODO
+    // TODO; manage hiding cursor if not writable
 
 }
 

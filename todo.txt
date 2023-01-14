@@ -9,6 +9,7 @@ Notes:
 * search and replace engine
 * add UTF-8 support
 
+* concatenate lines on SUPPR/BACKSPACE
 * better position after pasting/deleting/selecting ?
 * check for n-extensivity
 * check for has_been_changes
@@ -30,12 +31,10 @@ Notes:
          f, /   search for pattern
             R   replace with pattern elements and fields
 
-BACKSPACE, SUPPR, TAB, ENTER
 
 Maybe in a far future:
 * store optimal x ?
 * scrolloff ?
-* works with tabs ?
 * display line number ?
 * [langage] auto-indenting ?
 * tab-completion ??

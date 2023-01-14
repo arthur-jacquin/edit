@@ -22,7 +22,17 @@
 
 // COLORS **********************************************************************
 
-// TODO
+#define COLOR_DEFAULT_FG            0
+#define COLOR_KEYWORD               TB_BLUE
+#define COLOR_FLOW_CONTROL          TB_GREEN
+#define COLOR_BUILT_IN              TB_RED
+#define COLOR_NUMBER                TB_YELLOW
+#define COLOR_STRING                TB_MAGENTA
+#define COLOR_COMMENT               TB_CYAN
+
+#define COLOR_DEFAULT_BG            0
+#define COLOR_SELECTIONS_BG         0
+#define COLOR_MATCHING_BG           0
 
 
 // KEYBINDS ********************************************************************
@@ -92,7 +102,43 @@
 
 // LANGUAGES SUPPORT ***********************************************************
 
-// TODO (keywords, autoindent rules...)
+#define START_ANY                   0
+#define START_FIRST_OF_LINE         1
+#define START_FIRST_NON_BLANCK      2
+
+struct rule {
+    char *mark;
+    int start_at;
+    int to_the_end_of_line;
+    int color;
+};
+
+struct lang {
+    char **names;
+    char **keywords;
+    char **flow_control;
+    char **built_ins;
+    char **comment;
+    struct rule *rules;
+};
+
+// C
+char *c_names = "c h ";
+char *c_keywords = "volatile auto const static extern \
+                    enum struct union typedef register \
+                    void NULL char int float \
+                    short long double signed unsigned \
+                    define include ";
+char *c_flow_control = "return if else for while do break \
+                        continue switch case default goto ";
+char *c_built_ins = "sizeof malloc strcmp strcpy ";
+char *c_comment = "// ";
+
+// Languages
+struct lang languages[] = {
+    {&c_names, &c_keywords, &c_flow_control, &c_built_ins, &c_comment, NULL},
+    NULL
+};
 
 
 // ERROR CODES *****************************************************************

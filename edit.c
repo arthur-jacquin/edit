@@ -1,9 +1,9 @@
 // INCLUDES
 #include <stdio.h>
 #include <stdlib.h>
-#include "config.h"
 #define TB_IMPL
 #include "termbox.h"
+#include "config.h"
 
 // CONSTANTS
 #define VERSION                     "alpha"
@@ -47,6 +47,8 @@ struct substring {
 // utils
 int is_blank(char c);
 int is_word_char(char c);
+int is_number(char c);
+int is_in(const char *list, const char *chars, int x, int length);
 
 // lines management
 struct line *new_line(int line_nb, int length);
@@ -103,7 +105,7 @@ void replace(struct line *l, struct selection *s);
 // graphical
 int resize(int width, int height);
 void echo(const char *str);
-void print_line(struct line *line, int screen_line);
+void print_line(const char *chars, int length, int screen_line);
 void print_dialog(void);
 void print_ruler(void);
 void print_all(void);
@@ -160,6 +162,8 @@ struct pos anchor;                  // anchor line and column
 int y, x;                           // cursor position in file area
 int screen_height, screen_width;    // terminal dimensions
 struct tb_event ev;                 // struct to retrieve events
+
+struct lang *syntax = &languages[0]; // TODO manage language dynamically
 
 
 
@@ -600,6 +604,36 @@ int
 is_word_char(char c)
 {
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_');
+}
+
+int
+is_number(char c)
+{
+    return ('0' <= c && c <= '9');
+}
+
+int
+is_in(const char *list, const char *chars, int x, int length)
+{
+    int i, j, ok;
+    char c;
+
+    i = j = 0;
+    ok = 1;
+    while (c = list[i++]) {
+        if (c == ' ') {
+            if (ok && j == length) {
+                return 1;
+            } else {
+                j = 0;
+                ok = 1;
+            }
+        } else if (c != chars[x+(j++)]) {
+            ok = 0;
+        }
+    }
+
+    return 0;
 }
 
 
@@ -1659,13 +1693,68 @@ echo(const char *str)
 }
 
 void
-print_line(struct line *line, int screen_line)
+print_line(const char *chars, int length, int screen_line)
 {
-    int i;
+    // variables
+    int x, i, color, nb_to_color;
+    char c, nc;
+    int *fg;
+    int *bg;
+    fg = (int *) malloc(length * sizeof(int));
+    bg = (int *) malloc(length * sizeof(int));
 
-    tb_print(0, screen_line, 0, 0, line->chars);
-    for (i = line->length - 1; i < screen_width; i++)
-        tb_set_cell(i, screen_line, ' ', 0, 0);
+    // foreground
+    x = 0;
+    while (x < length) {
+        color = COLOR_DEFAULT_FG;
+        nb_to_color = 1;
+        if (is_word_char(c = chars[x])) {
+            for (i = 0; is_word_char(chars[x+i]); i++)
+                ;
+            if (is_in(*(syntax->keywords), chars, x, i)) {
+                color = COLOR_KEYWORD;
+            } else if (is_in(*(syntax->flow_control), chars, x, i)) {
+                color = COLOR_FLOW_CONTROL;
+            } else if (is_in(*(syntax->built_ins), chars, x, i)) {
+                color = COLOR_BUILT_IN;
+            }
+            nb_to_color = i;
+        } else if (is_number(c) || (x+1 < length && (c == '-' || c == '.') &&
+            (is_number(nc = chars[x+1]) || nc == '.'))) {
+            for (i = 1; i+x < length &&
+                    (is_number(nc = chars[x+i]) || nc == '.'); i++)
+                ;
+            color = COLOR_NUMBER;
+            nb_to_color = i;
+        } else if (c == '"' || c == '\'') {
+            for (i = 1; i+x < length && chars[x+i] != c; i++)
+                if (chars[x+i] == '\\')
+                    i++;
+            color = COLOR_STRING;
+            nb_to_color = (x+i+1 >= length) ? (length - x) : (i + 1);
+        } else if (is_in(*(syntax->comment), chars, x, strlen(*(syntax->comment)) - 1)) {
+            color = COLOR_COMMENT;
+            nb_to_color = length - x;
+        } else { // TODO: check for rules
+        }
+
+        for (i = 0; i < nb_to_color; i++)
+            fg[x++] = color;
+    }
+
+    // TODO background
+    for (x = 0; x < length; x++)
+        bg[x] = COLOR_DEFAULT_BG;
+
+    // actual printing
+    for (x = 0; x < length; x++)
+        tb_set_cell(x, screen_line, chars[x], fg[x], bg[x]);
+    for (; x < screen_width; x++)
+        tb_set_cell(x, screen_line, ' ', COLOR_DEFAULT_FG, COLOR_DEFAULT_BG);
+
+    // forget about fg, bg
+    free(fg);
+    free(bg);
 }
 
 void
@@ -1699,7 +1788,7 @@ print_all(void)
 
     ptr = first_line_on_screen;
     for (sc_line = 0; sc_line < screen_height - 1; sc_line++) {
-        print_line(ptr, sc_line);
+        print_line(ptr->chars, ptr->length, sc_line);
         if (ptr->next == NULL)
             break;
         ptr = ptr->next;

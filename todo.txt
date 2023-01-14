@@ -6,7 +6,7 @@ Notes:
 * add read-only mode
 
 * how act sels on line management/actions ????
-* highlight syntax, selections
+* highlight selections, matching
 * search and replace engine
 * add UTF-8 support
 
@@ -32,6 +32,7 @@ Notes:
              f, /   search for pattern
                 R   replace with pattern elements and fields
 
+BACKSPACE, SUPPR, TAB, ENTER
 
 Maybe in a far future:
 * scrolloff ?

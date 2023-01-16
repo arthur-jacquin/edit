@@ -1,43 +1,54 @@
-Notes:
-- overlap between TB_MOD_CTRL and TB_KEY_CTRL_*.
-- TB_MOD_{CTRL, SHIFT} are only set as mod to TB_KEY_ARROW_*.
+FIX:
+* problem with selections
+* move cursor and selections on actions/line management
 
+BIG STUFF:
 * add dialog mode, with click, arrows, return
+* integrate search and replace engine
 * add read-only mode
-
-* how act sels on line management/actions ????
-* search and replace engine
 * add UTF-8 support
-
-* concatenate lines on SUPPR/BACKSPACE
-* better position after pasting/deleting/selecting ?
-* check for n-extensivity
-* check for has_been_changes
-* check for making const args
 * better help
+* change parameters
+* find matching bracket
 * highlight matching bracket 
+* find next/previous word
+* find next/previous selection
+* duplicates selections 
+* select range of lines 
+* regex: add |
+* regex: add classes
+* concatenate lines on SUPPR/BACKSPACE
 
-          n/N   <n> next/previous selection
-            z   duplicate the current selection on the next <n> lines
-            x   suppress
+CHECK:
+* correctness of search engine
+* unstated assumptions
+* n-extensivity
+* has_been_changes
+* possibility to make "const" args
 
-            m   matching bracket
-          t/T   <n> next/previous word
+MISSING KEYBINDS:
+* [m] move to matching bracket
+* [t/T] move to <n> next/previous word
+* [n/N] move to <n> next/previous selection
+* [z] duplicate the current selection on the next <n> lines
+* [:] select all lines of custom range
+* [W] write as
+* [s] change a parameter
+* [f,/] search for pattern
+* [R] replace with pattern elements and fields
 
-            :   select all lines of custom range
-            W   write as
-            s   change a parameter
+LAST:
+* improve error management, assure safe and graceful fails
+* restructuring, cleaning, commenting code
+* documentation
+* publish
 
-         f, /   search for pattern
-            R   replace with pattern elements and fields
-
-
-Maybe in a far future:
+LATER:
 * store optimal x ?
 * scrolloff ?
 * display line number ?
 * [langage] auto-indenting ?
+* visual wrap of long lines ??
 * tab-completion ??
 * inline clipboard ??
-* visual wrap of long lines ???
 * macros ???

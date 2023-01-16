@@ -39,10 +39,11 @@ Maybe in a far future:
 * scrolloff ?
 * works with tab ?
 * [langage] auto-indenting ?
+* visual wrap of long lines ??
 * tab-completion ??
 * inline clipboard ??
-* visual wrap of long lines ???
 * macros ???
+
 
 ## Default keybinds
 
@@ -96,52 +97,24 @@ Maybe in a far future:
               u/U   switch to lowercase/uppercase
 
 
-## TODO Search and replace specials
-    
-    [-a-z#A-Z0-9], [^...]
-    \( ... \) mark a subpattern
+## Search and replace
 
-    \\ (backslash), \$ (dollar sign)
-    \0 (whole pattern), \1 .. \9 (subpattern in regex)
-    $1 .. $9 (fields)
+    SEARCH
+        characters
+        predefined classes: . (any), \w, \W (word, non word), \d, \D (digit, non digit)
+        markers: ^, $ (start, end of selection)
+        quantifiers: *, +, ?, {n}, {n,}, {,n}, {n,m}
+        delimiters: \(...\)
 
-    [] . ^ $ * + ? {} () \ |
+        custom classes: [abc], [^abc], [0-9], [-6], [^-a-z#A-Z0-9], ...
+        logic: |
 
-    abc     Find abc
-    [abc] 	Find any character between the brackets
-    [^abc] 	Find any character NOT between the brackets
-    [0-9] 	Find any character between the brackets (any digit)
-    [^0-9] 	Find any character NOT between the brackets (any non-digit)
-    (x|y) 	Find any of the alternatives specified
-    delimits subpattern
+    REPLACE
+        chars
+        \\ (backslash), \$ (dollar sign)
+        \0 (whole pattern), \1 .. \9 (subpatterns in regex)
+        $0 (whole selection), $1 .. $9 (fields)
 
-    . 	Find a single character, except newline or line terminator
-    \w 	Find a word character
-    \W 	Find a non-word character
-    \d 	Find a digit
-    \D 	Find a non-digit character
-    \s 	Find a whitespace character
-    \S 	Find a non-whitespace character
-    \b 	Find a match at the beginning/end of a word, beginning like this: \bHI, end like this: HI\b
-    \B 	Find a match, but not at the beginning/end of a word
-    \0 	Find a NULL character
-    \n 	Find a new line character
-    \f 	Find a form feed character
-    \r 	Find a carriage return character
-    \t 	Find a tab character
-    \v 	Find a vertical tab character
-    \xxx 	Find the character specified by an octal number xxx
-    \xdd 	Find the character specified by a hexadecimal number dd
-    \udddd 	Find the Unicode character specified by a hexadecimal number dddd
-
-    n+ 	Matches any string that contains at least one n
-    n* 	Matches any string that contains zero or more occurrences of n
-    n? 	Matches any string that contains zero or one occurrences of n
-    n{X} 	Matches any string that contains a sequence of X n's
-    n{X,Y} 	Matches any string that contains a sequence of X to Y n's
-    n{X,} 	Matches any string that contains a sequence of at least X n's
-    n$ 	Matches any string with n at the end of it
-    ^n 	Matches any string with n at the beginning of it
 
 ## Runtime-modifiable parameters
 
@@ -155,27 +128,25 @@ Maybe in a far future:
     tw          tab_width               int     4
     l           language                string  (from extension)
 
+
 ## Non-runtime-modifiable parameters
 
 You can modify settings in config.h, such as:
 - mouse support, scroll line number...
 - default values for parameters
-- colors
+- 8 or 256 colors modes, colorscheme
 - keybinds
 - ...
 
 If there is no config.h at compile time, a default configuration is loaded
 from config.def.h
 
+
 ## Thanks
 
 * my brother for beta-testing and comments
 * [termbox2](https://github.com/termbox/termbox2) terminal rendering library
 
-
-
-
----
 
 ## Ressources
 
@@ -187,37 +158,16 @@ Features/bindings and philosophy:
 * [kakoune philosophy](https://kakoune.org/why-kakoune/why-kakoune.html)
 * [kakoune](https://github.com/mawww/kakoune#advanced-topics)
 * [xi](https://xi-editor.io/docs.html)
+* [xi ropes tree](https://xi-editor.io/docs/crdt-details.html)
 * [notepad++](https://github.com/notepad-plus-plus/notepad-plus-plus/wiki/Features)
 * [mle](https://github.com/adsr/mle)
 * [sam](http://doc.cat-v.org/plan_9/4th_edition/papers/sam/)
 * [sam man](http://man.cat-v.org/plan_9/1/sam)
 * [sam refcard](http://sam.cat-v.org/cheatsheet/sam-refcard.pdf)
 
-File representation:
-* [xi ropes tree](https://xi-editor.io/docs/crdt-details.html)
-
-Edition engine:
+Regex search:
 * [sd](https://github.com/chmln/sd)
-* [sed 1](https://www.gnu.org/software/sed/manual/sed.html)
-* [sed 2](https://pubs.opengroup.org/onlinepubs/007904975/utilities/sed.html)
-* [sed 3](https://pubs.opengroup.org/onlinepubs/9699919799/)
-* [sed 4](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/sed.html)
-* [regex](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Cheatsheet)
-
-Syntax highlighting:
-* [latex](https://denbeke.be/blog/programming/syntax-highlighting-in-latex/)
-* [src-highlite](https://www.gnu.org/software/src-highlite/)
+* [sed](https://www.gnu.org/software/sed/manual/sed.html)
 
 Documentation:
 * [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
-* [words delimitation](https://en.wikipedia.org/wiki/Delimiter)
-
-## Infinite loop
-
-* add features
-* check correctness of all line fields and variables in any circumstances
-* chase unstated assumptions, possibility of failure
-* improve error management, assure safe and graceful fails
-* restructuring, cleaning, commenting code
-* documentation
-* publish

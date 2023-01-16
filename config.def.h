@@ -147,9 +147,6 @@ struct lang {
     struct rule *rules;
 };
 
-// default
-char *none = " ";
-
 // C
 char *c_names = "c h ";
 char *c_keywords = "volatile auto const static extern \
@@ -164,7 +161,6 @@ char *c_comment = "// ";
 
 // Languages
 struct lang languages[] = {
-    {&none, &none, &none, &none, &none, NULL},
     {&c_names, &c_keywords, &c_flow_control, &c_built_ins, &c_comment, NULL},
 };
 

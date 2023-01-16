@@ -66,7 +66,7 @@ void insert_clip(struct line *starting_line, int below);
 int load_file(char *file_name, int first_line_on_screen_nb);
 int write_file(char *file_name);
 char *get_extension(void);
-void load_lang(char *lang);
+void load_lang(void);
 
 // moving
 struct pos pos_of(int l, int x);
@@ -152,8 +152,8 @@ char spattern[INTERFACE_WIDTH];     // search pattern
 char pspattern[INTERFACE_WIDTH];    // previous search pattern
 char rpattern[INTERFACE_WIDTH];     // replace pattern
 char prpattern[INTERFACE_WIDTH];    // previous replace pattern
-struct substring fields[9];
-struct substring subpatterns[9];
+struct substring fields[10];
+struct substring subpatterns[10];
 
 int nb_line;                        // number of lines in file
 struct line *first_line;
@@ -239,7 +239,7 @@ main(int argc, char *argv[])
     // load file
     load_file(file_name, 1);
     get_extension();
-    load_lang(extension);
+    load_lang();
 
 
     // MAIN LOOP ***************************************************************
@@ -1077,18 +1077,18 @@ get_extension(void)
 }
 
 void
-load_lang(char *lang)
+load_lang(void)
 {
     int i;
 
-    for (i = 1; i < sizeof(languages)/sizeof(struct lang); i++) {
+    for (i = 0; i < sizeof(languages)/sizeof(struct lang); i++) {
         syntax = &languages[i];
         if (is_in(*(syntax->names), extension, 0, strlen(extension))) {
             return;
         }
     }
 
-    syntax = &languages[0];
+    syntax = NULL;
     strcpy(extension, "none");
 }
 

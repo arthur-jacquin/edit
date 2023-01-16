@@ -54,14 +54,39 @@ main(int argc, char **argv)
     test("r{4}", "rrr", 0);
     test("A{,2}r*y?t+r*o{1}", "AAttrrro", 8);
 
-    test("\\(Ar\\)thur\\(\\)", "Arthur", 6);
-    printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n);
-    printf("%d, %d\n", subpatterns[2].st, subpatterns[2].n);
+    test("\\(ar\\)?thur", "arthur", 6);
+    test("\\(ar\\)+thur", "arthur", 6);
+    test("\\(ar\\)*thur", "arthur", 6);
+    test("\\(ar\\)?thur", "thur", 4);
+    test("\\(ar\\)+thur", "thur", 0);
+    test("\\(ar\\)*thur", "thur", 4);
+    test("\\(ar\\)?thur", "ararthur", 0);
+    test("\\(ar\\)+thur", "ararthur", 8);
+    test("\\(ar\\)*thur", "ararthur", 8);
+    test("\\(ar\\){2}thur", "ararthur", 8);
+    test("\\(ar\\){1}thur", "ararthur", 0);
+    test("\\(ar\\){3}thur", "ararthur", 0);
+    test("\\(ar\\){2,}thur", "ararthur", 8);
+    test("\\(ar\\){3,}thur", "ararthur", 0);
+    test("\\(ar\\){,2}thur", "ararthur", 8);
+    test("\\(ar\\){,1}thur", "ararthur", 0);
 
-//     test("\\(ar\\)?thur", "arthur", 6);
-//     test("\\(ar\\)+thur", "arthur", 6);
-//     test("\\(ar\\)?thur", "thur", 4);
-//     test("\\(ar\\)+thur", "thur", 4);
+    test("\\(A?r*\\)thu\\(r{2}\\)", "Arthurr", 7);
+    //printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n); // 0, 2
+    //printf("%d, %d\n", subpatterns[2].st, subpatterns[2].n); // 5, 2
+
+    test("\\(ar\\){,2}thur", "ararthur", 8);
+    //printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n); // 0, 4
+    
+    test("\\(lol\\)?\\(ar\\)*thur", "arararthur", 10);
+    //printf("%d, %d\n", subpatterns[2].st, subpatterns[2].n); // 0, 6
+
+    test("a*\\(.*\\)", "aaaaabrout", 10);
+    //printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n); // 5, 5
+
+    test("\\(a\\){4}", "aa", 0);
+    test("\\(a\\){2}", "aa", 2);
+    test("\\(a\\){1}", "aa", 1);
 
 //     printf("\n%s\n", chars);
 //     replace(chars, 0, strlen(chars), strlen(chars));
@@ -113,20 +138,27 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
  
     for (k = 0; k < strlen(sp);) {
         // TODO: act if in_class, [, ]
-        //printf("pattern: %d, %c; string: %d, %c; is_elem_ok: %d.\n", k, sp[k], i, chars[x+i], is_elem_ok);
+        //printf("pattern: %d, %c; string: %d, %c; is_block_ok: %d; is_elem_ok: %d; in_block: %d, last_was: %d.\n", k, sp[k], i, chars[x+i], is_block_ok, is_elem_ok, in_block, last_was);
         
-        if (!in_block && !is_block_ok) {
+        if (last_was != BLOCK && !in_block && !is_block_ok) {
             return 0;
         } else if (sp[k] == '*' || sp[k] == '+' || sp[k] == '?' || sp[k] == '{') {
             if (sp[k] == '{') {
-                // does not check correct syntax
                 min = max = 0;
                 k++;
                 while ((c = sp[k++]) != '}' && c != ',')
-                    min = 10*min + c - '0';
+                    if (k == strlen(sp) || c < '0' || c > '9') {
+                        return 0; // error
+                    } else {
+                        min = 10*min + c - '0';
+                    }
                 if (c == ',') {
                     while ((c = sp[k++]) != '}' && c != ',')
-                        max = 10*max + c - '0';
+                        if (k == strlen(sp) || c < '0' || c > '9') {
+                            return 0; // error
+                        } else {
+                            max = 10*max + c - '0';
+                        }
                 } else {
                     max = min;
                 }
@@ -155,24 +187,34 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                     k = start_elem;
                 }
             } else {
-                // TODO
+                // printf("%d, %d, %d, %d\n", is_block_ok, nb_block, min, max);
                 if (!is_block_ok) {
+                    // cancelling read
+                    if (nb_block - 1 < min)
+                        return 0;
+                    subpatterns[s-1].n = start_block_i - subpatterns[s-1].st;
+                    i = start_block_i;
+                    is_block_ok = 1;
+                    last_was = NONE;
+                } else if (i == x + n) {
                     if (nb_block < min)
                         return 0;
-                    nb_block = 0;
-                    is_block_ok = 1;
-                    i = start_block_i;
-                } else if (i == x + n) {
-                } else if (max && nb_elem + 1 == max) {
-                    nb_block = 0;
+                } else if (max && nb_block == max) {
+                    // get out
+                    subpatterns[s-1].n = i - subpatterns[s-1].st;
+                    start_block_i = i;
                     last_was = NONE;
                 } else {
-                    nb_block++;
+                    // another read
+                    s--;
+                    start_block_i = i;
+                    in_block = 1;
+                    last_was = NONE;
                     k = start_block;
                 }
             }
-        } else if (sp[k] == '|') {
-            // TODO store in subpattern
+        /*} else if (sp[k] == '|') {
+            // much TODO
             if (last_was == NONE) {
                 return 0; // error
             } else if (last_was == ELEM) {
@@ -184,6 +226,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                     k++;
                 }
             } else {
+                // TODO store in subpattern
                 if (is_block_ok) {
                     last_was = NONE;
                     // TODO
@@ -191,26 +234,28 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                     i = start_block_i;
                     k++;
                 }
-            }
+            }*/
         } else if (k + 1 < strlen(sp) && sp[k] == '\\' && sp[k+1] == '(') {
             if (in_block)
                 return 0; // error
             in_block = 1;
             is_block_ok = is_elem_ok = 1;
             last_was = NONE;
+            nb_block = 0;
             start_block = k + 2;
             start_block_i = i;
-            // TODO
             k += 2; 
         } else if (k + 1 < strlen(sp) && sp[k] == '\\' && sp[k+1] == ')') {
             if (!in_block)
                 return 0; // error
             in_block = 0;
             last_was = BLOCK;
-            subpatterns[s].st = start_block_i;
+            is_elem_ok = 1;
+            if (nb_block == 0)
+                subpatterns[s].st = start_block_i;
             subpatterns[s].n = i - start_block_i;
+            nb_block++;
             s++;
-            // TODO: store in subpattern
             k += 2; 
         } else if (sp[k] == '^') {
             if (i > x)
@@ -243,12 +288,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
         }
     }
 
-    // TODO: check if ok
-
-//     printf("in_block %d, in_class %d, is_block_ok %d, is_elem_ok %d\n",
-//         in_block, in_class, is_block_ok, is_elem_ok);
-
-    if (!is_block_ok || !is_elem_ok)
+    if (in_block || in_class || !is_block_ok || !is_elem_ok)
         return 0;
 
     return i - x;

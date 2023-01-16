@@ -1,5 +1,6 @@
 // PARAMETERS ******************************************************************
 
+#define TERMINAL_SUPPORTS_256_COLORS
 #define MOUSE_SUPPORT               1
 #define BACKUP_FILE_NAME            "edit_backup_file"
 #define MIN_WIDTH                   81
@@ -21,43 +22,44 @@
 
 // COLORS **********************************************************************
 
-/*#define OUTPUT_MODE                 TB_OUTPUT_NORMAL
-
-#define COLOR_DEFAULT_FG            TB_DEFAULT
-#define COLOR_RULER                 COLOR_DEFAULT_FG
-#define COLOR_DIALOG                COLOR_DEFAULT_FG
+// 8-colors terminal
+#ifndef TERMINAL_SUPPORTS_256_COLORS
+#define OUTPUT_MODE                 TB_OUTPUT_NORMAL
+#define COLOR_DEFAULT               TB_DEFAULT
+#define COLOR_RULER                 COLOR_DEFAULT
+#define COLOR_DIALOG                COLOR_DEFAULT
 #define COLOR_KEYWORD               TB_BLUE
 #define COLOR_FLOW_CONTROL          TB_GREEN
 #define COLOR_BUILT_IN              TB_RED
 #define COLOR_NUMBER                TB_YELLOW
 #define COLOR_STRING                TB_MAGENTA
 #define COLOR_COMMENT               TB_CYAN
+#define COLOR_BG_DEFAULT            TB_DEFAULT
+#define COLOR_BG_SELECTIONS         0
+#define COLOR_BG_MATCHING           0
+#endif
 
-#define COLOR_DEFAULT_BG            TB_DEFAULT
-#define COLOR_SELECTIONS_BG         0
-#define COLOR_MATCHING_BG           0*/
-
+// 256-colors terminal
 // TODO: get https://www.calmar.ws/vim/256-xterm-24bit-rgb-color-chart.html
 // 99    Violet
 // 32    Bleu
 // 172   Orange
 // 213   Rose
-
+#ifdef TERMINAL_SUPPORTS_256_COLORS
 #define OUTPUT_MODE                 TB_OUTPUT_256
-
-#define COLOR_DEFAULT_FG            TB_DEFAULT
-#define COLOR_RULER                 COLOR_DEFAULT_FG
-#define COLOR_DIALOG                COLOR_DEFAULT_FG
+#define COLOR_DEFAULT               TB_DEFAULT
+#define COLOR_RULER                 COLOR_DEFAULT
+#define COLOR_DIALOG                COLOR_DEFAULT
 #define COLOR_KEYWORD               99
 #define COLOR_FLOW_CONTROL          32
 #define COLOR_BUILT_IN              32
 #define COLOR_NUMBER                99
 #define COLOR_STRING                99
 #define COLOR_COMMENT               172
-
-#define COLOR_DEFAULT_BG            TB_DEFAULT
-#define COLOR_SELECTIONS_BG         234
-#define COLOR_MATCHING_BG           TB_DEFAULT
+#define COLOR_BG_DEFAULT            TB_DEFAULT
+#define COLOR_BG_SELECTIONS         234
+#define COLOR_BG_MATCHING           TB_DEFAULT
+#endif
 
 
 // KEYBINDS ********************************************************************

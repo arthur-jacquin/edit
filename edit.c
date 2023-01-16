@@ -1792,7 +1792,7 @@ print_line(const char *chars, int length, int line_nb, struct selection *s, int 
     if (settings.syntax_highlight && strcmp(extension, "none")) {
         i = 0;
         while (i < length) {
-            color = COLOR_DEFAULT_FG;
+            color = COLOR_DEFAULT;
             nb_to_color = 1;
             if (is_word_char(c = chars[i])) {
                 for (j = 0; is_word_char(nc = chars[i+j]) || is_number(nc); j++)
@@ -1829,26 +1829,28 @@ print_line(const char *chars, int length, int line_nb, struct selection *s, int 
         }
     } else {
         for (i = 0; i < length; i++)
-            fg[i] = COLOR_DEFAULT_FG;
+            fg[i] = COLOR_DEFAULT;
     }
     
     // background
     for (i = 0; i < length; i++)
-        bg[i] = COLOR_DEFAULT_BG;
-    while (s != NULL && s->l < line_nb)
-        s = s->next;
-    while (s != NULL && s->l == line_nb) {
-        for (i = 0; i < s->n && s->x + i < length; i++)
-            bg[s->x + i] = COLOR_SELECTIONS_BG;
-        s = s->next;
-    } 
+        bg[i] = COLOR_BG_DEFAULT;
+    if (settings.highlight_selections) {
+        while (s != NULL && s->l < line_nb)
+            s = s->next;
+        while (s != NULL && s->l == line_nb) {
+            for (i = 0; i < s->n && s->x + i < length; i++)
+                bg[s->x + i] = COLOR_BG_SELECTIONS;
+            s = s->next;
+        } 
+    }
     // TODO: highlight matching bracket
 
     // actual printing
     for (i = 0; i < length; i++)
         tb_set_cell(i, screen_line, chars[i], fg[i], bg[i]);
     for (; i < screen_width; i++)
-        tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT_FG, COLOR_DEFAULT_BG);
+        tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
 
     // forget about fg, bg
     free(fg);
@@ -1862,9 +1864,9 @@ print_dialog(void)
 {
     int i;
 
-    tb_print(0, screen_height - 1, COLOR_DIALOG, COLOR_DEFAULT_BG, dialog_chars);
+    tb_print(0, screen_height - 1, COLOR_DIALOG, COLOR_BG_DEFAULT, dialog_chars);
     for (i = strlen(dialog_chars); i < screen_width - RULER_WIDTH; i++)
-        tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT_FG, COLOR_DEFAULT_BG);
+        tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
 }
 
 void
@@ -1873,9 +1875,9 @@ print_ruler(void)
     int i;
 
     for (i = screen_width - RULER_WIDTH; i < screen_width; i++)
-        tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT_FG, COLOR_DEFAULT_BG);
+        tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
     tb_printf(screen_width - RULER_WIDTH, screen_height - 1,
-        COLOR_RULER, COLOR_DEFAULT_BG,
+        COLOR_RULER, COLOR_BG_DEFAULT,
         "%d,%d", first_line_on_screen->line_nb + y, x);
 }
 

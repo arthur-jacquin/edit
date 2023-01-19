@@ -45,6 +45,7 @@ LAST:
 * publish
 
 LATER:
+* execute command ? make ?
 * regex: add word boundaries ?
 * store optimal x ?
 * scrolloff ?

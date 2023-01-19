@@ -151,19 +151,48 @@ struct lang {
 
 // C
 char *c_names = "c h ";
-char *c_keywords = "volatile auto const static extern \
-                    enum struct union typedef register \
-                    void NULL char int float \
-                    short long double signed unsigned \
-                    define include ";
-char *c_flow_control = "return if else for while do break \
-                        continue switch case default goto ";
-char *c_built_ins = "sizeof malloc strcmp strcpy ";
+char *c_keywords = "\
+    int long short char void \
+    signed unsigned float double \
+    typedef struct union enum \
+    static register auto volatile extern const \
+    FILE DIR NULL \
+    int8_t int16_t int32_t int64_t \
+    uint8_t uint16_t uint32_t uint64_t \
+    define include ";
+char *c_flow_control = "\
+    while for do if else switch case default \
+    goto break return continue ";
+char *c_built_ins = "\
+    sizeof malloc strcmp strcpy "; // TODO: cf stdlib.h, string.h...
 char *c_comment = "// ";
+
+// Python
+char *py_names = "py ";
+char *py_keywords = "\
+    False None True and in is not or \
+    as assert del global ";
+char *py_flow_control = "\
+	while for if else elif try except finally with \
+    break continue pass return yield lambda \
+    class def import from raise async await ";
+char *py_built_ins = "\
+    abs all any ascii bin bool breakpoint bytearray \
+    bytes callable chr classmethod compile complex \
+    delattr dict dir divmod enumerate eval exec \
+    filter float format frozenset getattr globals \
+    hasattr hash help hex id input int isinstance \
+    issubclass iter len list locals map max \
+    memoryview min next object oct open ord pow \
+    print property range repr reversed round set \
+    setattr slice sorted staticmethod str sum super \
+    tuple type vars zip __import__ ";
+char *py_comment = "# ";
 
 // Languages
 struct lang languages[] = {
     {&c_names, &c_keywords, &c_flow_control, &c_built_ins, &c_comment, NULL},
+    {&py_names, &py_keywords, &py_flow_control, &py_built_ins, &py_comment, NULL},
 };
 
 

@@ -3,6 +3,7 @@ FIX:
 * move cursor and selections on actions/line management
 
 BIG STUFF:
+* change to GPL
 * add dialog mode, with click, arrows, return
 * integrate search and replace engine
 * add read-only mode
@@ -25,6 +26,8 @@ CHECK:
 * possibility to make "const" args
 
 MISSING KEYBINDS:
+* [q] quit
+* [Q] force quit
 * [m] move to matching bracket
 * [t/T] move to <n> next/previous word
 * [n/N] move to <n> next/previous selection

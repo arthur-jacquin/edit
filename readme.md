@@ -50,9 +50,8 @@ Maybe in a far future:
     GENERAL
             <ESC>   return to default mode
                 ?   help
-                q   quit
-                w   write
-                W   write as
+              q/Q   quit/force quit
+              w/W   write/write as
                 r   reload
                 i   get in insert mode
                 s   change a parameter

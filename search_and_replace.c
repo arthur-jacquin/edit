@@ -19,14 +19,30 @@ struct substring subpatterns[10];
     
 char sep = ',';
 
-char sp[] = "Arthu+rtla";
-char rp[] = "$2,$1: $0";
+char sp[] = ".\\(\\w*\\)";
+char rp[] = "$2: \\1";
+char string[] = "Arthur,JACQUIN";
 char replaced[100]; // TODO: manage size interactively
 
 int
 main(int argc, char **argv)
 {
-
+    
+    test("Arte|t", "Arthur", 0);
+    test("Art\\(h\\)|eur", "Arthur", 6);
+    test("Art\\(h\\)|\\(lol\\)ur", "Arthur", 6);
+    test("Arte|\\(h\\)ur", "Arthur", 6);
+    test("Arth|e|\\(lol\\)ur", "Arthur", 6);
+    test("Arte|\\(lol\\)|u|hur", "Arthur", 6);
+    test("Art[yui]ur", "Arthur", 0);
+    test("Art[yuhi]ur", "Arthur", 6);
+    test("Art[^yui]ur", "Arthur", 6);
+    test("Art[^yuhi]ur", "Arthur", 0);
+    test("Art[a-z]", "Arthur", 4);
+    test("Art[0-9]", "Arthur", 0);
+    test("Art[A-Za-z-]", "Art-ur", 4);
+    test("Art[]", "Arthur", 0);
+    test("Art[h", "Arthur", 0);
     test("Arthur", "Arthur", 6);
     test("^Arthur", "Arthur", 6);
     test("^Arthur$", "Arthur", 6);
@@ -38,7 +54,9 @@ main(int argc, char **argv)
     test("u?", "uu", 1);
     test("u? ", "uu", 0);
     test("u+ ", " ", 0);
+    test("u+", " ", 0);
     test("u* ", " ", 1);
+    test("u*", " ", 0);
     test("u+", "u", 1);
     test("u+", "uu", 2);
     test("u*", "u", 1);
@@ -53,7 +71,6 @@ main(int argc, char **argv)
     test("r{4,}", "rrr", 0);
     test("r{4}", "rrr", 0);
     test("A{,2}r*y?t+r*o{1}", "AAttrrro", 8);
-
     test("\\(ar\\)?thur", "arthur", 6);
     test("\\(ar\\)+thur", "arthur", 6);
     test("\\(ar\\)*thur", "arthur", 6);
@@ -70,14 +87,11 @@ main(int argc, char **argv)
     test("\\(ar\\){3,}thur", "ararthur", 0);
     test("\\(ar\\){,2}thur", "ararthur", 8);
     test("\\(ar\\){,1}thur", "ararthur", 0);
-
     test("\\(A?r*\\)thu\\(r{2}\\)", "Arthurr", 7);
     //printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n); // 0, 2
     //printf("%d, %d\n", subpatterns[2].st, subpatterns[2].n); // 5, 2
-
     test("\\(ar\\){,2}thur", "ararthur", 8);
     //printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n); // 0, 4
-    
     test("\\(lol\\)?\\(ar\\)*thur", "arararthur", 10);
     //printf("%d, %d\n", subpatterns[2].st, subpatterns[2].n); // 0, 6
 
@@ -87,10 +101,10 @@ main(int argc, char **argv)
     test("\\(a\\){4}", "aa", 0);
     test("\\(a\\){2}", "aa", 2);
     test("\\(a\\){1}", "aa", 1);
+    
+    replace(string, 0, strlen(string), strlen(string));
+    //printf("SEARCH \"%s\" REPLACE \"%s\": \"%s\" BECOMES \"%s\"\n", sp, rp, string, replaced);
 
-//     printf("\n%s\n", chars);
-//     replace(chars, 0, strlen(chars), strlen(chars));
-//     printf("%s\n", replaced);
 }
 
 void test(char *sp, char *chars, int expected) {
@@ -124,25 +138,56 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
     int min, max;
     int in_block, in_class, last_was, found_in_class, is_neg_class;
     int start_block, start_block_i, nb_block, is_block_ok; // subpatterns
-    int start_elem, start_elem_i, nb_elem, is_elem_ok; // char, ., \w, \W, \d, \D, \^, \$, \\, \., (class)
+    int start_elem, start_elem_i, nb_elem, is_elem_ok; // char, ., \w, \W, \d, \D, \^, \$, \\, \., class
 
     in_block = in_class = 0;
     nb_block = nb_elem = 0;
     start_block = start_elem = 0;
     start_block_i = start_elem_i = 0;
-    last_was = ELEM;
+    last_was = NONE;
     is_block_ok = is_elem_ok = 1;
 
     i = x;
     k = 0;
  
     for (k = 0; k < strlen(sp);) {
-        // TODO: act if in_class, [, ]
+        // TODO: word boundaries ?
         //printf("pattern: %d, %c; string: %d, %c; is_block_ok: %d; is_elem_ok: %d; in_block: %d, last_was: %d.\n", k, sp[k], i, chars[x+i], is_block_ok, is_elem_ok, in_block, last_was);
-        
+
         if (last_was != BLOCK && !in_block && !is_block_ok) {
             return 0;
+        } else if (in_class) {
+            // no escapes in classes
+            if (sp[k] == ']') {
+                in_class = 0;
+                is_elem_ok = (is_neg_class) ? (!found_in_class) : (found_in_class);
+                i++;
+                k++;
+            } else if (k+2 < strlen(sp) && sp[k+1] == '-' && sp[k+2] != ']') {
+                found_in_class = found_in_class ||
+                    (sp[k] <= chars[x+i]) && (chars[x+i] <= sp[k+2]);
+                k += 3;
+            } else {
+                found_in_class = found_in_class || (sp[k] == chars[x+i]);
+                k++;
+            }
+        } else if (sp[k] == '[') {
+            if (i == x + n)
+                return 0;
+            if (!is_elem_ok)
+                is_block_ok = 0;
+            start_elem = k;
+            start_elem_i = i;
+            last_was = ELEM;
+            in_class = 1;
+            found_in_class = is_neg_class = 0;
+            if (k+1 < strlen(sp) && sp[k+1] == '^') {
+                k++;
+                is_neg_class = 1;
+            }
+            k++;
         } else if (sp[k] == '*' || sp[k] == '+' || sp[k] == '?' || sp[k] == '{') {
+            // computing min and max
             if (sp[k] == '{') {
                 min = max = 0;
                 k++;
@@ -187,7 +232,6 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                     k = start_elem;
                 }
             } else {
-                // printf("%d, %d, %d, %d\n", is_block_ok, nb_block, min, max);
                 if (!is_block_ok) {
                     // cancelling read
                     if (nb_block - 1 < min)
@@ -213,28 +257,37 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                     k = start_block;
                 }
             }
-        /*} else if (sp[k] == '|') {
-            // much TODO
+        } else if (sp[k] == '|') {
             if (last_was == NONE) {
                 return 0; // error
-            } else if (last_was == ELEM) {
-                if (is_elem_ok) {
-                    last_was = NONE;
-                    // TODO, move k to next, 
-                } else {
-                    i = start_elem_i;
+            } else if ((last_was == ELEM && is_elem_ok) ||
+                (last_was == BLOCK && is_block_ok)) {
+                last_was = NONE;
+                // move k to next location
+                while (k < strlen(sp) && sp[k] == '|') {
                     k++;
+                    if (k == strlen(sp)) {
+                        return 0; // error
+                    } else if (k+1 < strlen(sp) && sp[k] == '\\' && sp[k+1] == '(') {
+                        while (k+1 < strlen(sp) && !(sp[k] == '\\' && sp[k+1] == ')'))
+                            k++;
+                        k += 2;
+                    } else if (sp[k] == '[') {
+                        while (k < strlen(sp) && sp[k] != ']')
+                            k++;
+                        k++;
+                    } else if (sp[k] == '\\') {
+                        k += 2;
+                    } else {
+                        k++;
+                    }
                 }
             } else {
-                // TODO store in subpattern
-                if (is_block_ok) {
-                    last_was = NONE;
-                    // TODO
-                } else {
-                    i = start_block_i;
-                    k++;
-                }
-            }*/
+                i = (last_was == ELEM) ? start_elem_i : start_block_i;
+                last_was = NONE;
+                k++;
+                is_block_ok = is_elem_ok = 1;
+            }
         } else if (k + 1 < strlen(sp) && sp[k] == '\\' && sp[k+1] == '(') {
             if (in_block)
                 return 0; // error
@@ -361,22 +414,6 @@ replace(char *chars, int x, int n, int line_length)
     return j;
 }
 
-
-// IGNORED
-//     \s 	Find a whitespace character
-//     \S 	Find a non-whitespace character
-//     \b 	Find a match at the beginning/end of a word, beginning like this: \bHI, end like this: HI\b
-//     \B 	Find a match, but not at the beginning/end of a word
-//     \0 	Find a NULL character
-//     \n 	Find a new line character
-//     \f 	Find a form feed character
-//     \r 	Find a carriage return character
-//     \t 	Find a tab character
-//     \v 	Find a vertical tab character
-//     \xxx 	Find the character specified by an octal number xxx
-//     \xdd 	Find the character specified by a hexadecimal number dd
-//     \udddd 	Find the Unicode character specified by a hexadecimal number dddd
-
 int
 is_blank(char c)
 {
@@ -394,7 +431,3 @@ is_number(char c)
 {
     return ('0' <= c && c <= '9');
 }
-
-//             } else if (sp[k] == '^' || sp[k] == '$' || sp[k] == '.' || sp[k] == '\\'
-//                     || sp[k] == '[' || sp[k] == '*' || sp[k] == '+' || sp[k] == '?'
-//                     || sp[k] == '|' || sp[k] == '{') {

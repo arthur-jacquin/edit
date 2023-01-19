@@ -15,8 +15,6 @@ BIG STUFF:
 * find next/previous selection
 * duplicates selections 
 * select range of lines 
-* regex: add |
-* regex: add classes
 * concatenate lines on SUPPR/BACKSPACE
 
 CHECK:
@@ -44,6 +42,7 @@ LAST:
 * publish
 
 LATER:
+* regex: add word boundaries ?
 * store optimal x ?
 * scrolloff ?
 * display line number ?

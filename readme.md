@@ -171,3 +171,4 @@ Regex search:
 
 Documentation:
 * [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
+* [syntax](https://github.com/vim/vim/tree/master/runtime/syntax)

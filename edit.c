@@ -114,7 +114,7 @@ void print_ruler(void);
 void print_all(void);
 
 // interaction
-int dialog(const char *prompt, const char *specifics, int writable);
+int dialog(const char *prompt, const char *specifics, int writable, int refresh);
 void display_help(void);
 
 
@@ -243,7 +243,7 @@ main(int argc, char *argv[])
 
 
     // MAIN LOOP ***************************************************************
-    
+
     while (1) {
         delete_temp_sels();
         add_running_sels(1);
@@ -575,28 +575,28 @@ main(int argc, char *argv[])
 
         case TB_EVENT_MOUSE:
             switch (ev.key) {
-                case TB_KEY_MOUSE_LEFT:
-                    if (ev.y < screen_height - 1)
-                        go_to(pos_of(first_line_on_screen->line_nb + ev.y, ev.x));
-                    break;
-                case TB_KEY_MOUSE_WHEEL_UP:
-                    old_line_nb = first_line_on_screen->line_nb + y;
-                    first_line_on_screen = get_line(-SCROLL_LINE_NUMBER);
-                    if (old_line_nb - first_line_on_screen->line_nb > screen_height - 2) {
-                        go_to(pos_of(first_line_on_screen->line_nb + screen_height - 2, x));
-                    } else {
-                        go_to(pos_of(old_line_nb, x));
-                    }
-                    break;
-                case TB_KEY_MOUSE_WHEEL_DOWN:
-                    old_line_nb = first_line_on_screen->line_nb + y;
-                    first_line_on_screen = get_line(SCROLL_LINE_NUMBER);
-                    if (old_line_nb < first_line_on_screen->line_nb) {
-                        go_to(pos_of(first_line_on_screen->line_nb, x));
-                    } else {
-                        go_to(pos_of(old_line_nb, x));
-                    }
-                    break;
+            case TB_KEY_MOUSE_LEFT:
+                if (ev.y < screen_height - 1)
+                    go_to(pos_of(first_line_on_screen->line_nb + ev.y, ev.x));
+                break;
+            case TB_KEY_MOUSE_WHEEL_UP:
+                old_line_nb = first_line_on_screen->line_nb + y;
+                first_line_on_screen = get_line(-SCROLL_LINE_NUMBER);
+                if (old_line_nb - first_line_on_screen->line_nb > screen_height - 2) {
+                    go_to(pos_of(first_line_on_screen->line_nb + screen_height - 2, x));
+                } else {
+                    go_to(pos_of(old_line_nb, x));
+                }
+                break;
+            case TB_KEY_MOUSE_WHEEL_DOWN:
+                old_line_nb = first_line_on_screen->line_nb + y;
+                first_line_on_screen = get_line(SCROLL_LINE_NUMBER);
+                if (old_line_nb < first_line_on_screen->line_nb) {
+                    go_to(pos_of(first_line_on_screen->line_nb, x));
+                } else {
+                    go_to(pos_of(old_line_nb, x));
+                }
+                break;
             }
             break;
 
@@ -1673,7 +1673,6 @@ indent(struct line *l, struct selection *s)
     } else {
         for (i = 0; i < (-asked_indent) && l->chars[i] == ' '; i++)
             ;
-        printf("%d\n", i);
         new_chars = (char *) malloc(l->length - i);
         for (j = 0; j < l->length - i; j++)
             new_chars[j] = l->chars[j + i];
@@ -1908,10 +1907,76 @@ print_all(void)
 // INTERACTION *****************************************************************
 
 int
-dialog(const char *prompt, const char *specifics, int writable)
+dialog(const char *prompt, const char *specifics, int writable, int refresh)
 {
-    // TODO; manage hiding cursor if not writable
+    int dx;
 
+    dx = strlen(prompt);
+
+    while (1) {
+        if (refresh) {
+            delete_temp_sels();
+            add_running_sels(1);
+            print_all();
+        }
+        if (writable) {
+            tb_hide_cursor();
+        } else {
+            tb_set_cursor(dx, screen_height - 1);
+        }
+        tb_present();
+        tb_poll_event(&ev);
+        switch (ev.type) {
+        case TB_EVENT_KEY:
+            // TODO
+            // ESC
+            // ENTER
+            // ARROWS
+            // BACKSPACE
+            // DELETE
+            // <char>
+            break;
+
+        case TB_EVENT_MOUSE:
+            switch (ev.key) {
+            case TB_KEY_MOUSE_LEFT:
+                dx = (ev.x < INTERFACE_WIDTH) ? (ev.x) : (INTERFACE_WIDTH - 1);
+                dx = (dx >= strlen(prompt)) ? (dx) : (strlen(prompt));
+                break;
+            /*case TB_KEY_MOUSE_WHEEL_UP:
+                old_line_nb = first_line_on_screen->line_nb + y;
+                first_line_on_screen = get_line(-SCROLL_LINE_NUMBER);
+                if (old_line_nb - first_line_on_screen->line_nb > screen_height - 2) {
+                    go_to(pos_of(first_line_on_screen->line_nb + screen_height - 2, x));
+                } else {
+                    go_to(pos_of(old_line_nb, x));
+                }
+                break;
+            case TB_KEY_MOUSE_WHEEL_DOWN:
+                old_line_nb = first_line_on_screen->line_nb + y;
+                first_line_on_screen = get_line(SCROLL_LINE_NUMBER);
+                if (old_line_nb < first_line_on_screen->line_nb) {
+                    go_to(pos_of(first_line_on_screen->line_nb, x));
+                } else {
+                    go_to(pos_of(old_line_nb, x));
+                }
+                break;*/
+            }
+            break;
+
+        case TB_EVENT_RESIZE:
+            if (resize(ev.w, ev.h)) {
+                if (has_been_changes)
+                    write_file(BACKUP_FILE_NAME);
+                // TODO: find a way to quit
+                // return ERR_TERM_NOT_BIG_ENOUGH;
+            } else {
+                // TODO: what to do ?
+                // go_to(pos_of(first_line_on_screen->line_nb + y, x));
+            }
+            break;
+        }
+    }
 }
 
 void

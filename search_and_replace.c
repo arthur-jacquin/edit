@@ -19,10 +19,15 @@ struct substring subpatterns[10];
     
 char sep = ',';
 
-char sp[] = ".\\(\\w*\\)";
-char rp[] = "$2: \\1";
-char string[] = "Arthur,JACQUIN";
+char sp[] = "Il y a \\(\\d*\\) \\(camions\\)|\\(voitures\\)";
+char rp[] = "En \\2\\3, il y en a \\1.";
+char string[] = "Il y a 42 camions";
 char replaced[100]; // TODO: manage size interactively
+
+// char sp[] = ".\\(\\w*\\)";
+// char rp[] = "$2: \\1";
+// char string[] = "Arthur,JACQUIN";
+// char replaced[100]; // TODO: manage size interactively
 
 int
 main(int argc, char **argv)
@@ -103,7 +108,7 @@ main(int argc, char **argv)
     test("\\(a\\){1}", "aa", 1);
     
     replace(string, 0, strlen(string), strlen(string));
-    //printf("SEARCH \"%s\" REPLACE \"%s\": \"%s\" BECOMES \"%s\"\n", sp, rp, string, replaced);
+    printf("SEARCH \"%s\" REPLACE \"%s\": \"%s\" BECOMES \"%s\"\n", sp, rp, string, replaced);
 
 }
 
@@ -272,6 +277,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                         while (k+1 < strlen(sp) && !(sp[k] == '\\' && sp[k+1] == ')'))
                             k++;
                         k += 2;
+                        s++;
                     } else if (sp[k] == '[') {
                         while (k < strlen(sp) && sp[k] != ']')
                             k++;
@@ -306,7 +312,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
             is_elem_ok = 1;
             if (nb_block == 0)
                 subpatterns[s].st = start_block_i;
-            subpatterns[s].n = i - start_block_i;
+            subpatterns[s].n = (is_block_ok) ? (i - start_block_i) : 0;
             nb_block++;
             s++;
             k += 2; 

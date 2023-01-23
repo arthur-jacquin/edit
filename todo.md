@@ -6,6 +6,7 @@ BIG STUFF:
 * change to GPL
 * add dialog mode, with click, arrows, return
 * integrate search and replace engine
+* add shift selections
 * add read-only mode
 * add UTF-8 support
 * better help

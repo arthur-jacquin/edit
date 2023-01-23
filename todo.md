@@ -1,6 +1,7 @@
 FIX:
 * problem with selections
 * move cursor and selections on actions/line management
+* new line at end of file
 
 BIG STUFF:
 * change to GPL

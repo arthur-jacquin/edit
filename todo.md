@@ -5,7 +5,6 @@ FIX:
 
 BIG STUFF:
 * change to GPL
-* add dialog mode, with click, arrows, return
 * integrate search and replace engine
 * add shift selections
 * add read-only mode
@@ -33,7 +32,6 @@ MISSING KEYBINDS:
 * [n/N] move to <n> next/previous selection
 * [z] duplicate the current selection on the next <n> lines
 * [:] select all lines of custom range
-* [W] write as
 * [s] change a parameter
 * [f,/] search for pattern
 * [R] replace with pattern elements and fields

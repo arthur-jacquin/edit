@@ -114,7 +114,7 @@ void print_ruler(void);
 void print_all(void);
 
 // interaction
-int dialog(const char *prompt, const char *specifics, int writable, int refresh);
+int dialog(const char *prompt, char current[], char old[], int refresh);
 void display_help(void);
 
 
@@ -140,9 +140,11 @@ int read_only;
 int m;                              // multiplier
 int asked_indent, asked_remove;
 char dialog_chars[INTERFACE_WIDTH]; // dialog interface buffer
-int prompt_length, dialog_x;        // prompt length, cursor column in interface
+char interface[INTERFACE_WIDTH];    // interface buffer
+char old_interface[INTERFACE_WIDTH];// interface buffer
 
 char file_name[INTERFACE_WIDTH];    // name of file to write
+char old_file_name[INTERFACE_WIDTH];// name of file to write
 char extension[INTERFACE_WIDTH];    // name of file to write
 struct lang *syntax;
 
@@ -194,11 +196,13 @@ main(int argc, char *argv[])
             return 0;
         } else {
             strcpy(file_name, argv[1]);
+            strcpy(old_file_name, file_name);
             read_only = 0;
         }
     } else if (argc == 3) {
         if (!(strcmp(argv[2], "--read-only") && strcmp(argv[1], "-r"))) {
             strcpy(file_name, argv[1]);
+            strcpy(old_file_name, file_name);
             read_only = 1;
         }
     } else {
@@ -287,13 +291,13 @@ main(int argc, char *argv[])
                     }
                     break;
                 case KB_WRITE_AS:
-                    /*TODO if (dialog("Save as (ESC to cancel): ", "", 1)) {
-                        for (i = interface_x; i >= prompt_length; i--)
-                            file_name[i-prompt_length] = interface[i];
+                    if (dialog("Save as (ESC to cancel): ", file_name, old_file_name, 0)) {
                         write_file(file_name);
                         has_been_changes = 0;
                         echo("File saved.");
-                    }*/
+                    } else {
+                        echo("");
+                    }
                     break;
                 case KB_RELOAD:
                     if (has_been_changes) {
@@ -312,11 +316,9 @@ main(int argc, char *argv[])
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_CHANGE_SETTING:
-                    /* TODO if (dialog("Change parameter: ", "", 1)) {
-                        for (i = interface_x; i >= prompt_length; i--)
-                            file_name[i-prompt_length] = interface[i];
+                    if (dialog("Change parameter: ", interface, old_interface, 0)) {
                         // TODO: parameter modif, echoes if not succesful
-                    }*/
+                    }
                     break;
                 case KB_INSERT_START_LINE:
                     empty_sels();
@@ -1903,11 +1905,15 @@ print_all(void)
 // INTERACTION *****************************************************************
 
 int
-dialog(const char *prompt, const char *specifics, int writable, int refresh)
+dialog(const char *prompt, char current[], char old[], int refresh)
 {
     int dx;
+    int i, n;
+    int prompt_length;
 
-    dx = strlen(prompt);
+    dx = prompt_length = strlen(prompt);
+    current[0] = '\0';
+    n = 1;
 
     while (1) {
         if (refresh) {
@@ -1915,48 +1921,65 @@ dialog(const char *prompt, const char *specifics, int writable, int refresh)
             add_running_sels(1);
             print_all();
         }
-        if (writable) {
-            tb_hide_cursor();
-        } else {
-            tb_set_cursor(dx, screen_height - 1);
-        }
+        strcpy(dialog_chars, prompt);
+        strcat(dialog_chars, current);
+        print_dialog();
+        tb_set_cursor(dx, screen_height - 1);
         tb_present();
         tb_poll_event(&ev);
         switch (ev.type) {
         case TB_EVENT_KEY:
-            // TODO
-            // ESC
-            // ENTER
-            // ARROWS
-            // BACKSPACE
-            // DELETE
-            // <char>
+            if (ev.ch && n < INTERFACE_WIDTH - prompt_length - 1) {
+                for (i = n; i >= dx - prompt_length; i--)
+                    current[i+1] = current[i];
+                current[dx - prompt_length] = ev.ch;
+                dx++;
+                n++;
+            } else {
+                switch (ev.key) {
+                case TB_KEY_ESC:
+                    strcpy(current, old);
+                    return 0;
+                    break;
+                case TB_KEY_ENTER:
+                    strcpy(old, current);
+                    return 1;
+                    break;
+                case TB_KEY_BACKSPACE:
+                case TB_KEY_BACKSPACE2:
+                    if (dx - prompt_length > 0) {
+                        for (i = dx - prompt_length; i < n; i++)
+                            current[i-1] = current[i];
+                        dx--;
+                        n--;
+                    }
+                    break;
+                case TB_KEY_ARROW_RIGHT:
+                    dx += (dx - prompt_length < n - 1) ? 1 : 0;
+                    break;
+                case TB_KEY_ARROW_LEFT:
+                    dx -= (dx - prompt_length > 0) ? 1 : 0;
+                    break;
+                case TB_KEY_ARROW_UP:
+                    strcpy(current, old);
+                    break;
+                case TB_KEY_ARROW_DOWN:
+                    dx = prompt_length;
+                    current[0] = '\0';
+                    n = 1;
+                    break;
+                }
+            }
             break;
 
         case TB_EVENT_MOUSE:
             switch (ev.key) {
             case TB_KEY_MOUSE_LEFT:
                 dx = (ev.x < INTERFACE_WIDTH) ? (ev.x) : (INTERFACE_WIDTH - 1);
-                dx = (dx >= strlen(prompt)) ? (dx) : (strlen(prompt));
+                dx = (dx >= prompt_length) ? (dx) : (prompt_length);
                 break;
-            /*case TB_KEY_MOUSE_WHEEL_UP:
-                old_line_nb = first_line_on_screen->line_nb + y;
-                first_line_on_screen = get_line(-SCROLL_LINE_NUMBER);
-                if (old_line_nb - first_line_on_screen->line_nb > screen_height - 2) {
-                    go_to(pos_of(first_line_on_screen->line_nb + screen_height - 2, x));
-                } else {
-                    go_to(pos_of(old_line_nb, x));
-                }
-                break;
-            case TB_KEY_MOUSE_WHEEL_DOWN:
-                old_line_nb = first_line_on_screen->line_nb + y;
-                first_line_on_screen = get_line(SCROLL_LINE_NUMBER);
-                if (old_line_nb < first_line_on_screen->line_nb) {
-                    go_to(pos_of(first_line_on_screen->line_nb, x));
-                } else {
-                    go_to(pos_of(old_line_nb, x));
-                }
-                break;*/
+            // case TB_KEY_MOUSE_WHEEL_UP:
+            // case TB_KEY_MOUSE_WHEEL_DOWN:
             }
             break;
 

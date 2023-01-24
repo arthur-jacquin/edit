@@ -67,6 +67,7 @@
 // general
 #define KB_HELP                     '?'
 #define KB_QUIT                     'q'
+#define KB_FORCE_QUIT               'Q'
 #define KB_WRITE                    'w'
 #define KB_WRITE_AS                 'W'
 #define KB_RELOAD                   'r'

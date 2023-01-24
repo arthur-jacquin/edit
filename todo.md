@@ -15,7 +15,6 @@ BIG STUFF:
 * find next/previous word
 * find next/previous selection
 * duplicates selections 
-* select range of lines 
 * concatenate lines on SUPPR/BACKSPACE
 
 CHECK:
@@ -30,7 +29,6 @@ MISSING KEYBINDS:
 * [t/T] move to <n> next/previous word
 * [n/N] move to <n> next/previous selection
 * [z] duplicate the current selection on the next <n> lines
-* [:] select all lines of custom range
 * [f,/] search for pattern
 * [R] replace with pattern elements and fields
 
@@ -41,7 +39,7 @@ LAST:
 * publish
 
 LATER:
-* execute command ? make ?
+* [e] execute command ? make ?
 * regex: add word boundaries ?
 * store optimal x ?
 * scrolloff ?

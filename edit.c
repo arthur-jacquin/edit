@@ -118,6 +118,7 @@ void print_all(void);
 int dialog(const char *prompt, char current[], char old[], int refresh);
 void display_help(void);
 int set_parameter(char *assign);
+int parse_range(char *range);
 
 
 
@@ -177,7 +178,7 @@ struct tb_event ev;                 // struct to retrieve events
 int
 main(int argc, char *argv[])
 {
-    int a, l1, old_line_nb;
+    int l1, old_line_nb;
     uint32_t c;
     struct pos p;
 
@@ -290,7 +291,7 @@ main(int argc, char *argv[])
                     }
                     break;
                 case KB_WRITE_AS:
-                    if (dialog("Save as (ESC to cancel): ", file_name, old_file_name, 0)) {
+                    if (dialog("Save as: ", file_name, old_file_name, 0)) {
                         write_file(file_name);
                         has_been_changes = 0;
                         echo("File saved.");
@@ -317,7 +318,7 @@ main(int argc, char *argv[])
                 case KB_CHANGE_SETTING:
                     if (dialog("Change setting: ", interface, old_interface, 0)) {
                         if (!set_parameter(interface))
-                            echo("Unvalid assignment");
+                            echo("Invalid assignment.");
                     } else {
                         echo("");
                     }
@@ -446,18 +447,27 @@ main(int argc, char *argv[])
                         first_line_on_screen->line_nb + y, 0);
                     break;
                 case KB_SEL_CUSTOM_RANGE:
-                    // TODO
+                    if (dialog("Lines range: ", interface, old_interface, 0)) {
+                        if (!parse_range(interface))
+                            echo("Invalid range.");
+                    } else {
+                        echo("");
+                    }
                     break;
                 case KB_SEL_ALL_LINES:
                     add_range_sels(1, nb_line, 0);
                     break;
                 case KB_SEL_LINES_BLOCK:
                     l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
-                    add_range_sels(l1, find_end_of_block(l1, m),0);
+                    add_range_sels(l1, find_end_of_block(l1, m), 0);
                     break;
                 case KB_SEL_FIND:
                 case KB_SEL_SEARCH:
                     // TODO
+                    if (dialog("Search pattern: ", spattern, pspattern, 0)) {
+                    } else {
+                        echo("");
+                    }
                     break;
                 case KB_SEL_ANCHOR:
                     if (anchored) {
@@ -492,6 +502,10 @@ main(int argc, char *argv[])
                     break;
                 case KB_ACT_REPLACE:
                     // TODO
+                    if (dialog("Replace pattern: ", rpattern, prpattern, 0)) {
+                    } else {
+                        echo("");
+                    }
                     break;
                 case KB_ACT_LOWERCASE:
                     act(lower, 0);
@@ -2050,4 +2064,45 @@ set_parameter(char *assign)
     }
 
     return 1;
+}
+
+int
+parse_range(char *range)
+{
+    int l1, l2;
+    char *ptr;
+
+    ptr = strchr(range, ',');
+
+    if (ptr == NULL)
+        return 0;
+    *ptr = '\0';
+    ptr++;
+
+    if (strcmp(range, "") == 0) {
+        l1 = 1;
+    } else if (strcmp(range, ".") == 0) {
+        l1 = first_line_on_screen->line_nb + y;
+    } else if (sscanf(range, "%d", &l1) == 1) {
+        l1 = (l1 < 1) ? 1 : l1;
+    } else {
+        return 0;
+    }
+
+    if (strcmp(ptr, "") == 0) {
+        l2 = nb_line;
+    } else if (strcmp(ptr, ".") == 0) {
+        l2 = first_line_on_screen->line_nb + y;
+    } else if (sscanf(ptr, "%d", &l2) == 1) {
+        l2 = (l2 > nb_line) ? nb_line : l2;
+    } else {
+        return 0;
+    }
+
+    if (l2 < l1) {
+        return 0;
+    } else {
+        add_range_sels(l1, l2, 0);
+        return 1;
+    }
 }

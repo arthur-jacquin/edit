@@ -1,130 +1,15 @@
-#include <stdio.h>
-#include <string.h>
+int mark_pattern(char *chars, int x, int n, int line_length);
+int _replace(char *chars, int x, int n, int line_length);
 
-int is_blank(char c);
-int is_word_char(char c);
-int is_number(char c);
-int is_in(const char *list, const char *chars, int x, int length);
-
-void test(char *sp, char *chars, int expected);
-int mark_pattern(char *sp, char *chars, int x, int n, int line_length);
-int replace(char *chars, int x, int n, int line_length);
-
-struct substring {
-    int st;                             // starting position in original string
-    int n;                              // number of characters
-};
-struct substring fields[10];
-struct substring subpatterns[10];
-    
-char sep = ',';
-
-char sp[] = "Il y a \\(\\d*\\) \\(camions\\)|\\(voitures\\)";
-char rp[] = "En \\2\\3, il y en a \\1.";
-char string[] = "Il y a 42 camions";
 char replaced[100]; // TODO: manage size interactively
 
-// char sp[] = ".\\(\\w*\\)";
-// char rp[] = "$2: \\1";
-// char string[] = "Arthur,JACQUIN";
-// char replaced[100]; // TODO: manage size interactively
-
 int
-main(int argc, char **argv)
-{
-    
-    test("Arte|t", "Arthur", 0);
-    test("Art\\(h\\)|eur", "Arthur", 6);
-    test("Art\\(h\\)|\\(lol\\)ur", "Arthur", 6);
-    test("Arte|\\(h\\)ur", "Arthur", 6);
-    test("Arth|e|\\(lol\\)ur", "Arthur", 6);
-    test("Arte|\\(lol\\)|u|hur", "Arthur", 6);
-    test("Art[yui]ur", "Arthur", 0);
-    test("Art[yuhi]ur", "Arthur", 6);
-    test("Art[^yui]ur", "Arthur", 6);
-    test("Art[^yuhi]ur", "Arthur", 0);
-    test("Art[a-z]", "Arthur", 4);
-    test("Art[0-9]", "Arthur", 0);
-    test("Art[A-Za-z-]", "Art-ur", 4);
-    test("Art[]", "Arthur", 0);
-    test("Art[h", "Arthur", 0);
-    test("Arthur", "Arthur", 6);
-    test("^Arthur", "Arthur", 6);
-    test("^Arthur$", "Arthur", 6);
-    test("Arthur$", "Arthur", 6);
-    test("Arth^ur", "Arthur", 0);
-    test("Arth$ur", "Arthur", 0);
-    test("u? ", " ", 1);
-    test("u?", "u", 1);
-    test("u?", "uu", 1);
-    test("u? ", "uu", 0);
-    test("u+ ", " ", 0);
-    test("u+", " ", 0);
-    test("u* ", " ", 1);
-    test("u*", " ", 0);
-    test("u+", "u", 1);
-    test("u+", "uu", 2);
-    test("u*", "u", 1);
-    test("u*", "uuuu", 4);
-    test("r{1,5}", "rrr", 3);
-    test("r{1,2}", "rrr", 2);
-    test("r{,5}", "rrr", 3);
-    test("r{,2}", "rrr", 2);
-    test("r{2,}", "rrr", 3);
-    test("r{3}", "rrr", 3);
-    test("r{4,5}", "rrr", 0);
-    test("r{4,}", "rrr", 0);
-    test("r{4}", "rrr", 0);
-    test("A{,2}r*y?t+r*o{1}", "AAttrrro", 8);
-    test("\\(ar\\)?thur", "arthur", 6);
-    test("\\(ar\\)+thur", "arthur", 6);
-    test("\\(ar\\)*thur", "arthur", 6);
-    test("\\(ar\\)?thur", "thur", 4);
-    test("\\(ar\\)+thur", "thur", 0);
-    test("\\(ar\\)*thur", "thur", 4);
-    test("\\(ar\\)?thur", "ararthur", 0);
-    test("\\(ar\\)+thur", "ararthur", 8);
-    test("\\(ar\\)*thur", "ararthur", 8);
-    test("\\(ar\\){2}thur", "ararthur", 8);
-    test("\\(ar\\){1}thur", "ararthur", 0);
-    test("\\(ar\\){3}thur", "ararthur", 0);
-    test("\\(ar\\){2,}thur", "ararthur", 8);
-    test("\\(ar\\){3,}thur", "ararthur", 0);
-    test("\\(ar\\){,2}thur", "ararthur", 8);
-    test("\\(ar\\){,1}thur", "ararthur", 0);
-    test("\\(A?r*\\)thu\\(r{2}\\)", "Arthurr", 7);
-    //printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n); // 0, 2
-    //printf("%d, %d\n", subpatterns[2].st, subpatterns[2].n); // 5, 2
-    test("\\(ar\\){,2}thur", "ararthur", 8);
-    //printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n); // 0, 4
-    test("\\(lol\\)?\\(ar\\)*thur", "arararthur", 10);
-    //printf("%d, %d\n", subpatterns[2].st, subpatterns[2].n); // 0, 6
-
-    test("a*\\(.*\\)", "aaaaabrout", 10);
-    //printf("%d, %d\n", subpatterns[1].st, subpatterns[1].n); // 5, 5
-
-    test("\\(a\\){4}", "aa", 0);
-    test("\\(a\\){2}", "aa", 2);
-    test("\\(a\\){1}", "aa", 1);
-    
-    replace(string, 0, strlen(string), strlen(string));
-    printf("SEARCH \"%s\" REPLACE \"%s\": \"%s\" BECOMES \"%s\"\n", sp, rp, string, replaced);
-
-}
-
-void test(char *sp, char *chars, int expected) {
-    int res = mark_pattern(sp, chars, 0, strlen(chars), strlen(chars));
-    
-    if (res != expected)
-        //printf("-------------------------------------------------\n");
-        printf("%2d %2d (searched pattern \"%s\" in \"%s\")\n", expected, res, sp, chars);
-}
-
-
-int
-mark_pattern(char *sp, char *chars, int x, int n, int line_length)
+mark_pattern(char *chars, int x, int n, int line_length)
 {
     // return length of read pattern if found at x, of length < n, else 0
+
+    char *sp; // search pattern
+    int lsp; // length of search pattern
 
     int i; // index in chars
     int k; // index in sp
@@ -138,12 +23,16 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
         subpatterns[l].n = 0;
     s = 1;
 
+    // TODO: move to globals.h
     int NONE = 0, ELEM = 1, BLOCK = 2;
     
     int min, max;
     int in_block, in_class, last_was, found_in_class, is_neg_class;
     int start_block, start_block_i, nb_block, is_block_ok; // subpatterns
     int start_elem, start_elem_i, nb_elem, is_elem_ok; // char, ., \w, \W, \d, \D, \^, \$, \\, \., class
+
+    sp = search_pattern.current;
+    lsp = strlen(sp);
 
     in_block = in_class = 0;
     nb_block = nb_elem = 0;
@@ -155,10 +44,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
     i = x;
     k = 0;
  
-    for (k = 0; k < strlen(sp);) {
-        // TODO: word boundaries ?
-        //printf("pattern: %d, %c; string: %d, %c; is_block_ok: %d; is_elem_ok: %d; in_block: %d, last_was: %d.\n", k, sp[k], i, chars[x+i], is_block_ok, is_elem_ok, in_block, last_was);
-
+    for (k = 0; k < lsp;) {
         if (last_was != BLOCK && !in_block && !is_block_ok) {
             return 0;
         } else if (in_class) {
@@ -168,7 +54,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                 is_elem_ok = (is_neg_class) ? (!found_in_class) : (found_in_class);
                 i++;
                 k++;
-            } else if (k+2 < strlen(sp) && sp[k+1] == '-' && sp[k+2] != ']') {
+            } else if (k+2 < lsp && sp[k+1] == '-' && sp[k+2] != ']') {
                 found_in_class = found_in_class ||
                     (sp[k] <= chars[x+i]) && (chars[x+i] <= sp[k+2]);
                 k += 3;
@@ -186,7 +72,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
             last_was = ELEM;
             in_class = 1;
             found_in_class = is_neg_class = 0;
-            if (k+1 < strlen(sp) && sp[k+1] == '^') {
+            if (k+1 < lsp && sp[k+1] == '^') {
                 k++;
                 is_neg_class = 1;
             }
@@ -197,14 +83,14 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                 min = max = 0;
                 k++;
                 while ((c = sp[k++]) != '}' && c != ',')
-                    if (k == strlen(sp) || c < '0' || c > '9') {
+                    if (k == lsp || c < '0' || c > '9') {
                         return 0; // error
                     } else {
                         min = 10*min + c - '0';
                     }
                 if (c == ',') {
                     while ((c = sp[k++]) != '}' && c != ',')
-                        if (k == strlen(sp) || c < '0' || c > '9') {
+                        if (k == lsp || c < '0' || c > '9') {
                             return 0; // error
                         } else {
                             max = 10*max + c - '0';
@@ -269,17 +155,17 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                 (last_was == BLOCK && is_block_ok)) {
                 last_was = NONE;
                 // move k to next location
-                while (k < strlen(sp) && sp[k] == '|') {
+                while (k < lsp && sp[k] == '|') {
                     k++;
-                    if (k == strlen(sp)) {
+                    if (k == lsp) {
                         return 0; // error
-                    } else if (k+1 < strlen(sp) && sp[k] == '\\' && sp[k+1] == '(') {
-                        while (k+1 < strlen(sp) && !(sp[k] == '\\' && sp[k+1] == ')'))
+                    } else if (k+1 < lsp && sp[k] == '\\' && sp[k+1] == '(') {
+                        while (k+1 < lsp && !(sp[k] == '\\' && sp[k+1] == ')'))
                             k++;
                         k += 2;
                         s++;
                     } else if (sp[k] == '[') {
-                        while (k < strlen(sp) && sp[k] != ']')
+                        while (k < lsp && sp[k] != ']')
                             k++;
                         k++;
                     } else if (sp[k] == '\\') {
@@ -294,7 +180,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                 k++;
                 is_block_ok = is_elem_ok = 1;
             }
-        } else if (k + 1 < strlen(sp) && sp[k] == '\\' && sp[k+1] == '(') {
+        } else if (k + 1 < lsp && sp[k] == '\\' && sp[k+1] == '(') {
             if (in_block)
                 return 0; // error
             in_block = 1;
@@ -304,7 +190,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
             start_block = k + 2;
             start_block_i = i;
             k += 2; 
-        } else if (k + 1 < strlen(sp) && sp[k] == '\\' && sp[k+1] == ')') {
+        } else if (k + 1 < lsp && sp[k] == '\\' && sp[k+1] == ')') {
             if (!in_block)
                 return 0; // error
             in_block = 0;
@@ -321,7 +207,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
                 is_block_ok = 0;
             k++;
         } else if (sp[k] == '$') {
-            if (k < strlen(sp) - 1 || i < x + n)
+            if (k < lsp - 1 || i < x + n)
                 is_block_ok = 0;
             k++;
         } else if (i == x + n) {
@@ -332,7 +218,7 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
             last_was = ELEM;
             start_elem = k;
             start_elem_i = i;
-            if (k + 1 < strlen(sp) && sp[k] == '\\') {
+            if (k + 1 < lsp && sp[k] == '\\') {
                 is_elem_ok = (sp[k+1] == 'w' && is_word_char(chars[x+i])) ||
                              (sp[k+1] == 'W' && !is_word_char(chars[x+i])) ||
                              (sp[k+1] == 'd' && is_number(chars[x+i])) ||
@@ -355,13 +241,19 @@ mark_pattern(char *sp, char *chars, int x, int n, int line_length)
 
 
 int
-replace(char *chars, int x, int n, int line_length)
+_replace(char *chars, int x, int n, int line_length)
 {
+    char *rp; // search pattern
+    int lrp; // length of search pattern
+
     int i; // index in chars
     int j; // index in replaced
     int k; // index in rp
     int l; // no name index
     int f, st; // number of fields, start of running field
+    
+    rp = replace_pattern.current;
+    lrp = strlen(rp);
 
     // search for fields
     fields[0].st = x;
@@ -371,7 +263,7 @@ replace(char *chars, int x, int n, int line_length)
     f = 1;
     st = x;
     for (i = x; i < x + n && f < 9; i++) {
-        if (chars[i] == sep) {
+        if (chars[i] == settings.field_separator) {
             fields[f].n = i - st; 
             fields[f].st = st;
             st = i + 1;
@@ -385,7 +277,7 @@ replace(char *chars, int x, int n, int line_length)
     }
 
     // search for subpatterns
-    mark_pattern(sp, chars, x, n, line_length);
+    mark_pattern(chars, x, n, line_length);
 
     // copy before selection
     i = j = 0;
@@ -393,7 +285,7 @@ replace(char *chars, int x, int n, int line_length)
         replaced[j++] = chars[i++];
     
     // replace selection
-    for (k = 0; k < strlen(rp) - 1; k++) {
+    for (k = 0; k < lrp - 1; k++) {
         if (rp[k] == '\\' && (rp[k+1] == '\\' || rp[k+1] == '$')) {
             replaced[j++] = rp[k+1];
             k++;
@@ -409,7 +301,7 @@ replace(char *chars, int x, int n, int line_length)
             replaced[j++] = rp[k];
         }
     }
-    if (k < strlen(rp))
+    if (k < lrp)
         replaced[j++] = rp[k];
 
     // copy after selection
@@ -418,22 +310,4 @@ replace(char *chars, int x, int n, int line_length)
         replaced[j++] = chars[i++];
 
     return j;
-}
-
-int
-is_blank(char c)
-{
-    return (c == ' ');
-}
-
-int
-is_word_char(char c)
-{
-    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_');
-}
-
-int
-is_number(char c)
-{
-    return ('0' <= c && c <= '9');
 }

@@ -28,8 +28,6 @@ CHECK:
 * possibility to make "const" args
 
 MISSING KEYBINDS:
-* [q] quit
-* [Q] force quit
 * [m] move to matching bracket
 * [t/T] move to <n> next/previous word
 * [n/N] move to <n> next/previous selection

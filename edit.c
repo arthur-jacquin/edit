@@ -269,17 +269,13 @@ main(int argc, char *argv[])
                     display_help();
                     break;
                 case KB_QUIT:
-                    /*TODO if (has_been_changes) {
-                        if (a = dialog("Lose changes ? (q: quit, w: write and quit, ESC: cancel)", "qw", 0)) {
-                            if (a == 'w')
-                                write_file(file_name);
-                            tb_shutdown();
-                            return 0;
-                        }
-                    } else {*/
+                case KB_FORCE_QUIT:
+                    if (ev.ch == KB_QUIT && has_been_changes) {
+                        echo("There are unsaved changes.");
+                    } else {
                         tb_shutdown();
                         return 0;
-                    /*}*/
+                    }
                     break;
                 case KB_WRITE:
                     if (has_been_changes) {

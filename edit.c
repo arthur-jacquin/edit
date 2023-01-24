@@ -142,19 +142,21 @@ int read_only;
 int m;                              // multiplier
 int asked_indent, asked_remove;
 char dialog_chars[INTERFACE_WIDTH]; // dialog interface buffer
+
 char interface[INTERFACE_WIDTH];    // interface buffer
-char old_interface[INTERFACE_WIDTH];// interface buffer
+char old_interface[INTERFACE_WIDTH];
 
 char file_name[INTERFACE_WIDTH];    // name of file to write
-char old_file_name[INTERFACE_WIDTH];// name of file to write
-struct lang *syntax;
-
-struct selection *sel;              // selections queue
+char old_file_name[INTERFACE_WIDTH];
 
 char spattern[INTERFACE_WIDTH];     // search pattern
-char pspattern[INTERFACE_WIDTH];    // previous search pattern
+char pspattern[INTERFACE_WIDTH];
+
 char rpattern[INTERFACE_WIDTH];     // replace pattern
-char prpattern[INTERFACE_WIDTH];    // previous replace pattern
+char prpattern[INTERFACE_WIDTH];
+
+struct selection *sel;              // selections queue
+struct lang *syntax;
 struct substring fields[10];
 struct substring subpatterns[10];
 
@@ -198,12 +200,16 @@ main(int argc, char *argv[])
         } else {
             strcpy(file_name, argv[1]);
             strcpy(old_file_name, file_name);
+            get_extension();
+            load_lang();
             read_only = 0;
         }
     } else if (argc == 3) {
         if (!(strcmp(argv[2], "--read-only") && strcmp(argv[1], "-r"))) {
             strcpy(file_name, argv[1]);
             strcpy(old_file_name, file_name);
+            get_extension();
+            load_lang();
             read_only = 1;
         }
     } else {
@@ -242,8 +248,6 @@ main(int argc, char *argv[])
 
     // load file
     load_file(file_name, 1);
-    get_extension();
-    load_lang();
 
 
     // MAIN LOOP ***************************************************************
@@ -293,6 +297,8 @@ main(int argc, char *argv[])
                 case KB_WRITE_AS:
                     if (dialog("Save as: ", file_name, old_file_name, 0)) {
                         write_file(file_name);
+                        get_extension();
+                        load_syntax();
                         has_been_changes = 0;
                         echo("File saved.");
                     }

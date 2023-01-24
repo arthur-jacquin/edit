@@ -102,7 +102,6 @@ Maybe in a far future:
         markers: ^, $ (start, end of selection)
         quantifiers: *, +, ?, {n}, {n,}, {,n}, {n,m}
         delimiters: \(...\)
-
         custom classes: [abc], [^abc], [0-9], [-6], [^-a-z#A-Z0-9], ...
         logic: |
 
@@ -135,7 +134,7 @@ You can modify settings in config.h, such as:
 - ...
 
 If there is no config.h at compile time, a default configuration is loaded
-from config.def.h
+from config.def.h.
 
 
 ## Thanks

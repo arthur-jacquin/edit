@@ -5,8 +5,6 @@ FIX:
 
 BIG STUFF:
 * change to GPL
-* restructure everything
-* unified struct for settings with previous saved
 * integrate search and replace engine
 * add shift selections
 * add read-only mode

@@ -1,4 +1,4 @@
-binary: edit.c config.h termbox.h
+binary: *.c *.h
 	gcc -o binary edit.c
 
 config.h: config.def.h
@@ -6,7 +6,3 @@ config.h: config.def.h
 
 test: binary
 	./binary input.c
-
-size: binary
-	wc -l edit.c
-	du binary

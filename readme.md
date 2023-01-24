@@ -27,7 +27,6 @@ Simple, featured, modal text editor.
 ## Features
 
 * UTF-8 support
-* read-only mode (can act as a pager)
 * modal editor: edit, insert, dialog modes
 * some syntax highlight
 * advanced navigation
@@ -36,6 +35,7 @@ Simple, featured, modal text editor.
 * search and replace engine
 
 Maybe in a far future:
+* read-only mode ?
 * scrolloff ?
 * works with tab ?
 * [langage] auto-indenting ?

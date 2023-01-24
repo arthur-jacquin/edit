@@ -7,17 +7,17 @@ BIG STUFF:
 * change to GPL
 * integrate search and replace engine
 * add shift selections
-* add read-only mode
 * add UTF-8 support
 * better help
 * find matching bracket
 * highlight matching bracket 
 * find next/previous word
 * find next/previous selection
-* duplicates selections 
+* duplicates selections
 * concatenate lines on SUPPR/BACKSPACE
 
 CHECK:
+* where best to put variables ? extern/const...
 * correctness of search engine
 * unstated assumptions
 * n-extensivity
@@ -40,6 +40,7 @@ LAST:
 
 LATER:
 * [e] execute command ? make ?
+* read-only mode ?
 * regex: add word boundaries ?
 * store optimal x ?
 * scrolloff ?

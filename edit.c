@@ -10,6 +10,7 @@
 #define MAX_CHARS                   (1 << 8)
 #define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
 #define MIN_HEIGHT                  2
+#define LANG_WIDTH                  5
 
 
 
@@ -116,6 +117,7 @@ void print_all(void);
 // interaction
 int dialog(const char *prompt, char current[], char old[], int refresh);
 void display_help(void);
+int set_parameter(char *assign);
 
 
 
@@ -126,10 +128,9 @@ struct {
     int syntax_highlight;
     int highlight_selections;
     int case_sensitive;
-    int replace_tabs;
     char field_separator;
     int tab_width;
-    char language[5];
+    char language[LANG_WIDTH];
 } settings;
 
 int anchored;
@@ -145,7 +146,6 @@ char old_interface[INTERFACE_WIDTH];// interface buffer
 
 char file_name[INTERFACE_WIDTH];    // name of file to write
 char old_file_name[INTERFACE_WIDTH];// name of file to write
-char extension[INTERFACE_WIDTH];    // name of file to write
 struct lang *syntax;
 
 struct selection *sel;              // selections queue
@@ -217,7 +217,6 @@ main(int argc, char *argv[])
     settings.syntax_highlight       = SYNTAX_HIGHLIGHT;
     settings.highlight_selections   = HIGHLIGHT_SELECTIONS;
     settings.case_sensitive         = CASE_SENSITIVE;
-    settings.replace_tabs           = REPLACE_TABS;
     settings.field_separator        = FIELD_SEPARATOR;
     settings.tab_width              = TAB_WIDTH;
  
@@ -316,8 +315,11 @@ main(int argc, char *argv[])
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_CHANGE_SETTING:
-                    if (dialog("Change parameter: ", interface, old_interface, 0)) {
-                        // TODO: parameter modif, echoes if not succesful
+                    if (dialog("Change setting: ", interface, old_interface, 0)) {
+                        if (!set_parameter(interface))
+                            echo("Unvalid assignment");
+                    } else {
+                        echo("");
                     }
                     break;
                 case KB_INSERT_START_LINE:
@@ -481,7 +483,7 @@ main(int argc, char *argv[])
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
-                    if (strcmp(extension, "none"))
+                    if (strcmp(settings.language, "none"))
                         act(comment, 1);
                     break;
                 case KB_ACT_SUPPRESS:
@@ -1071,7 +1073,7 @@ get_extension(void)
     i++;
     j = 0;
     while (i < strlen(file_name))
-        extension[j++] = file_name[i++];
+        settings.language[j++] = file_name[i++];
 }
 
 void
@@ -1081,13 +1083,13 @@ load_lang(void)
 
     for (i = 0; i < sizeof(languages)/sizeof(struct lang); i++) {
         syntax = &languages[i];
-        if (is_in(*(syntax->names), extension, 0, strlen(extension))) {
+        if (is_in(*(syntax->names), settings.language, 0, strlen(settings.language))) {
             return;
         }
     }
 
     syntax = NULL;
-    strcpy(extension, "none");
+    strcpy(settings.language, "none");
 }
 
 
@@ -1786,7 +1788,7 @@ print_line(const char *chars, int length, int line_nb, struct selection *s, int 
     bg = (int *) malloc(length * sizeof(int));
 
     // foreground
-    if (settings.syntax_highlight && strcmp(extension, "none")) {
+    if (settings.syntax_highlight && strcmp(settings.language, "none")) {
         i = 0;
         while (i < length) {
             color = COLOR_DEFAULT;
@@ -1961,12 +1963,10 @@ dialog(const char *prompt, char current[], char old[], int refresh)
                     dx -= (dx - prompt_length > 0) ? 1 : 0;
                     break;
                 case TB_KEY_ARROW_UP:
-                    strcpy(current, old);
-                    break;
                 case TB_KEY_ARROW_DOWN:
-                    dx = prompt_length;
-                    current[0] = '\0';
-                    n = 1;
+                    strcpy(current, (ev.key == TB_KEY_ARROW_UP) ? old : "");
+                    n = strlen(current) + 1;
+                    dx = prompt_length + n - 1;
                     break;
                 }
             }
@@ -1978,6 +1978,7 @@ dialog(const char *prompt, char current[], char old[], int refresh)
                 dx = (ev.x < INTERFACE_WIDTH) ? (ev.x) : (INTERFACE_WIDTH - 1);
                 dx = (dx >= prompt_length) ? (dx) : (prompt_length);
                 break;
+            // TODO ?
             // case TB_KEY_MOUSE_WHEEL_UP:
             // case TB_KEY_MOUSE_WHEEL_DOWN:
             }
@@ -2003,4 +2004,50 @@ display_help(void)
 {
     // TODO: do better
     echo("Quit the editor and run `edit --help` for complete help.");
+}
+
+int
+set_parameter(char *assign)
+{
+    int b;
+    char c;
+    char s[LANG_WIDTH], old_lang[LANG_WIDTH];
+    struct lang *old_syntax;
+
+    if (strchr(assign, '=') == NULL) {
+        return 0;
+    } else if (sscanf(assign, "autoindent=%d", &b) == 1
+            || sscanf(assign, "i=%d", &b) == 1) {
+        settings.autoindent = b;
+    } else if (sscanf(assign, "syntax_highlight=%d", &b) == 1
+            || sscanf(assign, "sh=%d", &b) == 1) {
+        settings.syntax_highlight = b;
+    } else if (sscanf(assign, "highlight_selections=%d", &b) == 1
+            || sscanf(assign, "h=%d", &b) == 1) {
+        settings.highlight_selections = b;
+    } else if (sscanf(assign, "case_sensitive=%d", &b) == 1
+            || sscanf(assign, "c=%d", &b) == 1) {
+        settings.case_sensitive = b;
+    } else if (sscanf(assign, "field_separator=%c", &c) == 1
+            || sscanf(assign, "fs=%c", &c) == 1) {
+        settings.field_separator = c;
+    } else if (sscanf(assign, "tab_width=%d", &b) == 1
+            || sscanf(assign, "tw=%d", &b) == 1) {
+        settings.tab_width = (b >= 0) ? b : TAB_WIDTH;
+    } else if (sscanf(assign, "language=%s", s) == 1
+            || sscanf(assign, "l=%s", s) == 1) {
+        strcpy(old_lang, settings.language);
+        old_syntax = syntax;
+        strcpy(settings.language, s);
+        load_lang();
+        if (syntax == NULL) {
+            strcpy(settings.language, old_lang);
+            syntax = old_syntax;
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+
+    return 1;
 }

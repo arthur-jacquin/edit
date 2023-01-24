@@ -15,7 +15,6 @@
 #define SYNTAX_HIGHLIGHT            1
 #define HIGHLIGHT_SELECTIONS        1
 #define CASE_SENSITIVE              1
-#define REPLACE_TABS                1
 #define FIELD_SEPARATOR             ','
 #define TAB_WIDTH                   4
 

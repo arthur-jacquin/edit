@@ -10,7 +10,6 @@ BIG STUFF:
 * add read-only mode
 * add UTF-8 support
 * better help
-* change parameters
 * find matching bracket
 * highlight matching bracket 
 * find next/previous word
@@ -32,7 +31,6 @@ MISSING KEYBINDS:
 * [n/N] move to <n> next/previous selection
 * [z] duplicate the current selection on the next <n> lines
 * [:] select all lines of custom range
-* [s] change a parameter
 * [f,/] search for pattern
 * [R] replace with pattern elements and fields
 

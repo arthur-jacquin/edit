@@ -122,7 +122,6 @@ Maybe in a far future:
     sh          syntax_highlight        bool    yes
     h           highlight_selections    bool    yes
     c           case_sensitive          bool    yes
-    rt          replace_tabs            bool    yes
     fs          field_separator         char    ,
     tw          tab_width               int     4
     l           language                string  (from extension)

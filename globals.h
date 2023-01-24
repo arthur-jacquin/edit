@@ -13,6 +13,16 @@
 #define LANG_WIDTH                  5
 
 
+// ERROR CODES *****************************************************************
+
+// TODO
+#define ERR_TERM_NOT_BIG_ENOUGH     1
+#define ERR_BAD_ARGUMENTS           2
+#define ERR_MALLOC                  3
+#define ERR_TOO_LONG_LINE           4
+#define ERR_INVALID_LINE_VALUE      5
+
+
 
 // STRUCTS *********************************************************************
 
@@ -50,13 +60,13 @@ struct interface {
 
 // FUNCTIONS *******************************************************************
 
-// utils
+// utils.c
 int is_blank(char c);
 int is_word_char(char c);
 int is_number(char c);
 int is_in(const char *list, const char *chars, int x, int length);
 
-// lines management
+// lines.c
 struct line *new_line(int line_nb, int length);
 struct line *get_line(int delta_from_first_line_on_screen);
 void free_lines(struct line *starting);
@@ -68,13 +78,13 @@ void copy_to_clip(int starting_line_nb, int nb);
 void move_to_clip(int starting_line_nb, int nb);
 void insert_clip(struct line *starting_line, int below);
 
-// file management
+// file.c
 int load_file(char *file_name, int first_line_on_screen_nb);
 int write_file(char *file_name);
 void get_extension(void);
 void load_lang(void);
 
-// moving
+// movements.c
 struct pos pos_of(int l, int x);
 struct pos find_first_non_blanck(void);
 struct pos find_matching_bracket(void);
@@ -83,7 +93,7 @@ int find_start_of_block(int starting_line_nb, int nb);
 int find_end_of_block(int starting_line_nb, int nb);
 void go_to(struct pos p);
 
-// selections
+// selections.c
 int is_inf(struct selection *s1, struct selection *s2);
 struct selection *sel_of_pos(struct pos p, int temp);
 struct pos pos_of_curs(void);
@@ -98,7 +108,7 @@ void shift_sels(struct pos starting, struct pos ending, struct pos delta);
 void delete_temp_sels(void);
 void search(void);
 
-// actions on selections
+// actions.c
 void act(void (*process)(struct line *, struct selection *), int line_op);
 void insert(struct line *l, struct selection *s);
 void split_lines(struct line *l, struct selection *s);
@@ -110,7 +120,7 @@ void lower(struct line *l, struct selection *s);
 void upper(struct line *l, struct selection *s);
 void replace(struct line *l, struct selection *s);
 
-// graphical
+// graphical.c
 int resize(int width, int height);
 void echo(const char *str);
 struct selection *print_line(const char *chars, int length, int line_nb,
@@ -119,7 +129,7 @@ void print_dialog(void);
 void print_ruler(void);
 void print_all(void);
 
-// interaction
+// interaction.c
 int dialog(const char *prompt, struct interface *interf, int refresh);
 void display_help(void);
 int set_parameter(char *assign);
@@ -146,7 +156,7 @@ int read_only;
 
 int m;                              // multiplier
 int asked_indent, asked_remove;
-char dialog_chars[INTERFACE_WIDTH]; // dialog interface buffer
+char dialog_chars[INTERFACE_WIDTH];
 
 struct interface file_name_int;
 struct interface settings_int;

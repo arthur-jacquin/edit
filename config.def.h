@@ -194,18 +194,3 @@ struct lang languages[] = {
     {&c_names, &c_keywords, &c_flow_control, &c_built_ins, &c_comment, NULL},
     {&py_names, &py_keywords, &py_flow_control, &py_built_ins, &py_comment, NULL},
 };
-
-
-// ERROR CODES *****************************************************************
-
-// TODO
-#define ERR_TERM_NOT_BIG_ENOUGH     1
-#define ERR_BAD_ARGUMENTS           2
-#define ERR_MALLOC                  3
-#define ERR_TOO_LONG_LINE           4
-#define ERR_INVALID_LINE_VALUE      5
-
-
-// MISC ************************************************************************
-
-#define BRACKETS                    "()[]{}"    // TODO

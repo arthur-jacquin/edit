@@ -295,8 +295,6 @@ main(int argc, char *argv[])
                         write_file(file_name);
                         has_been_changes = 0;
                         echo("File saved.");
-                    } else {
-                        echo("");
                     }
                     break;
                 case KB_RELOAD:
@@ -319,8 +317,6 @@ main(int argc, char *argv[])
                     if (dialog("Change setting: ", interface, old_interface, 0)) {
                         if (!set_parameter(interface))
                             echo("Invalid assignment.");
-                    } else {
-                        echo("");
                     }
                     break;
                 case KB_INSERT_START_LINE:
@@ -450,8 +446,6 @@ main(int argc, char *argv[])
                     if (dialog("Lines range: ", interface, old_interface, 0)) {
                         if (!parse_range(interface))
                             echo("Invalid range.");
-                    } else {
-                        echo("");
                     }
                     break;
                 case KB_SEL_ALL_LINES:
@@ -465,8 +459,6 @@ main(int argc, char *argv[])
                 case KB_SEL_SEARCH:
                     // TODO
                     if (dialog("Search pattern: ", spattern, pspattern, 0)) {
-                    } else {
-                        echo("");
                     }
                     break;
                 case KB_SEL_ANCHOR:
@@ -503,8 +495,6 @@ main(int argc, char *argv[])
                 case KB_ACT_REPLACE:
                     // TODO
                     if (dialog("Replace pattern: ", rpattern, prpattern, 0)) {
-                    } else {
-                        echo("");
                     }
                     break;
                 case KB_ACT_LOWERCASE:
@@ -1955,6 +1945,7 @@ dialog(const char *prompt, char current[], char old[], int refresh)
                 switch (ev.key) {
                 case TB_KEY_ESC:
                     strcpy(current, old);
+                    echo("");
                     return 0;
                     break;
                 case TB_KEY_ENTER:

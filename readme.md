@@ -80,9 +80,7 @@ Maybe in a far future:
                 c   display number of selections
             <ESC>   reset to only one selection, at cursor, of length 0
                 .   select cursor line
-                :   select all lines of custom range
-                %   select all lines of files
-                b   select all lines of <n> block
+            %/b/:   select all lines of file/<n> following blocks/custom range
              f, /   search for pattern
                 v   anchor/unanchor
                 a   push running selection to pile; unanchor

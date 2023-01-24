@@ -6,3 +6,7 @@ config.h: config.def.h
 
 test: binary
 	./binary input.c
+
+size: binary
+	wc -l edit.c
+	du binary

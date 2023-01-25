@@ -22,6 +22,11 @@
 #define ERR_TOO_LONG_LINE           4
 #define ERR_INVALID_LINE_VALUE      5
 
+#define BLANK                       0
+#define WORD_CHAR                   1
+#define DIGIT                       2
+#define ELSE                        3
+
 
 
 // STRUCTS *********************************************************************
@@ -64,6 +69,7 @@ struct interface {
 int is_blank(char c);
 int is_word_char(char c);
 int is_number(char c);
+int type(char c);
 int is_in(const char *list, const char *chars, int x, int length);
 
 // lines.c
@@ -85,8 +91,10 @@ void get_extension(void);
 void load_lang(void);
 
 // movements.c
+int move(struct line **l, int *dx, int sens);
 struct pos pos_of(int l, int x);
 struct pos find_first_non_blanck(void);
+struct pos find_start_of_word(int n);
 struct pos find_matching_bracket(void);
 struct pos find_next_selection(int delta);
 int find_start_of_block(int starting_line_nb, int nb);
@@ -177,7 +185,9 @@ struct {
     int nb_line;
 } clipboard;
 
-struct pos anchor;                  // anchor line and column
+struct pos anchor;
+struct pos matching_bracket;
+int is_bracket;
 int y, x;                           // cursor position in file area
 int screen_height, screen_width;    // terminal dimensions
 struct tb_event ev;                 // struct to retrieve events

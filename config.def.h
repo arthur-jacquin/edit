@@ -57,7 +57,7 @@
 #define COLOR_COMMENT               172
 #define COLOR_BG_DEFAULT            TB_DEFAULT
 #define COLOR_BG_SELECTIONS         234
-#define COLOR_BG_MATCHING           TB_DEFAULT
+#define COLOR_BG_MATCHING           45
 #endif
 
 

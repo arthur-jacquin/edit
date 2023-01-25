@@ -81,7 +81,12 @@ print_line(const char *chars, int length, int line_nb, struct selection *s, int 
             s = s->next;
         } 
     }
-    // TODO: highlight matching bracket
+    if (is_bracket) {
+        if (line_nb == first_line_on_screen->line_nb + y)
+            bg[x] = COLOR_BG_MATCHING;
+        if (line_nb == matching_bracket.l)
+            bg[matching_bracket.x] = COLOR_BG_MATCHING;
+    }
 
     // actual printing
     for (i = 0; i < length; i++)
@@ -124,8 +129,14 @@ print_all(void)
     struct selection *s;
     struct line *ptr;
     int sc_line;
+    char c;
 
     tb_clear();
+
+    c = get_line(y)->chars[x];
+    is_bracket = (c == '{' || c == '}' || c == '[' || c == ']' || c == '(' || c == ')');
+    if (is_bracket)
+        matching_bracket = find_matching_bracket();
 
     s = sel;
     ptr = first_line_on_screen;

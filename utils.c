@@ -17,6 +17,21 @@ is_number(char c)
 }
 
 int
+type(char c)
+{
+    // TODO enumeration ?
+    if (is_blank(c)) {
+        return BLANK;
+    } else if (is_word_char(c)) {
+        return WORD_CHAR;
+    } else if (is_number(c)) {
+        return DIGIT;
+    } else {
+        return ELSE;
+    }
+}
+
+int
 is_in(const char *list, const char *chars, int x, int length)
 {
     int i, j, ok;

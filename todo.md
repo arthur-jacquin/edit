@@ -4,15 +4,11 @@ FIX:
 * new line at end of file
 
 BIG STUFF:
-* change to GPL
-* integrate search and replace engine
+* rewrite all the selections stuff
 * add shift selections
-* add UTF-8 support
-* better help
-* find matching bracket
-* highlight matching bracket 
-* find next/previous word
 * find next/previous selection
+* integrate search and replace engine
+* add UTF-8 support
 * duplicates selections
 * concatenate lines on SUPPR/BACKSPACE
 
@@ -20,25 +16,24 @@ CHECK:
 * where best to put variables ? extern/const...
 * correctness of search engine
 * unstated assumptions
-* n-extensivity
 * has_been_changes
 * possibility to make "const" args
 
 MISSING KEYBINDS:
-* [m] move to matching bracket
-* [t/T] move to <n> next/previous word
 * [n/N] move to <n> next/previous selection
 * [z] duplicate the current selection on the next <n> lines
 * [f,/] search for pattern
 * [R] replace with pattern elements and fields
 
 LAST:
+* better help
 * improve error management, assure safe and graceful fails
 * restructuring, cleaning, commenting code
 * documentation
-* publish
+* publish under GPL
 
 LATER:
+* < and > as brackets ?
 * [e] execute command ? make ?
 * read-only mode ?
 * regex: add word boundaries ?

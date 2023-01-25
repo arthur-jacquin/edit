@@ -70,6 +70,7 @@ main(int argc, char *argv[])
     strcpy(range_int.previous, "");
     sel = NULL;
     clipboard.start = NULL;
+    is_bracket = 0;
 
     // initialise termbox
     x = y = 0;
@@ -249,10 +250,10 @@ main(int argc, char *argv[])
                     go_to(pos_of(first_line_on_screen->line_nb + y - m, x));
                     break;
                 case KB_MOVE_NEXT_WORD:
-                    // TODO
+                    go_to(find_start_of_word(m));
                     break;
                 case KB_MOVE_PREV_WORD:
-                    // TODO
+                    go_to(find_start_of_word(-m));
                     break;
                 case KB_MOVE_NEXT_BLOCK:
                     go_to(pos_of(find_end_of_block(

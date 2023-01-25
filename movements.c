@@ -1,3 +1,29 @@
+int
+move(struct line **l, int *dx, int sens)
+{
+    if (sens > 0) {
+        if (*dx + 1 < (*l)->length) {
+            (*dx)++;
+        } else if ((*l)->line_nb == nb_line) {
+            return 0;
+        } else {
+            *l = (*l)->next;
+            *dx = 0;
+        }
+    } else {
+        if (*dx > 0) {
+            (*dx)--;
+        } else if ((*l)->line_nb == 1) {
+            return 0;
+        } else {
+            *l = (*l)->prev;
+            *dx = (*l)->length - 1;
+        }
+    }
+
+    return 1;
+}
+
 struct pos
 pos_of(int l, int x)
 {
@@ -24,10 +50,65 @@ find_first_non_blanck(void)
 }
 
 struct pos
+find_start_of_word(int n)
+{
+    struct line *l;
+    int sens, dx, current_type;
+    // TODO: better management on line changes ?
+
+    l = get_line(y);
+    dx = x;
+    sens = (n > 0) ? 1 : -1;
+    n *= sens;
+
+    while (n--) {
+        current_type = type(l->chars[dx]);
+        while (type(l->chars[dx]) == current_type) {
+            if (!move(&l, &dx, sens))
+                return pos_of(l->line_nb, dx);
+        }
+        while (type(l->chars[dx]) == BLANK) {
+            if (!move(&l, &dx, sens))
+                return pos_of(l->line_nb, dx);
+        }
+    }
+
+    return pos_of(l->line_nb, dx);
+}
+
+struct pos
 find_matching_bracket(void)
 {
-    // TODO
+    struct line *l;
+    char c, goal;
+    int dx, sens, nb;
 
+    l = get_line(y);
+    c = l->chars[x];
+    dx = x;
+
+    if (c == '{' || c == '[' || c == '(') {
+        goal = (c == '{') ? '}' : ((c == '[') ? ']' : ')');
+        sens = 1;
+    } else if (c == '}' || c == ']' || c == ')') {
+        goal = (c == '}') ? '{' : ((c == ']') ? '[' : '(');
+        sens = -1;
+    } else {
+        return pos_of(l->line_nb, x);
+    }
+
+    nb = 1;
+    do {
+        if (!move(&l, &dx, sens)) {
+            break;
+        } else if (l->chars[dx] == goal) {
+            nb--;
+        } else if (l->chars[dx] == c) {
+            nb++;
+        }
+    } while (nb);
+
+    return pos_of(l->line_nb, dx);
 }
 
 /*struct pos

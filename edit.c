@@ -51,10 +51,10 @@ main(int argc, char *argv[])
     // INIT VARIABLES **********************************************************
 
     // default settings
-    settings.autoindent             = AUTOINDENT;
+    settings.autoindent             = AUTOINDENT; // TODO
     settings.syntax_highlight       = SYNTAX_HIGHLIGHT;
     settings.highlight_selections   = HIGHLIGHT_SELECTIONS;
-    settings.case_sensitive         = CASE_SENSITIVE;
+    settings.case_sensitive         = CASE_SENSITIVE; // TODO
     settings.field_separator        = FIELD_SEPARATOR;
     settings.tab_width              = TAB_WIDTH;
  
@@ -156,10 +156,9 @@ main(int argc, char *argv[])
                     echo("INSERT (ESC to exit)");
                     break;
                 case KB_CHANGE_SETTING:
-                    if (dialog("Change setting: ", &settings_int, 0)) {
+                    if (dialog("Change setting: ", &settings_int, 0))
                         if (!set_parameter(settings_int.current))
                             echo("Invalid assignment.");
-                    }
                     break;
                 case KB_INSERT_START_LINE:
                     empty_sels();
@@ -285,10 +284,9 @@ main(int argc, char *argv[])
                         first_line_on_screen->line_nb + y, 0);
                     break;
                 case KB_SEL_CUSTOM_RANGE:
-                    if (dialog("Lines range: ", &range_int, 0)) {
+                    if (dialog("Lines range: ", &range_int, 0))
                         if (!parse_range(range_int.current))
                             echo("Invalid range.");
-                    }
                     break;
                 case KB_SEL_ALL_LINES:
                     add_range_sels(1, nb_line, 0);

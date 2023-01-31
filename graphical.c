@@ -18,12 +18,15 @@ struct selection *
 print_line(const char *chars, int length, int line_nb, struct selection *s, int screen_line)
 {
     // variables
-    int i, j, color, nb_to_color;
+    int i, j, color, nb_to_color, underline;
     char c, nc;
     int *fg;
     int *bg;
     fg = (int *) malloc(length * sizeof(int));
     bg = (int *) malloc(length * sizeof(int));
+
+    // underline current line
+    underline = (screen_line == y) ? TB_UNDERLINE : 0;
 
     // foreground
     if (settings.syntax_highlight && strcmp(settings.language, "none")) {
@@ -60,9 +63,9 @@ print_line(const char *chars, int length, int line_nb, struct selection *s, int 
                 nb_to_color = length - i;
             } else { // TODO: check for rules
             }
-    
+
             for (j = 0; j < nb_to_color; j++)
-                fg[i++] = color;
+                fg[i++] = color | underline;
         }
     } else {
         for (i = 0; i < length; i++)
@@ -89,6 +92,8 @@ print_line(const char *chars, int length, int line_nb, struct selection *s, int 
     }
 
     // actual printing
+    fg[length - 1] = COLOR_DEFAULT;
+    bg[length - 1] = COLOR_BG_DEFAULT;
     for (i = 0; i < length; i++)
         tb_set_cell(i, screen_line, chars[i], fg[i], bg[i]);
     for (; i < screen_width; i++)

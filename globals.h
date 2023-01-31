@@ -66,6 +66,7 @@ struct interface {
 // FUNCTIONS *******************************************************************
 
 // utils.c
+int char_length(char c);
 int is_blank(char c);
 int is_word_char(char c);
 int is_number(char c);

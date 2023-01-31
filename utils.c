@@ -1,4 +1,20 @@
 int
+char_length(char c)
+{
+    if (c & 0x80 == 0)
+        return 1;
+    else if (c & 0xe0 == 0xc0)
+        return 2;
+    else if (c & 0xf0 == 0xe0)
+        return 3;
+    else if (c & 0xf8 == 0xf0)
+        return 4;
+    else
+        return 0;
+}
+
+
+int
 is_blank(char c)
 {
     return (c == ' ');

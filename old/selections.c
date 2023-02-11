@@ -160,7 +160,7 @@ add_running_sels(int temp)
         if (line_delta < 0) {
             if (line_delta < -1)
                 add_range_sels(cursor_pos.l + 1, anchor.l - 1, temp);
-            cursor_sel->n = get_line(y)->length - x;
+            cursor_sel->n = get_line(y)->dl - x;
             cursor_sel->next = anchor_sel;
             anchor_sel->n = anchor.x;
             anchor_sel->x = 0;
@@ -169,7 +169,7 @@ add_running_sels(int temp)
             if (line_delta > 1)
                 add_range_sels(anchor.l + 1, cursor_pos.l - 1, temp);
             anchor_sel->n = get_line(anchor.l -
-                first_line_on_screen->line_nb)->length - anchor.x;
+                first_line_on_screen->line_nb)->dl - anchor.x;
             anchor_sel->next = cursor_sel;
             cursor_sel->n = x;
             cursor_sel->x = 0;
@@ -204,7 +204,7 @@ add_range_sels(int start, int end, int temp)
         new = (struct selection *) malloc(sizeof(struct selection));
         new->l = i;
         new->x = 0;
-        new->n = line->length;
+        new->n = line->dl;
         new->temp = temp;
 
         if (i == start) {

@@ -7,6 +7,7 @@ void test(char *sp, char *chars, int expected);
 int
 main(int argc, char **argv)
 {
+    printf("%d\n", utf8_char_length(' '));
 
     test("Arte|t", "Arthur", 0);
     test("Art\\(h\\)|eur", "Arthur", 6);

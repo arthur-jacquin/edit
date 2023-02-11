@@ -1,36 +1,37 @@
 int
 load_file(char *file_name, int first_line_on_screen_nb)
 {
+    // reads the file file_name and store it in first_line list
+
     FILE *src_file = NULL;
     int buf_size = DEFAULT_BUF_SIZE;
-    char *buf = NULL;
-    char *new_buf = NULL;
-    struct line *ptr;
-    struct line *last_line;
-    int i;
-    int c;
+    char *buf, *new_buf;
+    struct line *line, *last_line;
     int line_nb;
-    int reached_EOF;
+    int c, reached_EOF, ml, dl;
 
-    // liberate lines
-    free_lines(first_line);
+    // get sure first_line list is empty
+    forget_lines_list(first_line);
     first_line = first_line_on_screen = NULL;
 
     // open connection to src_file
-    src_file = fopen(file_name, "r");
+    if ((src_file = fopen(file_name, "r")) == NULL)
+        return ERR_FILE_CONNECTION;
     reached_EOF = 0;
     line_nb = 1;
 
     // prepare buffer
     buf = (char *) malloc(buf_size);
+    buf[buf_size - 1] = '\0';
 
     // read content into memory
     while (!reached_EOF) {
-        i = 0;
+        ml = dl = 0;
         while (1) {
-            if (i == buf_size - 1) {
+            if (ml == buf_size - 1) {
                 buf_size <<= 1;
                 new_buf = (char *) malloc(buf_size);
+                new_buf[buf_size - 1] = '\0';
                 strcpy(new_buf, buf);
                 free(buf);
                 buf = new_buf;
@@ -41,23 +42,26 @@ load_file(char *file_name, int first_line_on_screen_nb)
             } else if (c == '\n') {
                 break;
             } else {
-                buf[i++] = (char) c;
+                buf[ml] = (char) c;
+                if ((buf[ml] & 0xC0) != 0x80)
+                    dl++;
+                ml++;
             }
         }
-        buf[i++] = '\0';
+        buf[ml++] = '\0';
 
         // store line
-        ptr = new_line(line_nb, i);
+        line = create_line(line_nb, ml, dl);
         if (first_line == NULL) {
-            first_line = last_line = ptr;
-            ptr->prev = NULL;
+            first_line = last_line = line;
+            line->prev = NULL;
         } else {
-            link_lines(last_line, ptr);
-            last_line = ptr;
+            link_lines(last_line, line);
+            last_line = line;
         }
-        strcpy(ptr->chars, buf);
+        strcpy(line->chars, buf);
         if (line_nb == first_line_on_screen_nb)
-            first_line_on_screen = ptr;
+            first_line_on_screen = line;
         line_nb++;
     }
 
@@ -67,10 +71,11 @@ load_file(char *file_name, int first_line_on_screen_nb)
     free(buf);
 
     // close connection to src_file
-    fclose(src_file);
+    if (fclose(src_file) == EOF)
+        return ERR_FILE_CONNECTION;
 
     // refresh parameters
-    nb_line = line_nb - 1;
+    nb_lines = line_nb - 1;
     has_been_changes = 0;
 
     return 0;
@@ -79,29 +84,32 @@ load_file(char *file_name, int first_line_on_screen_nb)
 int
 write_file(char *file_name)
 {
+    // reads the first_line list and store the content in file_name file
+
     FILE *dest_file = NULL;
-    struct line *ptr;
+    struct line *l;
     char *chars;
     int c;
 
-    if (first_line != NULL) {
-        dest_file = fopen(file_name, "w");
+    // open connection to dest_file
+    if ((dest_file = fopen(file_name, "w")) == NULL)
+        return ERR_FILE_CONNECTION;
 
-        ptr = first_line;
-        while (1) {
-            chars = ptr->chars;
-            while (c = *chars++)
-                putc(c, dest_file);
-            if (ptr->next == NULL) {
-                break;
-            } else {
-                putc('\n', dest_file);
-                ptr = ptr->next;
-            }
-        }
-
-        fclose(dest_file);
+    // copy content of first_line list to dest_file
+    l = first_line;
+    while (l != NULL) {
+        chars = l->chars;
+        while (c = *chars++)
+            if (putc(c, dest_file) == EOF)
+                return ERR_FILE_CONNECTION;
+        if (putc('\n', dest_file) == EOF)
+            return ERR_FILE_CONNECTION;
+        l = l->next;
     }
+
+    // close connection to dest_file
+    if (fclose(dest_file))
+        return ERR_FILE_CONNECTION;
 
     return 0;
 }
@@ -109,6 +117,8 @@ write_file(char *file_name)
 void
 get_extension(void)
 {
+    // extract extension from file name interface
+
     int i, j;
 
     for (i = strlen(file_name_int.current) - 1; i >= 0 &&
@@ -123,15 +133,20 @@ get_extension(void)
 void
 load_lang(void)
 {
+    // try to select a syntax
+
     int i;
 
+    // iterate over possible languages
     for (i = 0; i < sizeof(languages)/sizeof(struct lang); i++) {
-        syntax = &languages[i];
-        if (is_in(*(syntax->names), settings.language, 0, strlen(settings.language))) {
+        settings.syntax = &languages[i];
+        if (is_in(*((settings.syntax)->names), settings.language, 0,
+            strlen(settings.language))) {
             return;
         }
     }
 
-    syntax = NULL;
+    // fail
+    settings.syntax = NULL;
     strcpy(settings.language, "none");
 }

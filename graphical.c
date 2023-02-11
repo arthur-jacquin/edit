@@ -1,6 +1,8 @@
 int
 resize(int width, int height)
 {
+    // try to resize terminal to the given width and height
+
     if ((screen_width = width) < MIN_WIDTH ||
         (screen_height = height) < MIN_HEIGHT)
         return ERR_TERM_NOT_BIG_ENOUGH;
@@ -9,99 +11,115 @@ resize(int width, int height)
 }
 
 void
-echo(const char *str)
+echo(const char *chars)
 {
-    strcpy(dialog_chars, str);
+    // set dialog line to chars
+
+    strcpy(dialog_chars, chars);
 }
 
 struct selection *
-print_line(const char *chars, int length, int line_nb, struct selection *s, int screen_line)
+print_line(struct line *l, struct selection *s, int screen_line)
 {
+    // print line *l to screen, on line screen_line
+    // return selection queue after this line
+
     // variables
-    int i, j, color, nb_to_color, underline;
+    int k, i, j, len, color, nb_to_color, underline;
     char c, nc;
-    int *fg;
-    int *bg;
-    fg = (int *) malloc(length * sizeof(int));
-    bg = (int *) malloc(length * sizeof(int));
+    struct tb_cell *buf = malloc((l->dl) * sizeof(struct tb_cell));
+    struct lang *syntax = settings.syntax;
 
     // underline current line
     underline = (screen_line == y) ? TB_UNDERLINE : 0;
 
+    // decompress UTF-8
+    for (k = i = 0; i < l->dl; i++) {
+        len = utf8_char_length(l->chars[k]);
+        buf[i].ch = l->chars[k++] & masks[len-1];
+        for (j = 1; j < len; j++) {
+            buf[i].ch <<= 6;
+            buf[i].ch |= 0x3f & (l->chars[k++]);
+        }
+    }
+
     // foreground
+    for (i = 0; i < l->dl; i++)
+        buf[i].fg = COLOR_DEFAULT;
     if (settings.syntax_highlight && strcmp(settings.language, "none")) {
-        i = 0;
-        while (i < length) {
+        k = i = 0;
+        while (i < l->dl) {
             color = COLOR_DEFAULT;
             nb_to_color = 1;
-            if (is_word_char(c = chars[i])) {
-                for (j = 0; is_word_char(nc = chars[i+j]) || is_number(nc); j++)
-                        ;
-                if (is_in(*(syntax->keywords), chars, i, j)) {
+            c = l->chars[k];
+            if (utf8_char_length(c) > 1) {
+                k += utf8_char_length(c);
+            } else if (is_word_char(c)) {
+                for (j = 0; is_word_char(nc = l->chars[k+j]) || is_digit(nc); j++)
+                    ;
+                if (is_in(*((syntax)->keywords), l->chars, k, j)) {
                     color = COLOR_KEYWORD;
-                } else if (is_in(*(syntax->flow_control), chars, i, j)) {
+                } else if (is_in(*(syntax->flow_control), l->chars, k, j)) {
                     color = COLOR_FLOW_CONTROL;
-                } else if (is_in(*(syntax->built_ins), chars, i, j)) {
+                } else if (is_in(*(syntax->built_ins), l->chars, k, j)) {
                     color = COLOR_BUILT_IN;
                 }
                 nb_to_color = j;
-            } else if (is_number(c) || (i+1 < length && (c == '-' || c == '.') &&
-                (is_number(nc = chars[i+1]) || nc == '.'))) {
-                for (j = 1; j+i < length &&
-                        (is_number(nc = chars[i+j]) || nc == '.'); j++)
+                k += j;
+            } else if (is_digit(c) || (k+1 < l->ml && (c == '-' || c == '.') &&
+                (is_digit(nc = l->chars[k+1]) || nc == '.'))) {
+                for (j = 1; is_digit(nc = l->chars[k+j]) || nc == '.'; j++)
                     ;
                 color = COLOR_NUMBER;
                 nb_to_color = j;
+                k += j;
             } else if (c == '"' || c == '\'') {
-                for (j = 1; j+i < length && chars[i+j] != c; j++)
-                    if (chars[i+j] == '\\')
-                        j++;
+                k++;
+                for (j = 2; k < l->ml && !(l->chars[k] == c && l->chars[k-1] != '\\'); j++)
+                    k += utf8_char_length(l->chars[k]);
+                k++;
                 color = COLOR_STRING;
-                nb_to_color = (i+j+1 >= length) ? (length - i) : (j + 1);
-            } else if (is_in(*(syntax->comment), chars, i, strlen(*(syntax->comment)) - 1)) {
+                nb_to_color = j;
+            } else if (is_in(*(syntax->comment), l->chars, k, strlen(*(syntax->comment)) - 1)) {
                 color = COLOR_COMMENT;
-                nb_to_color = length - i;
-            } else { // TODO: check for rules
+                nb_to_color = l->dl - i;
+                k = l->ml;
+            } else {
+                k++;
             }
 
             for (j = 0; j < nb_to_color; j++)
-                fg[i++] = color | underline;
+                buf[i++].fg = color | underline;
         }
-    } else {
-        for (i = 0; i < length; i++)
-            fg[i] = COLOR_DEFAULT;
-    }
-    
-    // background
-    for (i = 0; i < length; i++)
-        bg[i] = COLOR_BG_DEFAULT;
-    if (settings.highlight_selections) {
-        while (s != NULL && s->l < line_nb)
-            s = s->next;
-        while (s != NULL && s->l == line_nb) {
-            for (i = 0; i < s->n && s->x + i < length; i++)
-                bg[s->x + i] = COLOR_BG_SELECTIONS;
-            s = s->next;
-        } 
-    }
-    if (is_bracket) {
-        if (line_nb == first_line_on_screen->line_nb + y)
-            bg[x] = COLOR_BG_MATCHING;
-        if (line_nb == matching_bracket.l)
-            bg[matching_bracket.x] = COLOR_BG_MATCHING;
     }
 
+    // background
+    for (i = 0; i < l->dl; i++)
+        buf[i].bg = COLOR_BG_DEFAULT;
+//     if (settings.highlight_selections) {
+//         while (s != NULL && s->l < l->line_nb)
+//             s = s->next;
+//         while (s != NULL && s->l == l->line_nb) {
+//             for (i = 0; i < s->n && s->x + i < l->dl; i++)
+//                 buf[s->x + i].bg = COLOR_BG_SELECTIONS;
+//             s = s->next;
+//         } 
+//     }
+//     if (is_bracket) {
+//         if (l->line_nb == first_line_on_screen->line_nb + y)
+//             buf[x].bg = COLOR_BG_MATCHING;
+//         if (l->line_nb == matching_bracket.l)
+//             buf[matching_bracket.x].bg = COLOR_BG_MATCHING;
+//     }
+
     // actual printing
-    fg[length - 1] = COLOR_DEFAULT;
-    bg[length - 1] = COLOR_BG_DEFAULT;
-    for (i = 0; i < length; i++)
-        tb_set_cell(i, screen_line, chars[i], fg[i], bg[i]);
+    for (i = 0; i < l->dl; i++)
+        tb_set_cell(i, screen_line, buf[i].ch, buf[i].fg, buf[i].bg);
     for (; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
 
-    // forget about fg, bg
-    free(fg);
-    free(bg);
+    // forget buffer
+    free(buf);
 
     return s;
 }
@@ -109,16 +127,33 @@ print_line(const char *chars, int length, int line_nb, struct selection *s, int 
 void
 print_dialog(void)
 {
-    int i;
+    // display the dialog line
 
-    tb_print(0, screen_height - 1, COLOR_DIALOG, COLOR_BG_DEFAULT, dialog_chars);
-    for (i = strlen(dialog_chars); i < screen_width - RULER_WIDTH; i++)
-        tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
+    int len, i, j, k;
+    char nc;
+    uint32_t c;
+
+    // decompress UTF-8 and print
+    for (i = k = 0; nc = dialog_chars[k]; k++) {
+        len = utf8_char_length(nc);
+        c = nc & masks[len-1];
+        for (j = 1; j < len; j++) {
+            c <<= 6;
+            c |= 0x3f & dialog_chars[k++];
+        }
+        tb_set_cell(i++, screen_height-1, c, COLOR_DIALOG, COLOR_BG_DEFAULT);
+    }
+
+    // erase end of line
+    while (i < screen_width - RULER_WIDTH)
+        tb_set_cell(i++, screen_height-1, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
 }
 
 void
 print_ruler(void)
 {
+    // display the ruler
+
     int i;
 
     for (i = screen_width - RULER_WIDTH; i < screen_width; i++)
@@ -131,25 +166,27 @@ print_ruler(void)
 void
 print_all(void)
 {
+    // clear and display all the elements
+
     struct selection *s;
-    struct line *ptr;
+    struct line *l;
     int sc_line;
     char c;
 
+    // clear the interface
     tb_clear();
 
-    c = get_line(y)->chars[x];
-    is_bracket = (c == '{' || c == '}' || c == '[' || c == ']' || c == '(' || c == ')');
-    if (is_bracket)
-        matching_bracket = find_matching_bracket();
+//     l = get_line(y);
+//     c = l->chars[get_str_index(l, x)];
+//     is_bracket = (c == '{' || c == '}' || c == '[' || c == ']' || c == '(' || c == ')');
+//     if (is_bracket)
+//         matching_bracket = find_matching_bracket();
 
-    s = sel;
-    ptr = first_line_on_screen;
-    for (sc_line = 0; sc_line < screen_height - 1; sc_line++) {
-        s = print_line(ptr->chars, ptr->length, ptr->line_nb, s, sc_line);
-        if (ptr->next == NULL)
-            break;
-        ptr = ptr->next;
+    s = displayed;
+    l = first_line_on_screen;
+    for (sc_line = 0; l != NULL && sc_line < screen_height - 1; sc_line++) {
+        s = print_line(l, s, sc_line);
+        l = l->next;
     }
 
     tb_set_cursor(x, y);

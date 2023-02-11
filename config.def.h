@@ -36,6 +36,7 @@
 #define COLOR_BG_DEFAULT            TB_DEFAULT
 #define COLOR_BG_SELECTIONS         0
 #define COLOR_BG_MATCHING           0
+#define COLOR_TESTING               TB_YELLOW // XXX
 #endif
 
 // 256-colors terminal
@@ -58,6 +59,7 @@
 #define COLOR_BG_DEFAULT            TB_DEFAULT
 #define COLOR_BG_SELECTIONS         234
 #define COLOR_BG_MATCHING           45
+#define COLOR_TESTING               11 // XXX
 #endif
 
 

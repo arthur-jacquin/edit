@@ -2,6 +2,8 @@
 
 Simple, featured, modal text editor.
 
+[TODO](asciinema video)
+
 ## Goals
 
 * produce a standalone executable
@@ -32,7 +34,7 @@ Simple, featured, modal text editor.
 * advanced navigation
 * mouse support
 * advanced line management
-* search and replace engine
+* search and replace engine with field support
 
 Maybe in a far future:
 * read-only mode ?
@@ -43,86 +45,6 @@ Maybe in a far future:
 * tab-completion ??
 * inline clipboard ??
 * macros ???
-
-
-## Default keybinds
-
-    GENERAL
-            <ESC>   return to default mode
-                ?   help
-              q/Q   quit/force quit
-              w/W   write/write as
-                r   reload
-                i   get in insert mode
-                s   change a parameter
-
-    INSERT MODE (after removing selections)
-              I/A   at start/end of line
-              o/O   on an empty line created below/above cursor line
-
-    LINES
-              y/Y   yank <n> lines/blocks
-              d/D   delete <n> lines/blocks
-              p/P   paste after/before <n> times
-     SHIFT+arrows   move cursor line <n> lines up/down
-
-    MOVEMENTS
-                m   matching bracket
-            0/^/$   start/first non-blank character/end of line
-              g/G   go to line <n>/end of file
-      arrows, l/h   <n> next/previous character
-      arrows, j/k   <n> next/previous line
-              t/T   <n> next/previous word
-              {/}   <n> next/previous block
-              n/N   <n> next/previous match
-
-    SELECTIONS
-                c   display number of selections
-            <ESC>   reset to only one selection, at cursor, of length 0
-                .   select cursor line
-            %/b/:   select all lines of file/<n> following blocks/custom range
-             f, /   search for pattern
-                v   anchor/unanchor
-                a   push running selection to pile; unanchor
-                z   duplicate the current selection on the next <n> lines
-
-    ACTIONS ON SELECTIONS
-              </>   <n> decrease/increase line indent
-                K   comment/uncomment line
-                x   suppress
-                R   replace with pattern elements and fields
-              u/U   switch to lowercase/uppercase
-
-
-## Search and replace
-
-    SEARCH
-        characters
-        predefined classes: . (any), \w, \W (word, non word), \d, \D (digit, non digit)
-        markers: ^, $ (start, end of selection)
-        quantifiers: *, +, ?, {n}, {n,}, {,n}, {n,m}
-        delimiters: \(...\)
-        custom classes: [abc], [^abc], [0-9], [-6], [^-a-z#A-Z0-9], ...
-        logic: |
-
-    REPLACE
-        chars
-        \\ (backslash), \$ (dollar sign)
-        \0 (whole pattern), \1 .. \9 (subpatterns in regex)
-        $0 (whole selection), $1 .. $9 (fields)
-
-
-## Runtime-modifiable parameters
-
-    SHORT NAME  LONG NAME               TYPE    DEFAULT
-    i           autoindent              bool    yes
-    sh          syntax_highlight        bool    yes
-    h           highlight_selections    bool    yes
-    c           case_sensitive          bool    yes
-    fs          field_separator         char    ,
-    tw          tab_width               int     4
-    l           language                string  (from extension)
-
 
 ## Non-runtime-modifiable parameters
 
@@ -139,61 +61,31 @@ from config.def.h.
 
 ## Thanks
 
-* my brother for beta-testing and comments
-* [termbox2](https://github.com/termbox/termbox2) terminal rendering library
+- my brother for beta-testing and comments
+- [termbox2](https://github.com/termbox/termbox2) terminal rendering library
 
 
-## Ressources
 
-Features/bindings and philosophy:
-* [xi](https://xi-editor.io/docs.html)
-* [vim](https://vimhelp.org/vi_diff.txt.html)
-* [notepad](https://jsimlo.sk/notepad/features.php)
-* [ted](http://www.kpdus.com/ted.html)
-* [kakoune philosophy](https://kakoune.org/why-kakoune/why-kakoune.html)
-* [kakoune](https://github.com/mawww/kakoune#advanced-topics)
-* [notepad++](https://github.com/notepad-plus-plus/notepad-plus-plus/wiki/Features)
-* [sam](http://doc.cat-v.org/plan_9/4th_edition/papers/sam/)
-* [sam man](http://man.cat-v.org/plan_9/1/sam)
-* [sam refcard](http://sam.cat-v.org/cheatsheet/sam-refcard.pdf)
-* [neovim](https://neovim.io/charter/)
+## Related projects
 
-* [list](https://github.com/topics/text-editor) (explored for >= 150 stars)
+Inspiration
+- [suckless tools](https://suckless.org/) for the development philosophy
+- [vim](https://www.vim.org/) for the interface and most keybinds
+- [kakoune](https://kakoune.org/) for the *selection then action* philosohy
 
-Unsorted:
-* [aretex](https://github.com/aretext/aretext)
-* [de](https://github.com/driusan/de)
-* [smith](https://github.com/IGI-111/Smith)
-* [viw](https://github.com/lpan/viw)
-* [micro](https://github.com/zyedidia/micro)
 
-Tiny:
-* [kibi](https://github.com/ilai-deutel/kibi)
-* [kilo](https://github.com/antirez/kilo)
+## The story/rationale
 
-Rather small:
-* [vi](http://www.ungerhu.com/jxh/vi.html)
-* [mle](https://github.com/adsr/mle)
-* [iota](https://github.com/gchp/iota)
+When I started programming, I found the ubitiquous vim. I fell in love with its logic, efficiency and power. But as I used it, I started to want something more minimal, something closer to the suckless philosophy. While there is no text editor on suckless.org, there are plenty that follows a similar philosophy :
+- [kibi](https://github.com/ilai-deutel/kibi)
+- [kilo](https://github.com/antirez/kilo)
+- [mle](https://github.com/adsr/mle)
+- [iota](https://github.com/gchp/iota)
+- [micro](https://github.com/zyedidia/micro)
+- [aretex](https://github.com/aretext/aretext)
+- [de](https://github.com/driusan/de)
+- [smith](https://github.com/IGI-111/Smith)
 
-Overfeatured:
-* [vim](https://www.vim.org) 
-* [vis](https://github.com/martanne/vis)
-* [lite](https://github.com/rxi/lite/)
-* [lite-xl](https://lite-xl.com/)
-* [helix](https://helix-editor.com/)
+So why writing a new one ? Mainly for the learning experience. After reading "The C programming language" from Dennis Ritchie, I was looking for a project to try my early C skills. edit is written from scratch, without looking at any other editor code. I had so much fun designing a syntax highligt system, or a search and replace engine with regular expression and fields support. My goal has never been completeness; and the editor intentionnally lacks some features.
 
-Regex search:
-* [regexp](https://man.cat-v.org/plan_9/6/regexp)
-* [standard](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html)
-* [sd](https://github.com/chmln/sd)
-* [sed](https://www.gnu.org/software/sed/manual/sed.html)
-
-Others:
-* [record screen](https://asciinema.org/)
-* [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
-
-Syntax:
-* [kibi](https://github.com/ilai-deutel/kibi/tree/master/syntax.d)
-* [vim](https://github.com/vim/vim/tree/master/runtime/syntax)
-* [micro](https://github.com/zyedidia/micro/tree/master/runtime/syntax)
+Before publishing edit, I used for several months to polish it to my needs. It is now quite feature-stable, I use it every day. However the limitations might bothers one. If you ever try it, you should have no expectations, but I would greatly appreciate a feedback, wether it's on the user side or the code.

@@ -2,9 +2,9 @@ int
 move(struct line **l, int *dx, int sens)
 {
     if (sens > 0) {
-        if (*dx + 1 < (*l)->length) {
+        if (*dx + 1 <= (*l)->dl) {
             (*dx)++;
-        } else if ((*l)->line_nb == nb_line) {
+        } else if ((*l)->line_nb == nb_lines) {
             return 0;
         } else {
             *l = (*l)->next;
@@ -17,7 +17,7 @@ move(struct line **l, int *dx, int sens)
             return 0;
         } else {
             *l = (*l)->prev;
-            *dx = (*l)->length - 1;
+            *dx = (*l)->dl;
         }
     }
 
@@ -42,7 +42,7 @@ find_first_non_blanck(void)
     struct line *cursor_line;
 
     cursor_line = get_line(y);
-    for (i = x = cursor_line->length - 1; i >= 0; i--)
+    for (i = x = cursor_line->ml - 1; i >= 0; i--)
         if (!(is_blank(cursor_line->chars[i])))
             x = i;
 
@@ -155,7 +155,7 @@ find_start_of_block(int starting_line_nb, int nb)
     ptr = get_line(l - first_line_on_screen->line_nb);
 
     while (nb--) {
-        while (ptr->length == 1) {
+        while (ptr->ml == 1) {
             if (ptr->prev != NULL) {
                 ptr = ptr->prev;
                 l--;
@@ -163,7 +163,7 @@ find_start_of_block(int starting_line_nb, int nb)
                 return l;
             }
         }
-        while (ptr->length > 1) {
+        while (ptr->ml > 1) {
             if (ptr->prev != NULL) {
                 ptr = ptr->prev;
                 l--;
@@ -186,7 +186,7 @@ find_end_of_block(int starting_line_nb, int nb)
     ptr = get_line(l - first_line_on_screen->line_nb);
 
     while (nb--) {
-        while (ptr->length == 1) {
+        while (ptr->ml == 1) {
             if (ptr->next != NULL) {
                 ptr = ptr->next;
                 l++;
@@ -194,7 +194,7 @@ find_end_of_block(int starting_line_nb, int nb)
                 return l;
             }
         }
-        while (ptr->length > 1) {
+        while (ptr->ml > 1) {
             if (ptr->next != NULL) {
                 ptr = ptr->next;
                 l++;
@@ -213,8 +213,8 @@ go_to(struct pos p)
     int delta, n;
 
     // reach line
-    if (p.l > nb_line)
-        p.l = nb_line;
+    if (p.l > nb_lines)
+        p.l = nb_lines;
     if (p.l < 1)
         p.l = 1;
 
@@ -230,8 +230,8 @@ go_to(struct pos p)
     }
 
     // adjust x
-    if (p.x >= (n = get_line(y)->length))
-        p.x = n - 1;
+    if (p.x > (n = get_line(y)->dl))
+        p.x = n;
     if (p.x < 0)
         p.x = 0;
     x = p.x;

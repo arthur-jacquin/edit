@@ -138,7 +138,7 @@ find_next_selection(int delta)
     int asked_nb, closest, n;
     struct selection *cursor;
     struct pos res;
-        
+
     if (sel == NULL) {
         return pos_of(0, 0);
     } else {
@@ -183,7 +183,7 @@ find_start_of_block(int starting_line_nb, int nb)
             l = l->prev;
     }
 
-    return l->line_nb + 1; 
+    return l->line_nb + 1;
 }
 
 int
@@ -202,7 +202,7 @@ find_end_of_block(int starting_line_nb, int nb)
             l = l->next;
     }
 
-    return l->line_nb; 
+    return l->line_nb;
 }
 
 void

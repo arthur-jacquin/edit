@@ -103,7 +103,7 @@ print_line(struct line *l, struct selection *s, int screen_line)
             for (i = 0; i < s->n && s->x + i < l->dl; i++)
                 buf[s->x + i].bg = COLOR_BG_SELECTIONS;
             s = s->next;
-        } 
+        }
     }
     if (is_bracket) {
         if (l->line_nb == first_line_on_screen->line_nb + y)

@@ -95,7 +95,7 @@ shift_sel(struct selection *a, struct pos starting, struct pos ending, struct se
 {
     // shift selections of list a between starting and ending (exluded)
     // ignores delta.x and delta.n if delta.l not null
-    
+
     struct pos cursor;
 
     cursor = pos_of_cursor();
@@ -138,6 +138,63 @@ reset_selections(void)
     anchored = 0;
 }
 
+struct pos
+column_sel(int m)
+{
+    // append running selection and duplicates on followning m-1 lines to saved
+    // return position for cursor
+    // will not work if running selection is multiline
+
+    int i, delta, wx, wn;
+    struct pos cursor;
+    struct line *l;
+    struct selection *last;
+
+    // calibrate
+    cursor = pos_of_cursor();
+    if (anchored && anchor.l != cursor.l)
+        return cursor;
+    if (cursor.l + m - 1 > nb_lines)
+        m = nb_lines - cursor.l + 1;
+    if (anchored) {
+        delta = cursor.x - anchor.x;
+        wx = (delta > 0) ? anchor.x : cursor.x;
+        wn = (delta > 0) ? delta : -delta;
+    } else {
+        wx = x;
+        wn = 0;
+    }
+
+    // extract selections
+    last = NULL;
+    l = get_line(y + m - 1);
+    for (i = 0; i < m; i++) {
+        if (l->dl >= wx)
+            last = create_sel(l->line_nb, wx,
+                (wn <= l->dl - wx) ? (wn) : (l->dl - wx), last);
+        l = l->prev;
+    }
+
+    // save selections
+    forget_sel_list(temp);
+    temp = merge_sel(saved, last);
+    forget_sel_list(saved);
+    saved = temp;
+    temp = NULL;
+
+    // refresh anchor
+    if (anchored) {
+        if (cursor.l + m > nb_lines)
+            anchored = 0;
+        else if (anchor.x > get_line(y + m)->dl)
+            anchored = 0;
+        else
+            anchor.l = cursor.l + m;
+    }
+
+    return pos_of(cursor.l + m, x);
+}
+
 struct selection *
 merge_sel(struct selection *a, struct selection *b)
 {
@@ -164,7 +221,7 @@ merge_sel(struct selection *a, struct selection *b)
         } else {
             return start;
         }
- 
+
         new = create_sel(to_add->l, to_add->x, to_add->n, NULL);
         if (last == NULL) {
             start = last = new;
@@ -226,7 +283,7 @@ running_sel(void)
                 end = anchor;
             }
             end_sel = create_sel(end.l, 0, end.x, NULL);
-            medium_sel = (begin.l + 1 > end.l - 1) ? end_sel : 
+            medium_sel = (begin.l + 1 > end.l - 1) ? end_sel :
                 range_lines_sel(begin.l + 1, end.l - 1, end_sel);
             res = create_sel(begin.l, begin.x, get_line(begin.l -
                 first_line_on_screen->line_nb)->dl - begin.x, medium_sel);

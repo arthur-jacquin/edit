@@ -184,6 +184,7 @@ void shift_sel(struct selection *a, struct pos starting, struct pos ending,
     struct selection delta);
 void forget_sel_list(struct selection *a);
 void reset_selections(void);
+struct pos column_sel(int m);
 struct selection *merge_sel(struct selection *a, struct selection *b);
 struct selection *range_lines_sel(int start, int end, struct selection *next);
 struct selection *running_sel(void);

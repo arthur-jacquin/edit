@@ -171,13 +171,13 @@ move_line(int delta)
         if (dest == first_line_on_screen)
             first_line_on_screen = src;
         if (is_first_line(dest))
-            first_line = src; 
+            first_line = src;
         link_lines(src->prev, src->next);
         link_lines(dest->prev, src);
         link_lines(src, dest);
     }
     src->line_nb = new_line_nb;
-    
+
     return new_line_nb;
 }
 
@@ -258,7 +258,7 @@ void
 insert_clip(struct line *starting_line, int below)
 {
     // insert clipboard lines above or below starting line
-    
+
     int i, first_inserted_line_nb;
     struct line *l, *before, *after;
 

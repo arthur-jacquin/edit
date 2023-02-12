@@ -37,7 +37,7 @@ main(int argc, char *argv[])
     settings.autoindent = AUTOINDENT;
     settings.tab_width = TAB_WIDTH;
     init_interface(&settings_int, "");
- 
+
     // editor variables
     m = in_insert_mode = anchored = is_bracket = 0;
 
@@ -76,7 +76,7 @@ main(int argc, char *argv[])
         temp = running_sel();
         forget_sel_list(displayed);
         displayed = merge_sel(temp, saved);
-        
+
         // refresh screen and wait for input
         print_all();
         tb_present();
@@ -251,9 +251,9 @@ main(int argc, char *argv[])
                 //    //     echo("No more selections upwards.");
                 //    // }
                 //    break;
-                //case KB_SEL_DISPLAY_COUNT:
-                //    sprintf(dialog_chars, "%d selections.", nb_sels());
-                //    break;
+                case KB_SEL_DISPLAY_COUNT:
+                    sprintf(dialog_chars, "%d selections.", nb_sel(saved));
+                    break;
                 case KB_SEL_CURSOR_LINE:
                     forget_sel_list(saved);
                     saved = range_lines_sel(first_line_on_screen->line_nb + y,
@@ -287,13 +287,18 @@ main(int argc, char *argv[])
                         anchored = 1;
                     }
                     break;
-                //case KB_SEL_APPEND:
-                //    add_running_sels(0);
-                //    anchored = 0;
-                //    break;
-                //case KB_SEL_COLUMN:
-                //    // TODO
-                //    break;
+                case KB_SEL_APPEND:
+                    forget_sel_list(saved);
+                    saved = displayed;
+                    displayed = NULL;
+                    anchored = 0;
+                    break;
+                case KB_SEL_COLUMN:
+                    if (anchored && anchor.l != pos_of_cursor().l)
+                        echo("Not possible when multiline running selection.");
+                    else
+                        go_to(column_sel(m));
+                    break;
                 //case KB_ACT_INCREASE_INDENT:
                 //    asked_indent = m * settings.tab_width;
                 //    act(indent, 1);

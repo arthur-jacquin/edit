@@ -7,7 +7,7 @@
 #include "graphical.c"
 #include "movements.c"
 #include "selections.c"
-//#include "actions.c"
+#include "actions.c"
 
 int
 main(int argc, char *argv[])
@@ -319,12 +319,12 @@ main(int argc, char *argv[])
                 //    if (dialog("Replace pattern: ", &replace_pattern, 0)) {
                 //    }
                 //    break;
-                //case KB_ACT_LOWERCASE:
-                //    act(lower, 0);
-                //    break;
-                //case KB_ACT_UPPERCASE:
-                //    act(upper, 0);
-                //    break;
+                case KB_ACT_LOWERCASE:
+                    act(lower, 0);
+                    break;
+                case KB_ACT_UPPERCASE:
+                    act(upper, 0);
+                    break;
                 }
                 m = 0;
                 }

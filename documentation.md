@@ -37,14 +37,14 @@
 
 ### Manage selections
 
-                c   display number of selections
-            <ESC>   reset to only one selection, at cursor, of length 0
+                c   display number of saved selections
+            <ESC>   forget saved selections, unanchor
                 .   select cursor line
             %/b/:   select all lines of file/<n> following blocks/custom range
              f, /   search for pattern
                 v   anchor/unanchor
                 a   push running selection to pile; unanchor
-                z   duplicate the current selection on the next <n> lines
+                z   duplicate the current selection on the <n> following lines
 
 ### Act on selections
 

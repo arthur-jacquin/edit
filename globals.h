@@ -191,12 +191,12 @@ struct selection *running_sel(void);
 // void search(struct selection *a);
 
 // actions.c
-// void act(void (*process)(struct line *, struct selection *), int line_op);
+void act(void (*process)(struct line *, struct selection *), int line_op);
 // void insert(struct line *l, struct selection *s);
 // void split_lines(struct line *l, struct selection *s);
 // void suppress(struct line *l, struct selection *s);
 // void indent(struct line *l, struct selection *s);
 // void comment(struct line *l, struct selection *s);
-// void lower(struct line *l, struct selection *s);
-// void upper(struct line *l, struct selection *s);
+void lower(struct line *l, struct selection *s);
+void upper(struct line *l, struct selection *s);
 // void replace(struct line *l, struct selection *s);

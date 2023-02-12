@@ -13,6 +13,8 @@ Remove all the go_to(pos_of(..., just attribute new asked y and x, and go_to(pos
 TODO for move after indent: check difference of l->ml
 search and replace with UTF 8 ?
 UTF-8: move everything to a expand - process - compress model ?
+regex: choose a known syntax, link official documentation
+field detection: backslash resistant ?
 4 * INTERFACE_WIDTH ?
 int resize_to_be_treated ?
 remove masks ?
@@ -56,6 +58,9 @@ CHECK:
 MISSING KEYBINDS:
 * [f,/] search for pattern
 * [R] replace with pattern elements and fields
+* [</>] <n> decrease/increase line indent
+* [K] comment/uncomment line
+* [x] suppress
 
 LAST:
 * better help

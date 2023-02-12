@@ -131,41 +131,43 @@ find_matching_bracket(void)
 
     return pos_of(l->line_nb, dx);
 }
-/*
+
 struct pos
 find_next_selection(int delta)
 {
-    int asked_nb, closest, n;
-    struct selection *cursor;
-    struct pos res;
+    // find position to move through saved selections
+    // return null position if there is no selection in the asked direction
 
-    if (sel == NULL) {
+    int nb, closest, asked_number, last_strictly_before;
+
+    // check the existence of selections
+    if ((nb = nb_sel(saved)) == 0)
         return pos_of(0, 0);
-    } else {
-        cursor = (struct selection *) malloc(sizeof(struct selection));
-        cursor->l = first_line_on_screen->line_nb + y;
-        cursor->x = x;
-        closest = closest_nb(cursor);
-        n = nb_sels();
 
-        if ((closest == 0 && delta < 0)
-            || (closest == n && delta > 0)) { // n - 1 ?
-            free(cursor);
-            return pos_of(0, 0);
-        } else {
-            asked_nb = closest + delta - 1*(delta > 0);
-            if (asked_nb < 0)
-                asked_nb = 0;
-            if (asked_nb >= n)
-                asked_nb = n - 1;
-            cursor = get_sel(asked_nb);
-            res = pos_of(cursor->l, cursor->x);
-            free(cursor);
-            return res;
-        }
+    // calibrate asked_number
+    closest = index_closest_after_cursor(saved);
+    if (delta > 0) {
+        if (closest == -1)
+            return pos_of(0, 0); // none after
+        asked_number = closest + delta - 1;
+        if (asked_number > nb - 1)
+            asked_number = nb - 1;
+    } else {
+        if (closest == 0)
+            return pos_of(0, 0); // none before
+        // get last position that verify p <= cursor
+        last_strictly_before = ((closest == -1) ? nb : closest) - 1;
+        if (!is_inf(get_pos_of_sel(saved, last_strictly_before), pos_of_cursor()))
+            last_strictly_before--;
+        if (last_strictly_before < 0)
+            return pos_of(0, 0); // none strictly before
+        asked_number = last_strictly_before + delta + 1;
+        if (asked_number < 0)
+            asked_number = 0;
     }
+
+    return get_pos_of_sel(saved, asked_number);
 }
-*/
 
 int
 find_start_of_block(int starting_line_nb, int nb)

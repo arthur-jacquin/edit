@@ -8,7 +8,7 @@ TODO:
 - gathers variables in good order in globals.h
 
 internalize termbox
-better move when an index is already known 
+better move when an index is already known
 Remove all the go_to(pos_of(..., just attribute new asked y and x, and go_to(pos_of(x, y)) at start of main loop
 TODO for move after indent: check difference of l->ml
 search and replace with UTF 8 ?
@@ -40,10 +40,7 @@ KEEP IN MIND:
 * move at good position
 
 BIG STUFF:
-* rewrite all the selections stuff
-    * add shift selections
-    * find next/previous selection
-    * duplicates selections
+* add shift selections
 * rewrite all the actions
 * integrate search and replace engine
 * make search and replace engine UTF-8 support
@@ -57,8 +54,6 @@ CHECK:
 * possibility to make "const" args
 
 MISSING KEYBINDS:
-* [n/N] move to <n> next/previous selection
-* [z] duplicate the current selection on the next <n> lines
 * [f,/] search for pattern
 * [R] replace with pattern elements and fields
 

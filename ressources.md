@@ -19,7 +19,7 @@ Unsorted:
 * [vi](http://www.ungerhu.com/jxh/vi.html)
 
 Overfeatured:
-* [vim](https://www.vim.org) 
+* [vim](https://www.vim.org)
 * [vis](https://github.com/martanne/vis)
 * [lite](https://github.com/rxi/lite/)
 * [lite-xl](https://lite-xl.com/)

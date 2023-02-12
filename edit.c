@@ -13,6 +13,7 @@ int
 main(int argc, char *argv[])
 {
     int l1, old_line_nb;
+    struct pos p;
 
     // PARSING ARGUMENTS *******************************************************
     // TODO: better error detection, starting with -
@@ -237,20 +238,20 @@ main(int argc, char *argv[])
                     go_to(pos_of(find_start_of_block(
                         first_line_on_screen->line_nb + y, m), x));
                     break;
-                //case KB_MOVE_NEXT_SEL:
-                //    // if ((p = find_next_selection(m)).l) {
-                //    //     go_to(p);
-                //    // } else {
-                //    //     echo("No more selections downwards.");
-                //    // }
-                //    break;
-                //case KB_MOVE_PREV_SEL:
-                //    // if ((p = find_next_selection(-m)).l) {
-                //    //     go_to(p);
-                //    // } else {
-                //    //     echo("No more selections upwards.");
-                //    // }
-                //    break;
+                case KB_MOVE_NEXT_SEL:
+                    if ((p = find_next_selection(m)).l) {
+                        go_to(p);
+                    } else {
+                        echo("No more selections downwards.");
+                    }
+                    break;
+                case KB_MOVE_PREV_SEL:
+                    if ((p = find_next_selection(-m)).l) {
+                        go_to(p);
+                    } else {
+                        echo("No more selections upwards.");
+                    }
+                    break;
                 case KB_SEL_DISPLAY_COUNT:
                     sprintf(dialog_chars, "%d selections.", nb_sel(saved));
                     break;
@@ -300,11 +301,9 @@ main(int argc, char *argv[])
                         go_to(column_sel(m));
                     break;
                 //case KB_ACT_INCREASE_INDENT:
-                //    asked_indent = m * settings.tab_width;
-                //    act(indent, 1);
-                //    break;
                 //case KB_ACT_DECREASE_INDENT:
-                //    asked_indent = - m * settings.tab_width;
+                //    asked_indent = m * settings.tab_width *
+                //        ((ev.ch == KB_ACT_DECREASE_INDENT) ? -1 : 1);
                 //    act(indent, 1);
                 //    break;
                 //case KB_ACT_COMMENT:

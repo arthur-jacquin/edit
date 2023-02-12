@@ -49,7 +49,7 @@ pos_of_cursor(void)
 }
 
 int
-index_closest_after_nb(struct selection *a)
+index_closest_after_cursor(struct selection *a)
 {
     // find index of the first selection > than cursor (-1 if does not exist)
 
@@ -70,12 +70,22 @@ index_closest_after_nb(struct selection *a)
     }
 }
 
-/*int
-get_sel(struct selection *a, int index, struct pos *p)
+struct pos
+get_pos_of_sel(struct selection *a, int index)
 {
-    // try to extract position of corresponding selection, 0 if not exist
+    // extract the position of corresponding selection, null if does not exist
 
-}*/
+    int count;
+
+    for (count = 0; count < index; count++) {
+        if (a == NULL)
+            return pos_of(0, 0);
+        else
+            a = a->next;
+    }
+
+    return pos_of(a->l, a->x);
+}
 
 int
 nb_sel(struct selection *a)

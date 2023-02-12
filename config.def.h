@@ -92,7 +92,7 @@
 // movements
 #define KB_MOVE_MATCHING            'm'
 #define KB_MOVE_START_LINE          '0'
-#define KB_MOVE_NON_BLANCK          '^'
+#define KB_MOVE_NON_BLANK           '^'
 #define KB_MOVE_END_LINE            '$'
 #define KB_MOVE_SPECIFIC_LINE       'g'
 #define KB_MOVE_END_FILE            'G'
@@ -133,7 +133,7 @@
 
 #define START_ANY                   0
 #define START_FIRST_OF_LINE         1
-#define START_FIRST_NON_BLANCK      2
+#define START_FIRST_NON_BLANK       2
 
 struct rule {
     char *mark;

@@ -29,46 +29,21 @@ insert(struct line *l, struct selection *s)
     uint32_t c = ev.ch, first;
 
     // compute length of inserted character
-    // char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
     if (c < 0x80) {
-        first = 0;
         len = 1;
     } else if (c < 0x800) {
-        first = 0xc0;
         len = 2;
     } else if (c < 0x10000) {
-        first = 0xe0;
         len = 3;
     } else if (c < 0x200000) {
-        first = 0xf0;
         len = 4;
     } else { // Unicode error
         return;
     }
 
-    // allocate space for new string
+    // create new string
     new_chars = (char *) malloc(l->ml + len);
-
-    // copy first s->x displayable characters
-    for (k = 0, i = 0; i < s->x; i++) {
-        clr = utf8_char_length(l->chars[k]);
-        for (j = 0; j < clr; j++)
-            new_chars[k + j] = l->chars[k + j];
-        k += clr;
-    }
-
-    // insert (unicode encoded) character as UTF-8 in new_chars
-    for (j = len - 1; j > 0; j--) {
-        new_chars[k + j] = (c & 0x3f) | 0x80;
-        c >>= 6;
-    }
-    new_chars[k] = c | first;
-
-    // copy remaining characters
-    while (new_chars[k + len] = l->chars[k])
-        k++;
-
-    // refresh metadata, free old string
+    insert_unicode(l->chars, new_chars, s->x, ev.ch);
     old_chars = l->chars;
     l->chars = new_chars;
     free(old_chars);

@@ -1,19 +1,21 @@
 TODO:
 - continue migration
-- highlight selections, matching bracket
-- move cursor line as a compile-time setting
+- highlight selections
+- move cursor line, highlight matching bracket... as compile-time settings
 - syntax highlight rules
 - case sensitive
 - read-only mode
-
+- gathers variables in good order in globals.h
 
 internalize termbox
+better move when an index is already known 
 Remove all the go_to(pos_of(..., just attribute new asked y and x, and go_to(pos_of(x, y)) at start of main loop
 TODO for move after indent: check difference of l->ml
-switch dialog (including printing) to UNICODE
 search and replace with UTF 8 ?
-is_bracket, find positions... with UTF-8 ?
 UTF-8: move everything to a expand - process - compress model ?
+4 * INTERFACE_WIDTH ?
+int resize_to_be_treated ?
+remove masks ?
 
 For now
 1. FILE (supposedly UTF-8)
@@ -33,18 +35,18 @@ Maybe in the future
 4. SCREEN
 
 
-FIX:
-* problem with selections
-* move cursor and selections on actions/line management
-* new line at end of file
+KEEP IN MIND:
+* UTF-8
+* move at good position
 
 BIG STUFF:
 * rewrite all the selections stuff
-* add shift selections
-* find next/previous selection
+    * add shift selections
+    * find next/previous selection
+    * duplicates selections
+* rewrite all the actions
 * integrate search and replace engine
-* add UTF-8 support
-* duplicates selections
+* make search and replace engine UTF-8 support
 * concatenate lines on SUPPR/BACKSPACE
 
 CHECK:
@@ -68,7 +70,6 @@ LAST:
 * publish under GPL
 
 LATER:
-* < and > as brackets ?
 * [e] execute command ? make ?
 * read-only mode ?
 * regex: add word boundaries ?

@@ -111,3 +111,13 @@ TODO: choose a known syntax, link official documentation
     utils.c
 
     tests.c             Unit testing for search and replace engine
+
+
+## Notes
+
+In the clipboard, line numbers are 0 to clipboard.nb_lines - 1
+
+3 selections queues
+saved and temps contains actual selections, displayed is just a reference to it
+never call forget_sel_list on temp
+always forget_sel_list before resetting saved and temp

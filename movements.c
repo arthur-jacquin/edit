@@ -1,10 +1,12 @@
 int
 move(struct line **l, int *dx, int sens)
 {
+    // try to move by one in given direction, return 1 on success
+
     if (sens > 0) {
         if (*dx + 1 <= (*l)->dl) {
             (*dx)++;
-        } else if ((*l)->line_nb == nb_lines) {
+        } else if (is_last_line(*l)) {
             return 0;
         } else {
             *l = (*l)->next;
@@ -13,7 +15,7 @@ move(struct line **l, int *dx, int sens)
     } else {
         if (*dx > 0) {
             (*dx)--;
-        } else if ((*l)->line_nb == 1) {
+        } else if (is_first_line(*l)) {
             return 0;
         } else {
             *l = (*l)->prev;
@@ -27,6 +29,8 @@ move(struct line **l, int *dx, int sens)
 struct pos
 pos_of(int l, int x)
 {
+    // create a position from coordinates
+
     struct pos res;
 
     res.l = l;
@@ -36,25 +40,29 @@ pos_of(int l, int x)
 }
 
 struct pos
-find_first_non_blanck(void)
+find_first_non_blank(void)
 {
-    int i, x;
-    struct line *cursor_line;
+    // find the first non blank character on the cursor line
 
-    cursor_line = get_line(y);
-    for (i = x = cursor_line->ml - 1; i >= 0; i--)
-        if (!(is_blank(cursor_line->chars[i])))
+    struct line *l;
+    int i, x;
+
+    l = get_line(y);
+    for (i = x = l->ml - 1; i >= 0; i--)
+        if (!(is_blank(l->chars[i])))
             x = i;
 
-    return pos_of(cursor_line->line_nb, x);
+    return pos_of(l->line_nb, x);
 }
 
 struct pos
 find_start_of_word(int n)
 {
+    // find the <n>-th next beginning of word (end of word if n < 0)
+
     struct line *l;
     int sens, dx, current_type;
-    // TODO: better management on line changes ?
+    char c, nc;
 
     l = get_line(y);
     dx = x;
@@ -62,15 +70,26 @@ find_start_of_word(int n)
     n *= sens;
 
     while (n--) {
-        current_type = type(l->chars[dx]);
-        while (type(l->chars[dx]) == current_type) {
-            if (!move(&l, &dx, sens))
-                return pos_of(l->line_nb, dx);
+        c = l->chars[get_str_index(l, dx)];
+        while (move(&l, &dx, sens)) {
+            nc = l->chars[get_str_index(l, dx)];
+            if (is_blank(c)) {
+                if (!is_blank(nc))
+                    break;
+            } else if (is_word_char(c)) {
+                if (!is_word_char(nc))
+                    break;
+            } else if (is_digit(c)) {
+                if (!is_digit(nc))
+                    break;
+            } else {
+                if (is_blank(nc) || is_word_char(nc) || is_digit(nc))
+                    break;
+            }
         }
-        while (type(l->chars[dx]) == BLANK) {
+        while (is_blank(l->chars[get_str_index(l, dx)]))
             if (!move(&l, &dx, sens))
-                return pos_of(l->line_nb, dx);
-        }
+                break;
     }
 
     return pos_of(l->line_nb, dx);
@@ -79,39 +98,41 @@ find_start_of_word(int n)
 struct pos
 find_matching_bracket(void)
 {
+    // find position of bracket matching the one below cursor
+
     struct line *l;
-    char c, goal;
+    char c, goal, nc;
     int dx, sens, nb;
 
     l = get_line(y);
-    c = l->chars[x];
     dx = x;
 
-    if (c == '{' || c == '[' || c == '(') {
-        goal = (c == '{') ? '}' : ((c == '[') ? ']' : ')');
-        sens = 1;
-    } else if (c == '}' || c == ']' || c == ')') {
-        goal = (c == '}') ? '{' : ((c == ']') ? '[' : '(');
-        sens = -1;
-    } else {
+    switch (c = l->chars[get_str_index(l, dx)]) {
+    case '(': goal = ')'; sens = 1; break;
+    case '{': goal = '}'; sens = 1; break;
+    case '[': goal = ']'; sens = 1; break;
+    case '<': goal = '>'; sens = 1; break;
+    case ')': goal = '('; sens = -1; break;
+    case '}': goal = '{'; sens = -1; break;
+    case ']': goal = '['; sens = -1; break;
+    case '>': goal = '<'; sens = -1; break;
+    default:
         return pos_of(l->line_nb, x);
     }
 
     nb = 1;
-    do {
-        if (!move(&l, &dx, sens)) {
-            break;
-        } else if (l->chars[dx] == goal) {
+    while (nb && move(&l, &dx, sens)) {
+        nc = l->chars[get_str_index(l, dx)];
+        if (nc == goal)
             nb--;
-        } else if (l->chars[dx] == c) {
+        if (nc == c)
             nb++;
-        }
-    } while (nb);
+    }
 
     return pos_of(l->line_nb, dx);
 }
-
-/*struct pos
+/*
+struct pos
 find_next_selection(int delta)
 {
     int asked_nb, closest, n;
@@ -143,73 +164,52 @@ find_next_selection(int delta)
             return res;
         }
     }
-}*/
+}
+*/
 
 int
 find_start_of_block(int starting_line_nb, int nb)
 {
-    int l;
-    struct line *ptr;
+    // find line number of first line of the nb-th block above
 
-    l = starting_line_nb;
-    ptr = get_line(l - first_line_on_screen->line_nb);
+    struct line *l;
+
+    l = get_line(starting_line_nb - first_line_on_screen->line_nb);
 
     while (nb--) {
-        while (ptr->ml == 1) {
-            if (ptr->prev != NULL) {
-                ptr = ptr->prev;
-                l--;
-            } else {
-                return l;
-            }
-        }
-        while (ptr->ml > 1) {
-            if (ptr->prev != NULL) {
-                ptr = ptr->prev;
-                l--;
-            } else {
-                return l;
-            }
-        }
+        while (!is_first_line(l) && l->ml == 1)
+            l = l->prev;
+        while (!is_first_line(l) && l->ml > 1)
+            l = l->prev;
     }
 
-    return l + 1; 
+    return l->line_nb + 1; 
 }
 
 int
 find_end_of_block(int starting_line_nb, int nb)
 {
-    int l;
-    struct line *ptr;
+    // find line number of first empty line below nb blocks
 
-    l = starting_line_nb;
-    ptr = get_line(l - first_line_on_screen->line_nb);
+    struct line *l;
+
+    l = get_line(starting_line_nb - first_line_on_screen->line_nb);
 
     while (nb--) {
-        while (ptr->ml == 1) {
-            if (ptr->next != NULL) {
-                ptr = ptr->next;
-                l++;
-            } else {
-                return l;
-            }
-        }
-        while (ptr->ml > 1) {
-            if (ptr->next != NULL) {
-                ptr = ptr->next;
-                l++;
-            } else {
-                return l;
-            }
-        }
+        while (!is_last_line(l) && l->ml == 1)
+            l = l->next;
+        while (!is_last_line(l) && l->ml > 1)
+            l = l->next;
     }
 
-    return l; 
+    return l->line_nb; 
 }
 
 void
 go_to(struct pos p)
 {
+    // move to the position closest possible to p
+
     int delta, n;
 
     // reach line

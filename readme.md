@@ -71,7 +71,7 @@ from config.def.h.
 Inspiration
 - [suckless tools](https://suckless.org/) for the development philosophy
 - [vim](https://www.vim.org/) for the interface and most keybinds
-- [kakoune](https://kakoune.org/) for the *selection then action* philosohy
+- [kakoune](https://kakoune.org/) for the *selection then action* philosophy
 
 
 ## The story/rationale

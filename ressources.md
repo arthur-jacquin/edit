@@ -14,20 +14,9 @@ Features/bindings and philosophy:
 * [list](https://github.com/topics/text-editor) (explored for >= 150 stars)
 
 Unsorted:
-* [aretex](https://github.com/aretext/aretext)
-* [de](https://github.com/driusan/de)
-* [smith](https://github.com/IGI-111/Smith)
 * [viw](https://github.com/lpan/viw)
 * [micro](https://github.com/zyedidia/micro)
-
-Tiny:
-* [kibi](https://github.com/ilai-deutel/kibi)
-* [kilo](https://github.com/antirez/kilo)
-
-Rather small:
 * [vi](http://www.ungerhu.com/jxh/vi.html)
-* [mle](https://github.com/adsr/mle)
-* [iota](https://github.com/gchp/iota)
 
 Overfeatured:
 * [vim](https://www.vim.org) 

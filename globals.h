@@ -151,7 +151,7 @@ void display_help(void);
 void init_interface(struct interface *interf, const char *chars);
 int dialog(const char *prompt, struct interface *interf, int refresh);
 int set_parameter(const char *assign);
-//int parse_range(const char *range);
+int parse_range(const char *range);
 
 // graphical.c
 int resize(int width, int height);
@@ -183,6 +183,7 @@ int nb_sel(struct selection *a);
 void shift_sel(struct selection *a, struct pos starting, struct pos ending,
     struct selection delta);
 void forget_sel_list(struct selection *a);
+void reset_selections(void);
 struct selection *merge_sel(struct selection *a, struct selection *b);
 struct selection *range_lines_sel(int start, int end, struct selection *next);
 struct selection *running_sel(void);

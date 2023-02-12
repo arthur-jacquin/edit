@@ -75,7 +75,7 @@ main(int argc, char *argv[])
         forget_sel_list(temp);
         temp = running_sel();
         forget_sel_list(displayed);
-        displayed = merge_sel(saved, temp);
+        displayed = merge_sel(temp, saved);
         
         // refresh screen and wait for input
         print_all();
@@ -130,7 +130,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_RELOAD:
                     if (has_been_changes) {
-                        // TODO: reset selections
+                        reset_selections();
                         old_line_nb = first_line_on_screen->line_nb + y;
                         load_file(file_name_int.current, first_line_on_screen->line_nb);
                         go_to(pos_of(old_line_nb, x));
@@ -151,7 +151,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_INSERT_START_LINE:
                 case KB_INSERT_END_LINE:
-                    // TODO: reset selections
+                    reset_selections();
                     go_to(pos_of(first_line_on_screen->line_nb + y,
                         (ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0));
                     in_insert_mode = 1;
@@ -159,7 +159,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_INSERT_LINE_BELOW:
                 case KB_INSERT_LINE_ABOVE:
-                    // TODO: reset selections
+                    reset_selections();
                     l1 = first_line_on_screen->line_nb + y +
                         ((ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0);
                     insert_line(l1, 1, 0);
@@ -254,22 +254,25 @@ main(int argc, char *argv[])
                 //case KB_SEL_DISPLAY_COUNT:
                 //    sprintf(dialog_chars, "%d selections.", nb_sels());
                 //    break;
-                //case KB_SEL_CURSOR_LINE:
-                //    add_range_sels(first_line_on_screen->line_nb + y,
-                //        first_line_on_screen->line_nb + y, 0);
-                //    break;
-                //case KB_SEL_CUSTOM_RANGE:
-                //    if (dialog("Lines range: ", &range_int, 0))
-                //        if (!parse_range(range_int.current))
-                //            echo("Invalid range.");
-                //    break;
-                //case KB_SEL_ALL_LINES:
-                //    add_range_sels(1, nb_lines, 0);
-                //    break;
-                //case KB_SEL_LINES_BLOCK:
-                //    l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
-                //    add_range_sels(l1, find_end_of_block(l1, m), 0);
-                //    break;
+                case KB_SEL_CURSOR_LINE:
+                    forget_sel_list(saved);
+                    saved = range_lines_sel(first_line_on_screen->line_nb + y,
+                        first_line_on_screen->line_nb + y, NULL);
+                    break;
+                case KB_SEL_CUSTOM_RANGE:
+                    if (dialog("Lines range: ", &range_int, 0))
+                        if (!parse_range(range_int.current))
+                            echo("Invalid range.");
+                    break;
+                case KB_SEL_ALL_LINES:
+                    forget_sel_list(saved);
+                    saved = range_lines_sel(1, nb_lines, NULL);
+                    break;
+                case KB_SEL_LINES_BLOCK:
+                    forget_sel_list(saved);
+                    l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
+                    saved = range_lines_sel(l1, find_end_of_block(l1, m), NULL);
+                    break;
                 //case KB_SEL_FIND:
                 //case KB_SEL_SEARCH:
                 //    // TODO
@@ -351,8 +354,7 @@ main(int argc, char *argv[])
                     if (in_insert_mode) {
                         in_insert_mode = 0;
                     } else {
-                        // TODO: reset selection
-                        anchored = 0;
+                        reset_selections();
                     }
                     echo("");
                     break;

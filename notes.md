@@ -1,6 +1,6 @@
 TODO:
 - continue migration
-- highlight selections
+- better uppercase/lowercase
 - move cursor line, highlight matching bracket... as compile-time settings
 - syntax highlight rules
 - case sensitive

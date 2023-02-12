@@ -112,6 +112,8 @@ dialog(const char *prompt, struct interface *interf, int refresh)
 int
 set_parameter(const char *assign)
 {
+    // process a settings modification
+
     int b;
     char c, s[LANG_WIDTH], old_lang[LANG_WIDTH];
     struct lang *old_syntax;
@@ -153,20 +155,23 @@ set_parameter(const char *assign)
 
     return 1;
 }
-/*
+
 int
 parse_range(const char *range)
 {
+    // process a custom range of lines selection
+
     int l1, l2;
     char *ptr;
 
+    // split range in two strings: range and ptr
     ptr = strchr(range, ',');
-
     if (ptr == NULL)
         return 0;
     *ptr = '\0';
     ptr++;
 
+    // parse range
     if (strcmp(range, "") == 0) {
         l1 = 1;
     } else if (strcmp(range, ".") == 0) {
@@ -177,6 +182,7 @@ parse_range(const char *range)
         return 0;
     }
 
+    // parse ptr
     if (strcmp(ptr, "") == 0) {
         l2 = nb_lines;
     } else if (strcmp(ptr, ".") == 0) {
@@ -187,11 +193,12 @@ parse_range(const char *range)
         return 0;
     }
 
+    // add selections
     if (l2 < l1) {
         return 0;
     } else {
-        add_range_sels(l1, l2, 0);
+        forget_sel_list(saved);
+        saved = range_lines_sel(l1, l2, NULL);
         return 1;
     }
 }
-*/

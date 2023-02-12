@@ -128,6 +128,16 @@ forget_sel_list(struct selection *a)
     }
 }
 
+void
+reset_selections(void)
+{
+    // reset selections
+
+    forget_sel_list(saved);
+    saved = NULL;
+    anchored = 0;
+}
+
 struct selection *
 merge_sel(struct selection *a, struct selection *b)
 {

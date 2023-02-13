@@ -33,8 +33,8 @@ CHECK:
 * possibility to make "const" args
 
 MISSING KEYBINDS:
-* [f,/] search for pattern
-* [R] replace with pattern elements and fields
+* search for pattern
+* replace with pattern elements and fields
 
 LAST:
 * better help

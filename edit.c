@@ -238,18 +238,16 @@ main(int argc, char *argv[])
                         first_line_on_screen->line_nb + y, m), x));
                     break;
                 case KB_MOVE_NEXT_SEL:
-                    if ((p = find_next_selection(m)).l) {
+                    if ((p = find_next_selection(m)).l)
                         go_to(p);
-                    } else {
+                    else
                         echo("No more selections downwards.");
-                    }
                     break;
                 case KB_MOVE_PREV_SEL:
-                    if ((p = find_next_selection(-m)).l) {
+                    if ((p = find_next_selection(-m)).l)
                         go_to(p);
-                    } else {
+                    else
                         echo("No more selections upwards.");
-                    }
                     break;
                 case KB_SEL_DISPLAY_COUNT:
                     sprintf(dialog_chars, "%d selections.", nb_sel(saved));
@@ -273,12 +271,15 @@ main(int argc, char *argv[])
                     l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
                     saved = range_lines_sel(l1, find_end_of_block(l1, m), NULL);
                     break;
-                //case KB_SEL_FIND:
-                //case KB_SEL_SEARCH:
-                //    // TODO
-                //    if (dialog("Search pattern: ", &search_pattern, 0)) {
-                //    }
-                //    break;
+                case KB_SEL_FIND:
+                case KB_SEL_SEARCH:
+                    if (dialog("Search pattern: ", &search_pattern, 0)) {
+                        forget_sel_list(saved);
+                        saved = displayed;
+                        displayed = NULL;
+                        anchored = 0;
+                    }
+                    break;
                 case KB_SEL_ANCHOR:
                     if (anchored) {
                         anchored = 0;
@@ -313,11 +314,10 @@ main(int argc, char *argv[])
                     asked_remove = m;
                     act(suppress, 0);
                     break;
-                //case KB_ACT_REPLACE:
-                //    // TODO
-                //    if (dialog("Replace pattern: ", &replace_pattern, 0)) {
-                //    }
-                //    break;
+                case KB_ACT_REPLACE:
+                    if (dialog("Replace pattern: ", &replace_pattern, 0))
+                        act(replace, 0);
+                    break;
                 case KB_ACT_LOWERCASE:
                     act(lower, 0);
                     break;

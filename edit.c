@@ -87,8 +87,7 @@ main(int argc, char *argv[])
         switch (ev.type) {
         case TB_EVENT_KEY:
             if (ev.ch && in_insert_mode) {
-                //act(insert, 0);
-                //go_to(pos_of(first_line_on_screen->line_nb + y, x + 1));
+                act(insert, 0);
                 has_been_changes = 1;
             } else if (ev.ch && !in_insert_mode) {
                 if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
@@ -300,20 +299,20 @@ main(int argc, char *argv[])
                     else
                         go_to(column_sel(m));
                     break;
-                //case KB_ACT_INCREASE_INDENT:
-                //case KB_ACT_DECREASE_INDENT:
-                //    asked_indent = m * settings.tab_width *
-                //        ((ev.ch == KB_ACT_DECREASE_INDENT) ? -1 : 1);
-                //    act(indent, 1);
-                //    break;
-                //case KB_ACT_COMMENT:
-                //    if (strcmp(settings.language, "none"))
-                //        act(comment, 1);
-                //    break;
-                //case KB_ACT_SUPPRESS:
-                //    asked_remove = m;
-                //    act(suppress, 1);
-                //    break;
+                case KB_ACT_INCREASE_INDENT:
+                case KB_ACT_DECREASE_INDENT:
+                    asked_indent = m * settings.tab_width *
+                        ((ev.ch == KB_ACT_DECREASE_INDENT) ? -1 : 1);
+                    act(indent, 1);
+                    break;
+                case KB_ACT_COMMENT:
+                    if (strcmp(settings.language, "none"))
+                        act(comment, 1);
+                    break;
+                case KB_ACT_SUPPRESS:
+                    asked_remove = m;
+                    act(suppress, 0);
+                    break;
                 //case KB_ACT_REPLACE:
                 //    // TODO
                 //    if (dialog("Replace pattern: ", &replace_pattern, 0)) {
@@ -373,26 +372,18 @@ main(int argc, char *argv[])
                         go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
                     }
                     break;
-                //case TB_KEY_BACKSPACE:
-                //case TB_KEY_BACKSPACE2:
-                //    asked_remove = -m;
-                //    act(suppress, 1);
-                //    go_to(pos_of(first_line_on_screen->line_nb + y, x + asked_remove));
-                //    break;
-                //case TB_KEY_DELETE:
-                //    asked_remove = m;
-                //    act(suppress, 1);
-                //    break;
-                //case TB_KEY_TAB:
-                //    asked_indent = m * settings.tab_width;
-                //    act(indent, 1);
-                //    if (in_insert_mode)
-                //        go_to(pos_of(first_line_on_screen->line_nb + y, x + asked_indent));
-                //    break;
-                //case TB_KEY_BACK_TAB:
-                //    asked_indent = - m * settings.tab_width;
-                //    act(indent, 1);
-                //    break;
+                case TB_KEY_BACKSPACE:
+                case TB_KEY_BACKSPACE2:
+                case TB_KEY_DELETE:
+                    asked_remove = (ev.key == TB_KEY_DELETE) ? m : -m;
+                    act(suppress, 0);
+                    break;
+                case TB_KEY_TAB:
+                case TB_KEY_BACK_TAB:
+                    asked_indent = m * settings.tab_width *
+                        ((ev.key == TB_KEY_BACK_TAB) ? -1 : 1);
+                    act(indent, 1);
+                    break;
                 }
                 m = 0;
             }

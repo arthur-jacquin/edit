@@ -33,6 +33,108 @@ create_line(int line_nb, int ml, int dl)
 
     return res;
 }
+ 
+int
+insert_characters(struct line *l, struct selection *a, int start, int n,
+    int nb_bytes)
+{
+    // insert nb_bytes bytes (corresponding to n characters) after start
+    // displayable character (bytes are not initialised)
+    // return index of first inserted byte in l->chars
+
+    int i, j, k, k1, len;
+    char *new_chars, *old_chars;
+
+    // create new string
+    new_chars = (char *) malloc(l->ml + nb_bytes);
+
+    // copy bytes before insertion
+    for (k = i = 0; i < start; i++) {
+        len = utf8_char_length(l->chars[k]);
+        for (j = 0; j < len; j++)
+            new_chars[k + j] = l->chars[k + j];
+        k += len;
+    }
+
+    // copy bytes after insertion
+    for (k1 = k; k < l->ml; k++)
+        new_chars[k + nb_bytes] = l->chars[k];
+
+    // refresh metadata
+    old_chars = l->chars;
+    l->chars = new_chars;
+    free(old_chars);
+    l->ml += nb_bytes;
+    l->dl += n;
+
+    // move selections
+    while (a != NULL && a->l < l->line_nb)
+        a = a->next;
+    while (a != NULL && a->l == l->line_nb) {
+        if (start <= a->x + a->n) {
+            if (start <= a->x)
+                a->x += n;
+            else
+                a->n += n;
+        }
+        a = a->next;
+    }
+
+    // move cursor and anchor
+    if (l->line_nb == first_line_on_screen->line_nb + y && start <= x)
+        x += n;
+    if (anchored && l->line_nb == anchor.l && start <= anchor.x)
+        anchor.x += n;
+
+    return k1;
+}
+
+void
+delete_characters(struct line *l, struct selection *a, int start, int n)
+{
+    // delete n characters after start
+    // return index of first inserted byte in l->chars
+
+    int i, k, k1, k2, nb_bytes;
+    char *new_chars, *old_chars;
+
+    // compute length of new_chars
+    k1 = get_str_index(l, start);
+    k2 = get_str_index(l, start + n);
+    l->ml -= k2 - k1;
+    l->dl -= n;
+
+    // create new string
+    new_chars = (char *) malloc(l->ml);
+    for (k = 0; k < k1; k++)
+        new_chars[k] = l->chars[k];
+    for (; k < l->ml; k++)
+        new_chars[k] = l->chars[k + (k2 - k1)];
+
+    // refresh metadata
+    old_chars = l->chars;
+    l->chars = new_chars;
+    free(old_chars);
+
+    // move selections
+    while (a != NULL && a->l < l->line_nb)
+        a = a->next;
+    while (a != NULL && a->l == l->line_nb) {
+        if (start <= a->x + a->n) {
+            if (start <= a->x)
+                a->x -= n;
+            else
+                a->n += start - a->x;
+        }
+        a = a->next;
+    }
+
+    // move cursor and anchor
+    if (l->line_nb == first_line_on_screen->line_nb + y && start <= x)
+        x -= n;
+    if (anchored && l->line_nb == anchor.l && start <= anchor.x)
+        anchor.x -= n;
+}
 
 struct line *
 insert_line(int asked_line_nb, int ml, int dl)
@@ -50,6 +152,7 @@ insert_line(int asked_line_nb, int ml, int dl)
         replaced_line = get_line(asked_line_nb - first_line_on_screen->line_nb);
         shift_line_nb((asked_line_nb >= first_line_on_screen->line_nb) ?
             first_line_on_screen : first_line, asked_line_nb, 0, 1);
+        // TODO: shift_sel_line_nb(saved, asked_line_nb, 0, 1);
         new = create_line(asked_line_nb, ml, dl);
         new->chars[ml - 1] = '\0';
         link_lines(replaced_line->prev, new);
@@ -126,11 +229,10 @@ shift_line_nb(struct line *start, int min, int max, int delta)
     struct line *l;
 
     l = start;
-    while (l != NULL) {
-        if (max && l->line_nb > max)
-            break;
-        else if (l->line_nb >= min)
-            l->line_nb += delta;
+    while (l != NULL && l->line_nb < min)
+        l = l->next;
+    while (l != NULL && (!max || l->line_nb <= max)) {
+        l->line_nb += delta;
         l = l->next;
     }
 }
@@ -140,24 +242,29 @@ move_line(int delta)
 {
     // move cursor line, return new line_nb
 
-    int new_line_nb;
+ 
+    int cursor_line, new_line_nb;
     struct line *src, *dest;
-
+ 
     // compute new line number
-    new_line_nb = first_line_on_screen->line_nb + y + delta;
+    cursor_line = first_line_on_screen->line_nb + y;
+    new_line_nb = cursor_line + delta;
     if (new_line_nb < 1)
         new_line_nb = 1;
     if (new_line_nb > nb_lines)
         new_line_nb = nb_lines;
-    if (new_line_nb == first_line_on_screen->line_nb + y)
-        return new_line_nb;
+    if (new_line_nb == cursor_line)
+         return new_line_nb;
 
     src = get_line(y);
     dest = get_line(new_line_nb - first_line_on_screen->line_nb);
 
+    // TODO: selection shifting
+    //shift_sel_line_nb(saved, cursor_line, cursor_line, new_line_nb - cursor_line);
     if (delta > 0) {
         // TODO: better start for shift ?
-        shift_line_nb(first_line, first_line_on_screen->line_nb + y + 1, new_line_nb, -1);
+        //shift_sel_line_nb(saved, cursor_line + 1, new_line_nb, -1);
+        shift_line_nb(first_line, cursor_line + 1, new_line_nb, -1);
         if (src == first_line_on_screen)
             first_line_on_screen = first_line_on_screen->next;
         if (is_first_line(src))
@@ -167,6 +274,7 @@ move_line(int delta)
         link_lines(dest, src);
     } else {
         // TODO: better start for shift ?
+        //shift_sel_line_nb(saved, new_linecursor_line + 1, new_line_nb, -1);
         shift_line_nb(first_line, new_line_nb, first_line_on_screen->line_nb + y - 1, 1);
         if (dest == first_line_on_screen)
             first_line_on_screen = src;

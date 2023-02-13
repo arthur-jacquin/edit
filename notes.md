@@ -21,6 +21,7 @@ Remove all the go_to(pos_of(..., just attribute new asked y and x, and go_to(pos
 UTF-8: move everything to a expand - process - compress model ?
 regex: choose a known syntax, link official documentation
 move get_str_index to char * so that it can be used elsewhere (in interaction.c) ?
+suppress settings.language ?
 
 CHECK:
 * field detection: backslash resistant ?
@@ -35,9 +36,6 @@ CHECK:
 MISSING KEYBINDS:
 * [f,/] search for pattern
 * [R] replace with pattern elements and fields
-* [</>] <n> decrease/increase line indent
-* [K] comment/uncomment line
-* [x] suppress
 
 LAST:
 * better help

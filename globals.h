@@ -120,8 +120,6 @@ struct tb_event ev;                 // struct to retrieve events
 int utf8_char_length(char c);
 int unicode_char_length(uint32_t c);
 int get_str_index(struct line *l, int x);
-void insert_unicode(char *old, char *chars, int dx, uint32_t c);
-void delete_unicode(char *old, char *chars, int dx);
 int is_blank(char c);
 int is_word_char(char c);
 int is_digit(char c);
@@ -132,11 +130,14 @@ int load_file(char *file_name, int first_line_on_screen_nb);
 int write_file(char *file_name);
 void get_extension(void);
 void load_lang(void);
-
+ 
 // lines.c
 int is_first_line(const struct line *l);
 int is_last_line(const struct line *l);
 struct line *create_line(int line_nb, int ml, int dl);
+int insert_characters(struct line *l, struct selection *a, int start, int n,
+    int nb_bytes);
+void delete_characters(struct line *l, struct selection *a, int start, int n);
 struct line *insert_line(int asked_line_nb, int ml, int dl);
 struct line *get_line(int delta_from_first_line_on_screen);
 void forget_line(struct line *l);
@@ -182,8 +183,7 @@ struct pos pos_of_cursor(void);
 int index_closest_after_cursor(struct selection *a);
 struct pos get_pos_of_sel(struct selection *a, int index);
 int nb_sel(struct selection *a);
-void shift_sel(struct selection *a, struct pos starting, struct pos ending,
-    struct selection delta);
+void shift_sel_line_nb(struct selection *a, int min, int max, int delta);
 void forget_sel_list(struct selection *a);
 void reset_selections(void);
 struct pos column_sel(int m);
@@ -194,11 +194,11 @@ struct selection *running_sel(void);
 
 // actions.c
 void act(void (*process)(struct line *, struct selection *), int line_op);
-// void insert(struct line *l, struct selection *s);
-// void split_lines(struct line *l, struct selection *s);
-// void suppress(struct line *l, struct selection *s);
-// void indent(struct line *l, struct selection *s);
-// void comment(struct line *l, struct selection *s);
 void lower(struct line *l, struct selection *s);
 void upper(struct line *l, struct selection *s);
+void insert(struct line *l, struct selection *s);
+void indent(struct line *l, struct selection *s);
+void comment(struct line *l, struct selection *s);
+void suppress(struct line *l, struct selection *s);
 // void replace(struct line *l, struct selection *s);
+// void split_lines(struct line *l, struct selection *s);

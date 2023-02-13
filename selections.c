@@ -101,27 +101,20 @@ nb_sel(struct selection *a)
 }
 
 void
-shift_sel(struct selection *a, struct pos starting, struct pos ending, struct selection delta)
+shift_sel_line_nb(struct selection *a, int min, int max, int delta)
 {
-    // shift selections of list a between starting and ending (exluded)
-    // ignores delta.x and delta.n if delta.l not null
+    // shift the l field of delta for selections of list a if the current
+    // value is between min and max (included)
+    // comparison with max is ignored if max == 0
 
-    struct pos cursor;
-
-    cursor = pos_of_cursor();
-
-    while (a != NULL && !is_inf(starting, pos_of_sel(a)))
+    while (a != NULL && a->l < min)
         a = a->next;
-
-    while (a != NULL && is_inf(pos_of_sel(a), ending)) {
-        if (delta.l) {
-            a->l += delta.l;
-        } else {
-            a->x += delta.x;
-            a->n += delta.n;
-        }
+    while (a != NULL && (!max || a->l <= max)) {
+        a->l += delta;
         a = a->next;
     }
+
+    // TODO: move anchor, cursor
 }
 
 void

@@ -21,7 +21,8 @@ dialog(const char *prompt, struct interface *interf, int refresh)
     // enable a user input on the dialog line
     // return 0 if user cancelled, 1 if user confirmed
 
-    int dpl, dx, n, i, k;
+    int dpl, dx, n, i, j, k, len;
+    uint32_t c;
 
     for (k = i = 0; prompt[k]; i++)
         k += utf8_char_length(prompt[k]);
@@ -43,7 +44,25 @@ dialog(const char *prompt, struct interface *interf, int refresh)
         switch (ev.type) {
         case TB_EVENT_KEY:
             if (ev.ch && n < INTERFACE_WIDTH - dpl - 1) {
-                insert_unicode(interf->current, interf->current, dx, ev.ch);
+                // insert unicode codepoint ev.ch in interf->current
+
+                // compute number of untouched bytes
+                for (k = 0, i = 0; i < dx; i++)
+                    k = utf8_char_length(interf->current[k]);
+
+                // copy bytes after new character
+                len = unicode_char_length(c = ev.ch);
+                for (j = strlen(interf->current); j >= k; j--) // copy NULL
+                    interf->current[j + len] = interf->current[j];
+
+                // write ev.ch
+                for (j = len - 1; j > 0; j--) {
+                    interf->current[k + j] = (c & 0x3f) | 0x80;
+                    c >>= 6;
+                }
+                interf->current[k] = c | utf8_start[len - 1];
+
+                // refresh metadata
                 dx++;
                 n++;
             } else {
@@ -58,7 +77,18 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                 case TB_KEY_BACKSPACE:
                 case TB_KEY_BACKSPACE2:
                     if (dx > 0) {
-                        delete_unicode(interf->current, interf->current, dx);
+                        // delete dx-th displayable character
+
+                        // compute number of untouched bytes
+                        for (k = 0, i = 0; i < dx; i++)
+                            k = utf8_char_length(interf->current[k]);
+
+                        // copy remaining characters
+                        len = utf8_char_length(interf->current[k]);
+                        while (interf->current[k] = interf->current[k + len])
+                            k++;
+
+                        // refresh metadata
                         dx--;
                         n--;
                     }

@@ -1,6 +1,14 @@
 TODO:
+* make search and replace engine UTF-8 support
+* integrate search and replace engine
+* concatenate lines on SUPPR/BACKSPACE
+* shift selections when move line, move to clip, insert from clip, insert line,
+    split lines, concatenate lines...
+* {split, concatenate} lines
+* suppress selections when move to clip
+* int resize_to_be_treated ?
+
 - continue migration
-- better uppercase/lowercase
 - move cursor line, highlight matching bracket... as compile-time settings
 - syntax highlight rules
 - case sensitive
@@ -10,49 +18,17 @@ TODO:
 internalize termbox
 better move when an index is already known
 Remove all the go_to(pos_of(..., just attribute new asked y and x, and go_to(pos_of(x, y)) at start of main loop
-TODO for move after indent: check difference of l->ml
-search and replace with UTF 8 ?
 UTF-8: move everything to a expand - process - compress model ?
 regex: choose a known syntax, link official documentation
-field detection: backslash resistant ?
-4 * INTERFACE_WIDTH ?
-int resize_to_be_treated ?
-remove masks ?
-
-For now
-1. FILE (supposedly UTF-8)
-2. LINES BUFFER (double linked list of UTF-8 strings)
-3. TERMBOX BUFFER
-4. SCREEN
-
-    1>2: file.c: load_file
-    1<2: file.c: write_file
-    2>3: graphical.c: print_all
-    3>4: termbox.h: tb_present
-
-Maybe in the future
-1. FILE (supposedly UTF-8)
-2. LINES BUFFER (double linked list of UTF-8 strings)
-3. GRAPHICAL BUFFER (array of (Unicode, fg, bg) arrays) (as doubled linked list ?)
-4. SCREEN
-
-
-KEEP IN MIND:
-* UTF-8
-* move at good position
-
-BIG STUFF:
-* add shift selections
-* rewrite all the actions
-* integrate search and replace engine
-* make search and replace engine UTF-8 support
-* concatenate lines on SUPPR/BACKSPACE
 
 CHECK:
+* field detection: backslash resistant ?
+* 4 * INTERFACE_WIDTH + 1 ?
+* {insert, delete} characters
 * where best to put variables ? extern/const...
 * correctness of search engine
 * unstated assumptions
-* has_been_changes
+* has_been_changes, anchor, cursor, selections
 * possibility to make "const" args
 
 MISSING KEYBINDS:

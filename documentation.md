@@ -121,3 +121,13 @@ In the clipboard, line numbers are 0 to clipboard.nb_lines - 1
 saved and temps contains actual selections, displayed is just a reference to it
 never call forget_sel_list on temp
 always forget_sel_list before resetting saved and temp
+
+1. FILE (supposedly UTF-8)
+2. LINES BUFFER (double linked list of UTF-8 strings)
+3. TERMBOX BUFFER
+4. SCREEN
+
+    1>2: file.c: load_file
+    1<2: file.c: write_file
+    2>3: graphical.c: print_all
+    3>4: termbox.h: tb_present

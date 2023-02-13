@@ -21,12 +21,7 @@
 #define ERR_FILE_CONNECTION         2
 // #define ERR_MALLOC                  3
 #define ERR_TERM_NOT_BIG_ENOUGH     4
-
-/*
-#define ERR_TOO_LONG_LINE           4
-#define ERR_INVALID_LINE_VALUE      5
-#define ERR_UNICODE                 6
-*/
+// #define ERR_UNICODE                 5
 
 
 // STRUCTS *********************************************************************
@@ -53,7 +48,8 @@ struct substring {              // marks a substring in an original string
 };
 
 struct interface {              // interface for dialog mode
-    char current[4*INTERFACE_WIDTH], previous[4*INTERFACE_WIDTH];
+    // at most INTERFACE_WIDTH 4-bytes UTF-8 characters + NULL terminator
+    char current[4*INTERFACE_WIDTH + 1], previous[4*INTERFACE_WIDTH + 1];
 };
 
 

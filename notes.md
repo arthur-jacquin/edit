@@ -8,8 +8,6 @@ TODO:
 * suppress selections when move to clip
 * int resize_to_be_treated ?
 
-- continue migration
-- move cursor line, highlight matching bracket... as compile-time settings
 - syntax highlight rules
 - case sensitive
 - read-only mode
@@ -18,19 +16,20 @@ TODO:
 internalize termbox
 better move when an index is already known
 Remove all the go_to(pos_of(..., just attribute new asked y and x, and go_to(pos_of(x, y)) at start of main loop
-UTF-8: move everything to a expand - process - compress model ?
 regex: choose a known syntax, link official documentation
 move get_str_index to char * so that it can be used elsewhere (in interaction.c) ?
 suppress settings.language ?
 
 CHECK:
+* actions
+* edit interf->current in interaction.c
 * field detection: backslash resistant ?
-* 4 * INTERFACE_WIDTH + 1 ?
 * {insert, delete} characters
 * where best to put variables ? extern/const...
 * correctness of search engine
 * unstated assumptions
 * has_been_changes, anchor, cursor, selections
+* possibility to make compile-time arguments
 * possibility to make "const" args
 
 MISSING KEYBINDS:

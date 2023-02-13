@@ -31,7 +31,7 @@ print_line(struct line *l, struct selection *s, int screen_line)
     struct lang *syntax = settings.syntax;
 
     // underline current line
-    underline = (screen_line == y) ? TB_UNDERLINE : 0;
+    underline = (UNDERLINE_CURSOR_LINE && screen_line == y) ? TB_UNDERLINE : 0;
 
     // decompress UTF-8
     for (k = i = 0; i < l->dl; i++) {
@@ -105,7 +105,7 @@ print_line(struct line *l, struct selection *s, int screen_line)
             s = s->next;
         }
     }
-    if (is_bracket) {
+    if (HIGHLIGHT_MATCHING_BRACKET && is_bracket) {
         if (l->line_nb == first_line_on_screen->line_nb + y)
             buf[x].bg = COLOR_BG_MATCHING;
         if (l->line_nb == matching_bracket.l)

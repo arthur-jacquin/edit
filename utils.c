@@ -3,13 +3,31 @@ utf8_char_length(char c)
 {
     // compute the length in bytes of character starting by byte c
 
-    if ((c & 0x80) == 0) {
+    if ((char) (c & 0x80) == utf8_start[0]) {
         return 1;
-    } else if ((c & 0xe0) == 0xc0) {
+    } else if ((char) (c & 0xe0) == utf8_start[1]) {
         return 2;
-    } else if ((c & 0xf0) == 0xe0) {
+    } else if ((char) (c & 0xf0) == utf8_start[2]) {
         return 3;
-    } else if ((c & 0xf8) == 0xf0) {
+    } else if ((char) (c & 0xf8) == utf8_start[3]) {
+        return 4;
+    } else {
+        return 0;
+    }
+}
+
+int
+unicode_char_length(uint32_t c)
+{
+    // compute the length in bytes of unicode codepoint c
+
+    if (c < 0x80) {
+        return 1;
+    } else if (c < 0x800) {
+        return 2;
+    } else if (c < 0x10000) {
+        return 3;
+    } else if (c < 0x200000) {
         return 4;
     } else {
         return 0;

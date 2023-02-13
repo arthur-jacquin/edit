@@ -20,6 +20,7 @@ better move when an index is already known
 Remove all the go_to(pos_of(..., just attribute new asked y and x, and go_to(pos_of(x, y)) at start of main loop
 UTF-8: move everything to a expand - process - compress model ?
 regex: choose a known syntax, link official documentation
+move get_str_index to char * so that it can be used elsewhere (in interaction.c) ?
 
 CHECK:
 * field detection: backslash resistant ?

@@ -61,6 +61,7 @@ struct interface {              // interface for dialog mode
 
 // UTF-8 management
 char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
+char utf8_start[4] = {0, 0xc0, 0xe0, 0xf0};
 
 // file properties
 struct interface file_name_int;     // interface for storing file name
@@ -117,6 +118,7 @@ struct tb_event ev;                 // struct to retrieve events
 
 // utils.c
 int utf8_char_length(char c);
+int unicode_char_length(uint32_t c);
 int get_str_index(struct line *l, int x);
 void insert_unicode(char *old, char *chars, int dx, uint32_t c);
 void delete_unicode(char *old, char *chars, int dx);

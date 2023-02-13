@@ -187,6 +187,12 @@ suppress(struct line *l, struct selection *s)
     delete_characters(l, s, start, nb_deleted);
 }
 
+void
+replace(struct line *l, struct selection *s)
+{
+    // TODO
+}
+
 //void
 //split_lines(struct line *l, struct selection *s)
 //{

@@ -1,32 +1,62 @@
 int
+compare_chars(char *s1, int i1, char *s2, int i2)
+{
+    // compare characters from s1 and s2 strings starting at i1 and i2 indexes
+    // return 0 if characters are equal
+    // return a positive (resp. negative) integer if character from s1 is lower
+    // (resp. greater) than character from s2 (as of unicode codepoint)
+
+    int k, l1, l2;
+
+    if ((l1 = utf8_char_length(s1[i1])) != (l2 = utf8_char_length(s2[i2]))) {
+        return l2 - l1;
+    } else {
+        for (k = 0; k < l1; k++) {
+            if (s1[i1+k] != s2[i2+k])
+                return s2[i2+k] - s1[i1+k];
+        }
+
+        return 0;
+    }
+}
+
+void
+decrement(char *chars, int *i, int *k, int goal)
+{
+    // assuming *k is an index in chars corresponding to the (*i)-th character,
+    // decrement *i to goal (and *k accordingly)
+
+    while (*i > goal) {
+        (*i)--;
+        (*k)--;
+        while ((chars[*k] & 0xc0) == 0x80)
+            (*k)--;
+    }
+}
+
+int
 mark_pattern(char *chars, int x, int n)
 {
-    // try to read searched pattern in chars
-    // store identified subpatterns
+    // try to read searched pattern in chars, store identified subpatterns
     // return length of read pattern if found at x, of length < n, else 0
 
     char *sp; // search pattern
-    int lsp; // length of search pattern
-
-    int i; // index in chars
-    int k; // index in sp
-    int l; // generic index
+    int in_block, in_class, last_was, found_in_class, is_neg_class; // booleans
+    int i, k; // indexes in chars (characters, bytes)
+    int j, l; // indexes in sp (characters, bytes)
     int s, st; // number of subpatterns, start of running subpattern
-    char c;
+    int start_block, start_block_i, nb_block, is_block_ok; // block management
+    int start_elem, start_elem_i, nb_elem, is_elem_ok; // character management
+    // can be: char, ., \w, \W, \d, \D, \^, \$, \\, \., class
+    int min, max, lsp, a; // sp length, repetition boundaries, generic
+    int NONE = 0, ELEM = 1, BLOCK = 2; // markers
+    char c; // generic
 
     // init subpatterns
     subpatterns[0].st = x;
     subpatterns[0].n = n;
-    for (l = 1; l < 10; l++)
-        subpatterns[l].n = 0;
-
-    // TODO: move to globals.h
-    int NONE = 0, ELEM = 1, BLOCK = 2;
-    
-    int min, max;
-    int in_block, in_class, last_was, found_in_class, is_neg_class;
-    int start_block, start_block_i, nb_block, is_block_ok; // subpatterns
-    int start_elem, start_elem_i, nb_elem, is_elem_ok; // char, ., \w, \W, \d, \D, \^, \$, \\, \., class
+    for (a = 1; a < 10; a++)
+        subpatterns[a].n = 0;
 
     sp = search_pattern.current;
     lsp = strlen(sp);
@@ -39,67 +69,79 @@ mark_pattern(char *chars, int x, int n)
     is_block_ok = is_elem_ok = 1;
     s = 1;
 
-    i = x;
-    k = 0;
+    // init indexes
+    for (k = i = 0; i < x; i++)
+        k += utf8_char_length(chars[k]);
  
-    for (k = 0; k < lsp;) {
+    // try to read whole pattern
+    for (j = l = 0; l < lsp;) {
         if (last_was != BLOCK && !in_block && !is_block_ok) {
-            return 0;
+            return 0; // error
         } else if (in_class) {
             // no escapes in classes
-            if (sp[k] == ']') {
+            a = utf8_char_length(sp[l]);
+            if (sp[l] == ']') {
                 in_class = 0;
                 is_elem_ok = (is_neg_class) ? (!found_in_class) : (found_in_class);
-                i++;
-                k++;
-            } else if (k+2 < lsp && sp[k+1] == '-' && sp[k+2] != ']') {
+                i++; k += utf8_char_length(chars[k]);
+                j++; l++;
+            } else if (l+a+1 < lsp && sp[l+a] == '-' && sp[l+a+1] != ']') {
+                // range
+                // try ||= ?
                 found_in_class = found_in_class ||
-                    (sp[k] <= chars[x+i]) && (chars[x+i] <= sp[k+2]);
-                k += 3;
+                    (compare_chars(sp, l, chars, x+i) >= 0 &&
+                     compare_chars(sp, l+a+1, chars, x+i) <= 0);
+                j++; l += a; // lower bound
+                j++; l++; // "-" separator
+                j++; l += utf8_char_length(sp[l]); // upper bound
             } else {
-                found_in_class = found_in_class || (sp[k] == chars[x+i]);
-                k++;
+                // try ||= ?
+                found_in_class = found_in_class ||
+                    (compare_chars(sp, l, chars, x+i) == 0);
+                j++; l += utf8_char_length(sp[l]);
             }
-        } else if (sp[k] == '[') {
+        } else if (sp[l] == '[') {
             if (i == x + n)
                 return 0;
             if (!is_elem_ok)
                 is_block_ok = 0;
-            start_elem = k;
+            start_elem = j;
             start_elem_i = i;
             last_was = ELEM;
             in_class = 1;
             found_in_class = is_neg_class = 0;
-            if (k+1 < lsp && sp[k+1] == '^') {
-                k++;
+            if (l+1 < lsp && sp[l+1] == '^') {
+                j++; l++;
                 is_neg_class = 1;
             }
-            k++;
-        } else if (sp[k] == '*' || sp[k] == '+' || sp[k] == '?' || sp[k] == '{') {
+            j++; l++;
+        } else if (sp[l] == '*' || sp[l] == '+' || sp[l] == '?' || sp[l] == '{') {
             // computing min and max
-            if (sp[k] == '{') {
+            if (sp[l] == '{') {
                 min = max = 0;
-                k++;
-                while ((c = sp[k++]) != '}' && c != ',')
-                    if (k == lsp || c < '0' || c > '9') {
+                j++; l++;
+                while ((c = sp[l]) != '}' && c != ',')
+                    if (l+1 == lsp || c < '0' || c > '9') {
                         return 0; // error
                     } else {
                         min = 10*min + c - '0';
+                        j++; l++;
                     }
                 if (c == ',') {
-                    while ((c = sp[k++]) != '}' && c != ',')
-                        if (k == lsp || c < '0' || c > '9') {
+                    while ((c = sp[l]) != '}')
+                        if (l+1 == lsp || c < '0' || c > '9') {
                             return 0; // error
                         } else {
                             max = 10*max + c - '0';
+                            j++; l++;
                         }
                 } else {
                     max = min;
                 }
             } else {
-                min = (sp[k] == '+') ? 1 : 0;
-                max = (sp[k] == '?') ? 1 : 0;
-                k++;
+                min = (sp[l] == '+') ? 1 : 0;
+                max = (sp[l] == '?') ? 1 : 0;
+                j++; l++;
             }
             if (last_was == NONE) {
                 return 0; // error
@@ -109,7 +151,7 @@ mark_pattern(char *chars, int x, int n)
                         is_block_ok = 0;
                     nb_elem = 0;
                     is_elem_ok = 1;
-                    i = start_elem_i;
+                    decrement(chars, &i, &k, start_elem_i);
                 } else if (i == x + n) {
                     if (nb_elem + 1 < min)
                         is_block_ok = 0;
@@ -118,7 +160,7 @@ mark_pattern(char *chars, int x, int n)
                     last_was = NONE;
                 } else {
                     nb_elem++;
-                    k = start_elem;
+                    decrement(sp, &j, &l, start_elem);
                 }
             } else {
                 if (!is_block_ok) {
@@ -126,7 +168,7 @@ mark_pattern(char *chars, int x, int n)
                     if (nb_block - 1 < min)
                         return 0;
                     subpatterns[s-1].n = start_block_i - subpatterns[s-1].st;
-                    i = start_block_i;
+                    decrement(chars, &i, &k, start_block_i);
                     is_block_ok = 1;
                     last_was = NONE;
                 } else if (i == x + n) {
@@ -143,52 +185,64 @@ mark_pattern(char *chars, int x, int n)
                     start_block_i = i;
                     in_block = 1;
                     last_was = NONE;
-                    k = start_block;
+                    decrement(sp, &j, &l, start_block);
                 }
             }
-        } else if (sp[k] == '|') {
+        } else if (sp[l] == '|') {
             if (last_was == NONE) {
                 return 0; // error
             } else if ((last_was == ELEM && is_elem_ok) ||
                 (last_was == BLOCK && is_block_ok)) {
                 last_was = NONE;
-                // move k to next location
-                while (k < lsp && sp[k] == '|') {
-                    k++;
-                    if (k == lsp) {
+                // move j and l to next location
+                while (l < lsp && sp[l] == '|') { // l < lsp needed ?
+                    j++; l++;
+                    if (l == lsp) {
                         return 0; // error
-                    } else if (k+1 < lsp && sp[k] == '\\' && sp[k+1] == '(') {
-                        while (k+1 < lsp && !(sp[k] == '\\' && sp[k+1] == ')'))
-                            k++;
-                        k += 2;
+                    } else if (l+1 < lsp && sp[l] == '\\' && sp[l+1] == '(') {
+                        // block
+                        while (!(sp[l] == '\\' && sp[l+1] == ')')) {
+                            j++; l += utf8_char_length(sp[l]);
+                            if (l+1 == lsp)
+                                return 0; // error
+                        }
+                        j += 2; l += 2;
                         s++;
-                    } else if (sp[k] == '[') {
-                        while (k < lsp && sp[k] != ']')
-                            k++;
-                        k++;
-                    } else if (sp[k] == '\\') {
-                        k += 2;
+                    } else if (sp[l] == '[') {
+                        // class
+                        while (sp[l] != ']') {
+                            j++; l += utf8_char_length(sp[l]);
+                            if (l == lsp)
+                                return 0; // error
+                        }
+                        j++; l++;
+                    } else if (sp[l] == '\\') {
+                        // escaped character
+                        j++; l++;
+                        j++; l += utf8_char_length(sp[l]);
                     } else {
-                        k++;
+                        // normal character
+                        j++; l += utf8_char_length(sp[l]);
                     }
                 }
             } else {
-                i = (last_was == ELEM) ? start_elem_i : start_block_i;
+                decrement(chars, &i, &k,
+                    (last_was == ELEM) ? start_elem_i : start_block_i);
                 last_was = NONE;
-                k++;
+                j++; l++;
                 is_block_ok = is_elem_ok = 1;
             }
-        } else if (k + 1 < lsp && sp[k] == '\\' && sp[k+1] == '(') {
+        } else if (l+1 < lsp && sp[l] == '\\' && sp[l+1] == '(') {
             if (in_block)
                 return 0; // error
             in_block = 1;
             is_block_ok = is_elem_ok = 1;
             last_was = NONE;
             nb_block = 0;
-            start_block = k + 2;
+            start_block = j + 2;
             start_block_i = i;
-            k += 2; 
-        } else if (k + 1 < lsp && sp[k] == '\\' && sp[k+1] == ')') {
+            j += 2; l += 2;
+        } else if (l+1 < lsp && sp[l] == '\\' && sp[l+1] == ')') {
             if (!in_block)
                 return 0; // error
             in_block = 0;
@@ -199,35 +253,37 @@ mark_pattern(char *chars, int x, int n)
             subpatterns[s].n = (is_block_ok) ? (i - start_block_i) : 0;
             nb_block++;
             s++;
-            k += 2; 
-        } else if (sp[k] == '^') {
+            j += 2; l += 2;
+        } else if (sp[l] == '^') {
             if (i > x)
                 is_block_ok = 0;
-            k++;
-        } else if (sp[k] == '$') {
-            if (k < lsp - 1 || i < x + n)
+            j++; l++;
+        } else if (sp[l] == '$') {
+            if (l+1 < lsp || i < x + n)
                 is_block_ok = 0;
-            k++;
+            j++; l++;
         } else if (i == x + n) {
             return 0; // error
         } else { // EATING ELEM
             if (!is_elem_ok)
                 is_block_ok = 0;
             last_was = ELEM;
-            start_elem = k;
+            start_elem = j;
             start_elem_i = i;
-            if (k + 1 < lsp && sp[k] == '\\') {
-                is_elem_ok = (sp[k+1] == 'w' && is_word_char(chars[x+i])) ||
-                             (sp[k+1] == 'W' && !is_word_char(chars[x+i])) ||
-                             (sp[k+1] == 'd' && is_digit(chars[x+i])) ||
-                             (sp[k+1] == 'D' && !is_digit(chars[x+i])) ||
-                             (sp[k+1] == chars[x+i]); // escaped char
-                k += 2;
+            if (l+1 < lsp && sp[l] == '\\') {
+                j++; l++;
+                is_elem_ok = (sp[l] == 'w' && is_word_char(chars[x+i])) ||
+                             (sp[l] == 'W' && !is_word_char(chars[x+i])) ||
+                             (sp[l] == 'd' && is_digit(chars[x+i])) ||
+                             (sp[l] == 'D' && !is_digit(chars[x+i])) ||
+                             (compare_chars(sp, l, chars, x+i) == 0); // escaped char
+                j++; l += utf8_char_length(sp[l]);
             } else {
-                is_elem_ok = (sp[k] == '.' || sp[k] == chars[x+i]);
-                k++;
+                is_elem_ok = (sp[l] == '.') ||
+                    (compare_chars(sp, l, chars, x+i) == 0);
+                j++; l += utf8_char_length(sp[l]);
             }
-            i++;
+            i++; k += utf8_char_length(chars[k]);
         }
     }
 

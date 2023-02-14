@@ -25,6 +25,7 @@ Simple, featured, modal text editor.
 * does not work well with very big files.
 * does not visually wrap lines.
 * does not work with tabs.
+* search: one level of \\( \\) maximum, no escapes in classes
 
 ## Features
 

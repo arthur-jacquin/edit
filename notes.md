@@ -1,5 +1,4 @@
 TODO:
-* make search and replace engine UTF-8 support
 * integrate search and replace engine
 * concatenate lines on SUPPR/BACKSPACE
 * shift selections when move line, move to clip, insert from clip, insert line,
@@ -7,6 +6,7 @@ TODO:
 * {split, concatenate} lines
 * suppress selections when move to clip
 * int resize_to_be_treated ?
+* fix insert/delete in dialog
 
 - syntax highlight rules
 - case sensitive
@@ -19,6 +19,7 @@ Remove all the go_to(pos_of(..., just attribute new asked y and x, and go_to(pos
 regex: choose a known syntax, link official documentation
 move get_str_index to char * so that it can be used elsewhere (in interaction.c) ?
 suppress settings.language ?
+move all hexadecimal values to global with a description ?
 
 CHECK:
 * actions
@@ -26,7 +27,7 @@ CHECK:
 * field detection: backslash resistant ?
 * {insert, delete} characters
 * where best to put variables ? extern/const...
-* correctness of search engine
+* correctness of search engine (extensivity)
 * unstated assumptions
 * has_been_changes, anchor, cursor, selections
 * possibility to make compile-time arguments

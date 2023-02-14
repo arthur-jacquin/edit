@@ -20,6 +20,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
 {
     // enable a user input on the dialog line
     // return 0 if user cancelled, 1 if user confirmed
+    // if refresh is set, display search results on each keystroke
 
     int dpl, dx, n, i, j, k, len;
     uint32_t c;
@@ -32,7 +33,9 @@ dialog(const char *prompt, struct interface *interf, int refresh)
 
     while (1) {
         if (refresh) {
-            // TODO: compute newly displayed selections
+            // compute newly displayed selections
+            forget_sel_list(displayed);
+            displayed = search(saved);
             print_all();
         }
         strcpy(dialog_chars, prompt);
@@ -48,7 +51,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
 
                 // compute number of untouched bytes
                 for (k = 0, i = 0; i < dx; i++)
-                    k = utf8_char_length(interf->current[k]);
+                    k += utf8_char_length(interf->current[k]);
 
                 // copy bytes after new character
                 len = unicode_char_length(c = ev.ch);
@@ -80,8 +83,8 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                         // delete dx-th displayable character
 
                         // compute number of untouched bytes
-                        for (k = 0, i = 0; i < dx; i++)
-                            k = utf8_char_length(interf->current[k]);
+                        for (k = 0, i = 0; i < dx - 1; i++)
+                            k += utf8_char_length(interf->current[k]);
 
                         // copy remaining characters
                         len = utf8_char_length(interf->current[k]);

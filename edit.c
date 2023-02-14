@@ -8,6 +8,7 @@
 #include "movements.c"
 #include "selections.c"
 #include "actions.c"
+#include "search_and_replace.c"
 
 int
 main(int argc, char *argv[])
@@ -273,7 +274,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_SEL_FIND:
                 case KB_SEL_SEARCH:
-                    if (dialog("Search pattern: ", &search_pattern, 0)) {
+                    if (dialog("Search pattern: ", &search_pattern, 1)) {
                         forget_sel_list(saved);
                         saved = displayed;
                         displayed = NULL;

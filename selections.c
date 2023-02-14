@@ -304,8 +304,45 @@ running_sel(void)
     return res;
 }
 
-void
+struct selection *
 search(struct selection *a)
 {
-    // TODO
+    // return a selections list of substrings contained in saved that matches
+    // the search pattern (assume all selections are valid)
+
+    struct selection *res, *last, *new;
+    struct line *l;
+    int k, len;
+
+    // check the existence of selections
+    if (a == NULL)
+        return NULL;
+
+    l = get_line(a->l - first_line_on_screen->line_nb);
+    res = last = NULL;
+    while (a != NULL) {
+        // get correct line
+        while (l->line_nb < a->l)
+            l = l->next;
+
+        // try to match pattern at any starting point
+        k = 0;
+        while (k < a->n) {
+            if (len = mark_pattern(l->chars, a->x + k, a->n - k)) {
+                new = create_sel(l->line_nb, a->x + k, len, NULL);
+                if (last == NULL) {
+                    res = last = new;
+                } else {
+                    last->next = new;
+                    last = new;
+                }
+                k += len;
+            } else {
+                k++;
+            }
+        }
+        a = a->next;
+    }
+
+    return res;
 }

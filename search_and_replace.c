@@ -89,15 +89,15 @@ mark_pattern(char *chars, int x, int n)
                 // range
                 // try ||= ?
                 found_in_class = found_in_class ||
-                    (compare_chars(sp, l, chars, x+i) >= 0 &&
-                     compare_chars(sp, l+a+1, chars, x+i) <= 0);
+                    (compare_chars(sp, l, chars, k) >= 0 &&
+                     compare_chars(sp, l+a+1, chars, k) <= 0);
                 j++; l += a; // lower bound
                 j++; l++; // "-" separator
                 j++; l += utf8_char_length(sp[l]); // upper bound
             } else {
                 // try ||= ?
                 found_in_class = found_in_class ||
-                    (compare_chars(sp, l, chars, x+i) == 0);
+                    (compare_chars(sp, l, chars, k) == 0);
                 j++; l += utf8_char_length(sp[l]);
             }
         } else if (sp[l] == '[') {
@@ -272,15 +272,15 @@ mark_pattern(char *chars, int x, int n)
             start_elem_i = i;
             if (l+1 < lsp && sp[l] == '\\') {
                 j++; l++;
-                is_elem_ok = (sp[l] == 'w' && is_word_char(chars[x+i])) ||
-                             (sp[l] == 'W' && !is_word_char(chars[x+i])) ||
-                             (sp[l] == 'd' && is_digit(chars[x+i])) ||
-                             (sp[l] == 'D' && !is_digit(chars[x+i])) ||
-                             (compare_chars(sp, l, chars, x+i) == 0); // escaped char
+                is_elem_ok = (sp[l] == 'w' && is_word_char(chars[k])) ||
+                             (sp[l] == 'W' && !is_word_char(chars[k])) ||
+                             (sp[l] == 'd' && is_digit(chars[k])) ||
+                             (sp[l] == 'D' && !is_digit(chars[k])) ||
+                             (compare_chars(sp, l, chars, k) == 0); // escaped char
                 j++; l += utf8_char_length(sp[l]);
             } else {
                 is_elem_ok = (sp[l] == '.') ||
-                    (compare_chars(sp, l, chars, x+i) == 0);
+                    (compare_chars(sp, l, chars, k) == 0);
                 j++; l += utf8_char_length(sp[l]);
             }
             i++; k += utf8_char_length(chars[k]);

@@ -1,6 +1,7 @@
 // INCLUDES
 #include <stdio.h>
 #include <stdlib.h>
+
 #define TB_IMPL
 #include "termbox.h"
 #include "config.h"

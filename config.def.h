@@ -38,7 +38,6 @@
 #define COLOR_BG_DEFAULT            TB_DEFAULT
 #define COLOR_BG_SELECTIONS         0
 #define COLOR_BG_MATCHING           0
-#define COLOR_TESTING               TB_YELLOW // XXX
 #endif
 
 // 256-colors terminal
@@ -61,7 +60,6 @@
 #define COLOR_BG_DEFAULT            TB_DEFAULT
 #define COLOR_BG_SELECTIONS         234
 #define COLOR_BG_MATCHING           45
-#define COLOR_TESTING               11 // XXX
 #endif
 
 
@@ -133,18 +131,16 @@
 
 // LANGUAGES SUPPORT ***********************************************************
 
-#define START_ANY                   0
-#define START_FIRST_OF_LINE         1
-#define START_FIRST_NON_BLANK       2
+enum rules_start { START_ANY, START_FIRST_OF_LINE, START_FIRST_NON_BLANK };
 
-struct rule {
+struct rule { // TODO comment
     char *mark;
     int start_at;
     int to_the_end_of_line;
     int color;
 };
 
-struct lang {
+struct lang { // TODO comment
     char **names;
     char **keywords;
     char **flow_control;

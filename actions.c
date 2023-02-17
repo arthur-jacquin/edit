@@ -190,7 +190,8 @@ suppress(struct line *l, struct selection *s)
 void
 replace(struct line *l, struct selection *s)
 {
-    // TODO
+    // replace the selection according to search and replace patterns
+
 }
 
 //void

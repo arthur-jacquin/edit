@@ -158,6 +158,7 @@ void
 suppress(struct line *l, struct selection *s)
 {
     // if s->n, supress selected characters, else use asked_remove
+    // TODO: concatenate/split lines
 
     int start, nb_deleted;
 
@@ -192,36 +193,78 @@ replace(struct line *l, struct selection *s)
 {
     // replace the selection according to search and replace patterns
 
-}
+    char *rp, *replaced, *new_replaced, *src; // replace pattern, replaced string
+    int k_chars; // index in chars (bytes)
+    int i, k; // index in rp (characters, bytes)
+    int lrp; // length of rp
+    int j, lj; // index in replaced (characters, bytes)
+    int lr; // size of replaced buffer
+    int a; // no name index
+    int n, mst, mn; // substring to append to replaced
+    int sx; // rembering s->x, XXX unecessary with spcified behaviour on delete_chars
 
-//void
-//split_lines(struct line *l, struct selection *s)
-//{
-//    struct line *new;
-//    char *new_chars, *old_chars;
-//    int i, k;
-//
-//    // get memory index of split
-//    k = get_str_index(l, s->x);
-//
-//    // shorten string
-//    new_chars = (char *) malloc(k + 1);
-//    for (i = 0; i < k; i++)
-//        new_chars[i] = l->chars[i];
-//    new_chars[k] = '\0';
-//
-//    // create new line below
-//    new = insert_line(l->line_nb + 1, l->ml - k);
-//    for (i = k; i < l->ml; i++)
-//        new->chars[i - k] = l->chars[i];
-//
-//    // refresh metadata, free old string
-//    old_chars = l->chars;
-//    l->chars = new_chars;
-//    free(old_chars);
-//    l->ml = k + 1;
-//    new->dl = l->dl - s->x; 
-//    l->dl = s->x;
-//
-//    // TODO: shift selections
-//}
+    // search for fields and subpatterns
+    mark_fields(l->chars, s->x, s->n);
+    mark_pattern(l->chars, s->x, s->n);
+
+    // malloc then populate replaced, adjust its length dynamically
+    rp = replace_pattern.current;
+    k = i = 0;
+    lrp = strlen(rp);
+    replaced = (char *) malloc(lr = DEFAULT_BUF_SIZE);
+    replaced[0] = '\0';
+    j = lj = 0;
+    while (i < lrp) {
+        if ((i < lrp - 1) && (rp[k] == '\\' || rp[k] == '$') &&
+            (is_digit(rp[k+1]))) {
+            src = l->chars;
+            if (rp[k] == '\\') {
+                // append corresponding subpattern
+                n = subpatterns[rp[k+1] - '0'].n;
+                mst = subpatterns[rp[k+1] - '0'].mst;
+                mn = subpatterns[rp[k+1] - '0'].mn;
+            } else {
+                // append corresponding field
+                n = fields[rp[k+1] - '0'].n;
+                mst = fields[rp[k+1] - '0'].mst;
+                mn = fields[rp[k+1] - '0'].mn;
+            }
+            i += 2; k += 2;
+        } else {
+            // manage escaped character
+            if (i < lrp - 1 && rp[k] == '\\') {
+                i++; k++;
+            }
+            // append character starting at rp[k]
+            src = rp;
+            n = 1;
+            mst = k;
+            mn = utf8_char_length(rp[k]);
+            i++; k += mn; 
+        }
+        // manage replaced length
+        if (lj + mn >= lr) {
+            while (lj + mn >= lr)
+                lr <<= 1;
+            new_replaced = (char *) malloc(lr);
+            strncpy(new_replaced, replaced, lj);
+            free(replaced);
+            replaced = new_replaced;
+        }
+        
+        // append substring
+        for (a = 0; a < mn; a++)
+            replaced[lj++] = src[mst + a];
+        replaced[lj] = '\0';
+        j += n;
+    }
+
+    // do the actual replacement
+    delete_characters(l, s, sx = s->x, s->n);
+    k_chars = insert_characters(l, s, sx, j, lj);
+    for (a = 0; a < lj; a++)
+        l->chars[k_chars + a] = replaced[a];
+
+    // forget about replaced
+    free(replaced);
+}

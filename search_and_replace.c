@@ -40,6 +40,8 @@ mark_pattern(char *chars, int x, int n)
     // try to read searched pattern in chars, store identified subpatterns
     // return length of read pattern if found at x, of length < n, else 0
 
+    // TODO: subpatterns mst and mn fields
+
     char *sp; // search pattern
     int in_block, in_class, last_was, found_in_class, is_neg_class; // booleans
     int i, k; // indexes in chars (characters, bytes)
@@ -292,93 +294,54 @@ mark_pattern(char *chars, int x, int n)
 
     return i - x;
 }
-/*
+
 int
-replace_with_pattern(char *chars, int x, int n)
+mark_fields(char *chars, int x, int n)
 {
-    // replace characters in chars according to search and replace patterns
-    // return the number of characters in chars
+    // search for fields
+    // return number of fields
+   
+    int f; // index of running selection
+    int i, k; // index in chars (characters, bytes)
+    int st, mst; // start of running selection (characters, bytes)
+    int a; // generic
 
-    int k, j, dml;
-    char *replaced; // variable length
+    // init fields and variables
+    for (k = i = 0; i < x; i++)
+        k += utf8_char_length(chars[k]);
+    for (a = k; i < x + n; i++)
+        a += utf8_char_length(chars[a]);
+    fields[0].st = st = i = x;
+    fields[0].mst = mst = k;
+    fields[0].n = n;
+    fields[0].mn = a - k;
+    for (a = 1; a < 10; a++) {
+        fields[a].st = fields[a].mst = 0;
+        fields[a].n = fields[a].mn = 0;
+    }
 
-    // TODO: malloc then populate replaced, adjust its length
+    // read chars
+    f = 1;
+    while (i < x + n && f < 9) {
+        if ((chars[k] == settings.field_separator) &&
+            (k == 0 || chars[k-1] != '\\')) {
+            fields[f].st = st;
+            fields[f].mst = mst;
+            fields[f].n = i - st;
+            fields[f].mn = k - mst;
+            st = i + 1;
+            mst = k + 1;
+            f++;
+        }
+        i++; k += utf8_char_length(chars[k]);
+    }
+    if (f < 9) {
+        fields[f].st = st;
+        fields[f].mst = mst;
+        fields[f].n = i - st;
+        fields[f].mn = k - mst;
+        f++;
+    }
 
-    // do the actual replacement
-    // TODO: what about selections ?
-    delete_characters(l, s, x, n);
-    insert_characters(l, s, x, length_of_inserted, dml = strlen(replaced));
-    for (k = get_str_index(), j = 0; j < dml; j++)
-        l->chars[k + j] = replaced[j];
-
-    // forget about replaced
-    free(replaced);
-
-//    char *rp; // search pattern
-//    int lrp; // length of search pattern
-//
-//    int i; // index in chars
-//    int j; // index in replaced
-//    int k; // index in rp
-//    int l; // no name index
-//    int f, st; // number of fields, start of running field
-//
-//    rp = replace_pattern.current;
-//    lrp = strlen(rp);
-//
-//    // search for fields
-//    fields[0].st = x;
-//    fields[0].n = n;
-//    for (l = 1; l < 10; l++)
-//        fields[l].n = 0;
-//    f = 1;
-//    st = x;
-//    for (i = x; i < x + n && f < 9; i++) {
-//        if (chars[i] == settings.field_separator) { // TODO: backslash support
-//            fields[f].n = i - st;
-//            fields[f].st = st;
-//            st = i + 1;
-//            f++;
-//        }
-//    }
-//    if (f < 9) {
-//        fields[f].n = i - st;
-//        fields[f].st = st;
-//        f++;
-//    }
-//
-//    // search for subpatterns
-//    mark_pattern(chars, x, n);
-//
-//    // copy before selection
-//    i = j = 0;
-//    while (i < x)
-//        replaced[j++] = chars[i++];
-//    
-//    // replace selection
-//    for (k = 0; k < lrp - 1; k++) {
-//        if (rp[k] == '\\' && (rp[k+1] == '\\' || rp[k+1] == '$')) {
-//            replaced[j++] = rp[k+1];
-//            k++;
-//        } else if (rp[k] == '$' && is_digit(rp[k+1])) {
-//            for (l = 0; l < fields[rp[k+1] - '0'].n; l++)
-//                replaced[j++] = chars[fields[rp[k+1] - '0'].st + l];
-//            k++;
-//        } else if (rp[k] == '\\' && is_digit(rp[k+1])) {
-//            for (l = 0; l < subpatterns[rp[k+1] - '0'].n; l++)
-//                replaced[j++] = chars[subpatterns[rp[k+1] - '0'].st + l];
-//            k++;
-//        } else {
-//            replaced[j++] = rp[k];
-//        }
-//    }
-//    if (k < lrp)
-//        replaced[j++] = rp[k];
-//
-//    // copy after selection
-//    i = x + n;
-//    //while (i < line_length)
-//    //    replaced[j++] = chars[i++];
-//
-//    return j;
-}*/
+    return f - 1;
+}

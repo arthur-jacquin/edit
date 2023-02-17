@@ -10,9 +10,12 @@
 * syntax highlight rules
 * case sensitive
 * manage resizing while in dialog mode
+* subpatterns, fields: store bytes length
+* delete_character: specify behaviour on start of selection
 
 ### Restructurations
 
+* (characters, bytes) struct ?
 * gathers variables in good order in globals.h
 * internalize termbox ?
 * remove all the `go_to(pos_of(...`, just attribute new asked y and x, and execute `go_to(pos_of(x, y))` at start of main loop
@@ -27,7 +30,7 @@
 
 * missing TODO and comments
 * correctness, especially
-    * search engine (extensivity)
+    * search and replace engine (extensivity)
     * {insert, delete} characters    
 * look for unstated assumptions
 * has_been_changes, anchor, cursor, selections, ... all globals

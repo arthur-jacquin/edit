@@ -45,7 +45,8 @@ struct selection {              // sorted list of selections
 };
 
 struct substring {              // marks a substring in an original string
-    int st, n;                  // starting position, number of characters
+    int st, mst;                // starting position (characters, bytes)
+    int n, mn;                  // length (characters, bytes)
 };
 
 struct interface {              // interface for dialog mode
@@ -201,4 +202,4 @@ void replace(struct line *l, struct selection *s);
 
 // search_and_replace.c
 int mark_pattern(char *chars, int x, int n);
-int replace_with_pattern(char *chars, int x, int n);
+int mark_fields(char *chars, int x, int n);

@@ -39,7 +39,7 @@ insert_characters(struct line *l, struct selection *a, int start, int n,
     int nb_bytes)
 {
     // insert nb_bytes bytes (corresponding to n characters) after start
-    // displayable character (bytes are not initialised)
+    // displayable characters (bytes are not initialised)
     // return index of first inserted byte in l->chars
 
     int i, j, k, k1, len;
@@ -93,7 +93,6 @@ void
 delete_characters(struct line *l, struct selection *a, int start, int n)
 {
     // delete n characters after start
-    // return index of first inserted byte in l->chars
 
     int i, k, k1, k2, nb_bytes;
     char *new_chars, *old_chars;

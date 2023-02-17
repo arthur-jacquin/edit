@@ -49,7 +49,7 @@ mark_pattern(char *chars, int x, int n)
     int start_elem, start_elem_i, nb_elem, is_elem_ok; // character management
     // can be: char, ., \w, \W, \d, \D, \^, \$, \\, \., class
     int min, max, lsp, a; // sp length, repetition boundaries, generic
-    int NONE = 0, ELEM = 1, BLOCK = 2; // markers
+    enum markers { NONE, ELEM, BLOCK }; // markers
     char c; // generic
 
     // init subpatterns
@@ -292,77 +292,93 @@ mark_pattern(char *chars, int x, int n)
 
     return i - x;
 }
-
-char replaced[100]; // TODO: manage size interactively
-
+/*
 int
 replace_with_pattern(char *chars, int x, int n)
 {
-    char *rp; // search pattern
-    int lrp; // length of search pattern
+    // replace characters in chars according to search and replace patterns
+    // return the number of characters in chars
 
-    int i; // index in chars
-    int j; // index in replaced
-    int k; // index in rp
-    int l; // no name index
-    int f, st; // number of fields, start of running field
-    
-    rp = replace_pattern.current;
-    lrp = strlen(rp);
+    int k, j, dml;
+    char *replaced; // variable length
 
-    // search for fields
-    fields[0].st = x;
-    fields[0].n = n;
-    for (l = 1; l < 10; l++)
-        fields[l].n = 0;
-    f = 1;
-    st = x;
-    for (i = x; i < x + n && f < 9; i++) {
-        if (chars[i] == settings.field_separator) {
-            fields[f].n = i - st; 
-            fields[f].st = st;
-            st = i + 1;
-            f++;
-        }
-    }
-    if (f < 9) {
-        fields[f].n = i - st; 
-        fields[f].st = st;
-        f++;
-    }
+    // TODO: malloc then populate replaced, adjust its length
 
-    // search for subpatterns
-    mark_pattern(chars, x, n);
+    // do the actual replacement
+    // TODO: what about selections ?
+    delete_characters(l, s, x, n);
+    insert_characters(l, s, x, length_of_inserted, dml = strlen(replaced));
+    for (k = get_str_index(), j = 0; j < dml; j++)
+        l->chars[k + j] = replaced[j];
 
-    // copy before selection
-    i = j = 0;
-    while (i < x)
-        replaced[j++] = chars[i++];
-    
-    // replace selection
-    for (k = 0; k < lrp - 1; k++) {
-        if (rp[k] == '\\' && (rp[k+1] == '\\' || rp[k+1] == '$')) {
-            replaced[j++] = rp[k+1];
-            k++;
-        } else if (rp[k] == '$' && is_digit(rp[k+1])) {
-            for (l = 0; l < fields[rp[k+1] - '0'].n; l++)
-                replaced[j++] = chars[fields[rp[k+1] - '0'].st + l];
-            k++;
-        } else if (rp[k] == '\\' && is_digit(rp[k+1])) {
-            for (l = 0; l < subpatterns[rp[k+1] - '0'].n; l++)
-                replaced[j++] = chars[subpatterns[rp[k+1] - '0'].st + l];
-            k++;
-        } else {
-            replaced[j++] = rp[k];
-        }
-    }
-    if (k < lrp)
-        replaced[j++] = rp[k];
+    // forget about replaced
+    free(replaced);
 
-    // copy after selection
-    i = x + n;
-    //while (i < line_length)
-    //    replaced[j++] = chars[i++];
-
-    return j;
-}
+//    char *rp; // search pattern
+//    int lrp; // length of search pattern
+//
+//    int i; // index in chars
+//    int j; // index in replaced
+//    int k; // index in rp
+//    int l; // no name index
+//    int f, st; // number of fields, start of running field
+//
+//    rp = replace_pattern.current;
+//    lrp = strlen(rp);
+//
+//    // search for fields
+//    fields[0].st = x;
+//    fields[0].n = n;
+//    for (l = 1; l < 10; l++)
+//        fields[l].n = 0;
+//    f = 1;
+//    st = x;
+//    for (i = x; i < x + n && f < 9; i++) {
+//        if (chars[i] == settings.field_separator) { // TODO: backslash support
+//            fields[f].n = i - st;
+//            fields[f].st = st;
+//            st = i + 1;
+//            f++;
+//        }
+//    }
+//    if (f < 9) {
+//        fields[f].n = i - st;
+//        fields[f].st = st;
+//        f++;
+//    }
+//
+//    // search for subpatterns
+//    mark_pattern(chars, x, n);
+//
+//    // copy before selection
+//    i = j = 0;
+//    while (i < x)
+//        replaced[j++] = chars[i++];
+//    
+//    // replace selection
+//    for (k = 0; k < lrp - 1; k++) {
+//        if (rp[k] == '\\' && (rp[k+1] == '\\' || rp[k+1] == '$')) {
+//            replaced[j++] = rp[k+1];
+//            k++;
+//        } else if (rp[k] == '$' && is_digit(rp[k+1])) {
+//            for (l = 0; l < fields[rp[k+1] - '0'].n; l++)
+//                replaced[j++] = chars[fields[rp[k+1] - '0'].st + l];
+//            k++;
+//        } else if (rp[k] == '\\' && is_digit(rp[k+1])) {
+//            for (l = 0; l < subpatterns[rp[k+1] - '0'].n; l++)
+//                replaced[j++] = chars[subpatterns[rp[k+1] - '0'].st + l];
+//            k++;
+//        } else {
+//            replaced[j++] = rp[k];
+//        }
+//    }
+//    if (k < lrp)
+//        replaced[j++] = rp[k];
+//
+//    // copy after selection
+//    i = x + n;
+//    //while (i < line_length)
+//    //    replaced[j++] = chars[i++];
+//
+//    return j;
+}*/

@@ -8,7 +8,6 @@
 * {split, concatenate} lines
 * suppress selections when move to clip
 * syntax highlight rules
-* case sensitive
 * manage resizing while in dialog mode
 * subpatterns, fields: store bytes length
 * delete_character: specify behaviour on start of selection

@@ -6,14 +6,19 @@ compare_chars(char *s1, int i1, char *s2, int i2)
     // return a positive (resp. negative) integer if character from s1 is lower
     // (resp. greater) than character from s2 (as of unicode codepoint)
 
-    int k, l1, l2;
+    int k, l1, l2, delta;
 
     if ((l1 = utf8_char_length(s1[i1])) != (l2 = utf8_char_length(s2[i2]))) {
         return l2 - l1;
     } else {
         for (k = 0; k < l1; k++) {
-            if (s1[i1+k] != s2[i2+k])
-                return s2[i2+k] - s1[i1+k];
+            if (delta = (s2[i2+k] - s1[i1+k])) {
+                if (!settings.case_sensitive && k == l1 - 1 &&
+                    (delta == (1 << 5) || delta == - (1 << 5)))
+                    return 0;
+                else
+                    return delta;
+            }
         }
 
         return 0;

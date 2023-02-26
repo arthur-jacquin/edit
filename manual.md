@@ -1,5 +1,25 @@
 ## User guide
 
+    explain the way edit is distributed
+        you have to compile it
+        configuration (most of it is at runtime, in order to create a standalone
+            executable)
+            config.def.h, config.h
+            runtime/compile time
+    explain the way to interact with the editor
+        enter
+        explain the way elements are layed out
+        display-wait-act loop
+        modes, how to exit at any point
+        specify how to use the dialog modes
+    explain the editing model
+        selections, differents stacks, anchoring
+        change selections, act on them
+        multiplier
+    cover all commands, in a logical order
+        specify how to modify runtime settings
+    TODO cover all abilities of the editor
+
 The interface (file, dialog interface, ruler). Should not surprise vim users
 
 Main idea:

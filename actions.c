@@ -159,6 +159,7 @@ suppress(struct line *l, struct selection *s)
 {
     // if s->n, supress selected characters, else use asked_remove
     // TODO: concatenate/split lines
+    // TODO: manually move cursor if delete
 
     int start, nb_deleted;
 
@@ -194,8 +195,7 @@ replace(struct line *l, struct selection *s)
     // replace the selection according to search and replace patterns
 
     char *rp, *replaced, *new_replaced, *src; // replace pattern, replaced string
-    int k_chars; // index in chars (bytes)
-    int i, k; // index in rp (characters, bytes)
+    int k, k_chars; // index in rp, chars (bytes)
     int lrp; // length of rp
     int j, lj; // index in replaced (characters, bytes)
     int lr; // size of replaced buffer
@@ -209,13 +209,13 @@ replace(struct line *l, struct selection *s)
 
     // malloc then populate replaced, adjust its length dynamically
     rp = replace_pattern.current;
-    k = i = 0;
+    k = 0;
     lrp = strlen(rp);
     replaced = (char *) malloc(lr = DEFAULT_BUF_SIZE);
     replaced[0] = '\0';
     j = lj = 0;
-    while (i < lrp) {
-        if ((i < lrp - 1) && (rp[k] == '\\' || rp[k] == '$') &&
+    while (k < lrp) {
+        if ((k < lrp - 1) && (rp[k] == '\\' || rp[k] == '$') &&
             (is_digit(rp[k+1]))) {
             src = l->chars;
             if (rp[k] == '\\') {
@@ -229,19 +229,20 @@ replace(struct line *l, struct selection *s)
                 mst = fields[rp[k+1] - '0'].mst;
                 mn = fields[rp[k+1] - '0'].mn;
             }
-            i += 2; k += 2;
+            k += 2;
         } else {
             // manage escaped character
-            if (i < lrp - 1 && rp[k] == '\\') {
-                i++; k++;
+            if (k < lrp - 1 && rp[k] == '\\') {
+                k++;
             }
             // append character starting at rp[k]
             src = rp;
             n = 1;
             mst = k;
             mn = utf8_char_length(rp[k]);
-            i++; k += mn; 
+            k += mn; 
         }
+
         // manage replaced length
         if (lj + mn >= lr) {
             while (lj + mn >= lr)
@@ -258,13 +259,22 @@ replace(struct line *l, struct selection *s)
         replaced[lj] = '\0';
         j += n;
     }
+//tb_printf(0, 0, COLOR_DEFAULT, COLOR_BG_DEFAULT,
+//        "%d %d %d %d  %s", s->x, s->n, j, lj, replaced);
+//tb_present();
+//tb_poll_event(&ev);
 
     // do the actual replacement
     delete_characters(l, s, sx = s->x, s->n);
     k_chars = insert_characters(l, s, sx, j, lj);
+    //k_chars = replace_characters(l, s, s->x, s->n, j, lj);
     for (a = 0; a < lj; a++)
         l->chars[k_chars + a] = replaced[a];
 
     // forget about replaced
     free(replaced);
+
+//print_all();
+//tb_present();
+//tb_poll_event(&ev);
 }

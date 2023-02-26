@@ -41,7 +41,7 @@
 #endif
 
 // 256-colors terminal
-// TODO: get https://www.calmar.ws/vim/256-xterm-24bit-rgb-color-chart.html
+// TODO: refer to https://jacquin.xyz/colors
 // 99    Violet
 // 32    Bleu
 // 172   Orange

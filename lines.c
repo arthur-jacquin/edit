@@ -94,7 +94,7 @@ delete_characters(struct line *l, struct selection *a, int start, int n)
 {
     // delete n characters after start
 
-    int i, k, k1, k2, nb_bytes;
+    int k, k1, k2;
     char *new_chars, *old_chars;
 
     // compute length of new_chars
@@ -130,10 +130,66 @@ delete_characters(struct line *l, struct selection *a, int start, int n)
 
     // move cursor and anchor
     if (l->line_nb == first_line_on_screen->line_nb + y && start <= x)
-        x -= n;
+        x = (x - n >= start) ? (x - n) : start;
     if (anchored && l->line_nb == anchor.l && start <= anchor.x)
-        anchor.x -= n;
+        anchor.x = (anchor.x - n >= start) ? (anchor.x - n) : start;
 }
+/*
+void
+replace_characters(struct line *l, struct selection *a, int start, int n,
+    int new_n, int nb_bytes)
+{
+    // replace n characters after start by new_n characters taking nb_bytes
+    // bytes (characters are not initialised)
+
+    int i, k, k1, k2;
+    char *new_chars, *old_chars;
+
+    // compute length of new_chars
+    k1 = get_str_index(l, start);
+    k2 = get_str_index(l, start + n);
+    l->ml += nb_bytes - (k2 - k1);
+    l->dl += new_n - n;
+
+    // create new string
+    new_chars = (char *) malloc(l->ml);
+    for (k = 0; k < k1; k++)
+        new_chars[k] = l->chars[k];
+    for (k = k1 + nb_bytes; k < l->ml; k++)
+        new_chars[k] = l->chars[k - (nb_bytes - (k2 - k1))];
+
+    // refresh metadata
+    old_chars = l->chars;
+    l->chars = new_chars;
+    free(old_chars);
+
+    // move selections
+    while (a != NULL && a->l < l->line_nb)
+        a = a->next;
+    while (a != NULL && a->l == l->line_nb) {
+        if (start <= a->x + a->n) {
+            if (start <= a->x)
+                a->x += new_n - n;
+            else
+        //        a->n += start - a->x;
+        }
+        a = a->next;
+    }
+
+    // move cursor and anchor
+    if (l->line_nb == first_line_on_screen->line_nb + y && start <= x) {
+        if (start + n <= x)
+            x += new_n - n;
+        else
+            //x = (x - n >= start) ? (x - n) : start;
+    }
+    if (anchored && l->line_nb == anchor.l && start <= anchor.x) {
+        if (start + n <= anchor.x)
+            anchor.x += new_n - n;
+        else
+            //x = (x - n >= start) ? (x - n) : start;
+    }
+}*/
 
 struct line *
 insert_line(int asked_line_nb, int ml, int dl)
@@ -241,7 +297,6 @@ move_line(int delta)
 {
     // move cursor line, return new line_nb
 
- 
     int cursor_line, new_line_nb;
     struct line *src, *dest;
  

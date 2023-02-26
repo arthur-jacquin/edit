@@ -13,12 +13,18 @@ A suckless, simple, featured, modal text editor.
 
 ## Documentation
 
-Read `philosphy.md` to see why i wrote `edit`, design choices explanations,
-how it compares to other editors, other editors that might better suits you.
+Read `philosphy.md` to see why I wrote `edit`, what it is and is not, the design
+choices explanations, how it compares to other editors, other editors that might
+better suits you. If you're wondering if you should use `edit`, read this.
 
 Read `user_guide.md` to see build instructions, use guide, and discover features.
+If you want to use `edit`, read this.
 
-Read `hacker_guide.md` to get to know better the code.
+Read `cheatsheet.md` to see a quick summary of all runtime options, commands and
+default keybinds.
+
+Others documentation files are in-depth descriptions of some systems, like
+syntax highlighting or search and replace engines; or technical notes.
 
 ## Goals
 
@@ -62,3 +68,8 @@ Read `hacker_guide.md` to get to know better the code.
 ## License
 
 `edit` is licensed under the GPLv3. See `license`.
+
+## Feedback/contact information
+
+Your feedback is greatly appreciated! If you have any comment on the editor,
+wether it's on the user side or the code, please send me an email at arthur@jaquin.xyz

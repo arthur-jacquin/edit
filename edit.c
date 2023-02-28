@@ -28,8 +28,12 @@ main(int argc, char *argv[])
         return 0;
     } else {
         init_interface(&file_name_int, argv[1]);
-        get_extension();
-        load_lang();
+    }
+
+    // check if file can be accessed, and loads it if possible
+    if (load_file(file_name_int.current, 1) == ERR_FILE_CONNECTION) {
+        printf("%s\n", FILE_CONNECTION_MESSAGE);
+        return ERR_FILE_CONNECTION;
     }
 
 
@@ -39,6 +43,8 @@ main(int argc, char *argv[])
     settings.autoindent = AUTOINDENT;
     settings.tab_width = TAB_WIDTH;
     init_interface(&settings_int, "");
+    get_extension();
+    load_lang();
 
     // editor variables
     m = in_insert_mode = anchored = is_bracket = 0;
@@ -66,10 +72,7 @@ main(int argc, char *argv[])
         tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
     if (resize(tb_width(), tb_height()))
         return ERR_TERM_NOT_BIG_ENOUGH;
-    echo("Welcome to edit!");
-
-    // load file
-    load_file(file_name_int.current, 1);
+    echo(WELCOME_MESSAGE);
 
     // main loop
     while (1) {
@@ -93,7 +96,7 @@ main(int argc, char *argv[])
             } else if (ev.ch && !in_insert_mode) {
                 if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
                     m = 10*m + ev.ch - '0';
-                    sprintf(dialog_chars, "Multiplier: %d", m);
+                    sprintf(dialog_chars, MULTIPLIER_MESSAGE_PATTERN, m);
                     break;
                 } else {
                 if (m == 0)
@@ -105,7 +108,7 @@ main(int argc, char *argv[])
                 case KB_QUIT:
                 case KB_FORCE_QUIT:
                     if (ev.ch == KB_QUIT && has_been_changes) {
-                        echo("There are unsaved changes.");
+                        echo(UNSAVED_CHANGES_MESSAGE);
                     } else {
                         tb_shutdown();
                         return 0;
@@ -115,18 +118,18 @@ main(int argc, char *argv[])
                     if (has_been_changes) {
                         write_file(file_name_int.current);
                         has_been_changes = 0;
-                        echo("File saved.");
+                        echo(FILE_SAVED_MESSAGE);
                     } else {
-                        echo("No changes to write.");
+                        echo(NOTHING_TO_WRITE_MESSAGE);
                     }
                     break;
                 case KB_WRITE_AS:
-                    if (dialog("Save as: ", &file_name_int, 0)) {
+                    if (dialog(SAVE_AS_PROMPT, &file_name_int, 0)) {
                         write_file(file_name_int.current);
                         get_extension();
                         load_lang();
                         has_been_changes = 0;
-                        echo("File saved.");
+                        echo(FILE_SAVED_MESSAGE);
                     }
                     break;
                 case KB_RELOAD:
@@ -136,19 +139,19 @@ main(int argc, char *argv[])
                         load_file(file_name_int.current, first_line_on_screen->line_nb);
                         go_to(pos_of(old_line_nb, x));
                         has_been_changes = 0;
-                        echo("File reloaded.");
+                        echo(FILE_RELOADED_MESSAGE);
                     } else {
-                        echo("No changes to revert.");
+                        echo(NOTHING_TO_REVERT_MESSAGE);
                     }
                     break;
                 case KB_INSERT_MODE:
                     in_insert_mode = 1;
-                    echo("INSERT (ESC to exit)");
+                    echo(INSERT_MODE_MESSAGE);
                     break;
                 case KB_CHANGE_SETTING:
-                    if (dialog("Change setting: ", &settings_int, 0))
+                    if (dialog(CHANGE_SETTING_PROMPT, &settings_int, 0))
                         if (!set_parameter(settings_int.current))
-                            echo("Invalid assignment.");
+                            echo(INVALID_ASSIGNMENT_MESSAGE);
                     break;
                 case KB_INSERT_START_LINE:
                 case KB_INSERT_END_LINE:
@@ -156,7 +159,7 @@ main(int argc, char *argv[])
                     go_to(pos_of(first_line_on_screen->line_nb + y,
                         (ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0));
                     in_insert_mode = 1;
-                    echo("INSERT (ESC to exit)");
+                    echo(INSERT_MODE_MESSAGE);
                     break;
                 case KB_INSERT_LINE_BELOW:
                 case KB_INSERT_LINE_ABOVE:
@@ -167,7 +170,7 @@ main(int argc, char *argv[])
                     go_to(pos_of(l1, 0));
                     in_insert_mode = 1;
                     has_been_changes = 1;
-                    echo("INSERT (ESC to exit)");
+                    echo(INSERT_MODE_MESSAGE);
                     break;
                 case KB_CLIP_YANK_LINE:
                     copy_to_clip(first_line_on_screen->line_nb + y, m);
@@ -242,16 +245,16 @@ main(int argc, char *argv[])
                     if ((p = find_next_selection(m)).l)
                         go_to(p);
                     else
-                        echo("No more selections downwards.");
+                        echo(NO_SEL_DOWN_MESSAGE);
                     break;
                 case KB_MOVE_PREV_SEL:
                     if ((p = find_next_selection(-m)).l)
                         go_to(p);
                     else
-                        echo("No more selections upwards.");
+                        echo(NO_SEL_UP_MESSAGE);
                     break;
                 case KB_SEL_DISPLAY_COUNT:
-                    sprintf(dialog_chars, "%d selections.", nb_sel(saved));
+                    sprintf(dialog_chars, SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
                     break;
                 case KB_SEL_CURSOR_LINE:
                     forget_sel_list(saved);
@@ -259,9 +262,9 @@ main(int argc, char *argv[])
                         first_line_on_screen->line_nb + y, NULL);
                     break;
                 case KB_SEL_CUSTOM_RANGE:
-                    if (dialog("Lines range: ", &range_int, 0))
+                    if (dialog(RANGE_PROMPT, &range_int, 0))
                         if (!parse_range(range_int.current))
-                            echo("Invalid range.");
+                            echo(INVALID_RANGE_MESSAGE);
                     break;
                 case KB_SEL_ALL_LINES:
                     forget_sel_list(saved);
@@ -274,7 +277,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_SEL_FIND:
                 case KB_SEL_SEARCH:
-                    if (dialog("Search pattern: ", &search_pattern, 1)) {
+                    if (dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
                         forget_sel_list(saved);
                         saved = displayed;
                         displayed = NULL;
@@ -297,7 +300,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_SEL_COLUMN:
                     if (anchored && anchor.l != pos_of_cursor().l)
-                        echo("Not possible when multiline running selection.");
+                        echo(COLUMN_SEL_ERROR_MESSAGE);
                     else
                         go_to(column_sel(m));
                     break;
@@ -316,7 +319,7 @@ main(int argc, char *argv[])
                     act(suppress, 0);
                     break;
                 case KB_ACT_REPLACE:
-                    if (dialog("Replace pattern: ", &replace_pattern, 0))
+                    if (dialog(REPLACE_PATTERN_PROMPT, &replace_pattern, 0))
                         act(replace, 0);
                     break;
                 case KB_ACT_LOWERCASE:

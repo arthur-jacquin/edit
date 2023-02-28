@@ -1,3 +1,27 @@
+// MESSAGES AND PROMPTS ********************************************************
+
+#define WELCOME_MESSAGE             "Welcome to edit!"
+#define FILE_CONNECTION_MESSAGE     "The file does not exist or can not be accessed."
+#define FILE_SAVED_MESSAGE          "File saved."
+#define FILE_RELOADED_MESSAGE       "File reloaded."
+#define INSERT_MODE_MESSAGE         "INSERT (ESC to exit)"
+#define UNSAVED_CHANGES_MESSAGE     "There are unsaved changes."
+#define NOTHING_TO_WRITE_MESSAGE    "No changes to write."
+#define NOTHING_TO_REVERT_MESSAGE   "No changes to revert."
+#define NO_SEL_DOWN_MESSAGE         "No more selections downwards."
+#define NO_SEL_UP_MESSAGE           "No more selections upwards."
+#define COLUMN_SEL_ERROR_MESSAGE    "Not possible when multiline running selection."
+#define MULTIPLIER_MESSAGE_PATTERN  "Multiplier: %d"
+#define SELECTIONS_MESSAGE_PATTERN  "%d saved selections."
+#define SAVE_AS_PROMPT              "Save as: "
+#define CHANGE_SETTING_PROMPT       "Change setting: "
+#define INVALID_ASSIGNMENT_MESSAGE  "Invalid assignment."
+#define RANGE_PROMPT                "Lines range: "
+#define INVALID_RANGE_MESSAGE       "Invalid range."
+#define SEARCH_PATTERN_PROMPT       "Search pattern: "
+#define REPLACE_PATTERN_PROMPT      "Replace pattern: "
+
+
 // PARAMETERS ******************************************************************
 
 #define TERMINAL_SUPPORTS_256_COLORS

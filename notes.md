@@ -12,7 +12,6 @@
 ### Restructurations
 
 * only short option names ?
-* move all messages to config files
 * use strncat and other stdlib functions (ctype.h, string.h...)
 * replace `{insert,delete}_chars` by `replace_chars`
 * (characters, bytes) struct ?

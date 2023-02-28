@@ -185,7 +185,7 @@ find_start_of_block(int starting_line_nb, int nb)
             l = l->prev;
     }
 
-    return l->line_nb + 1;
+    return l->line_nb + ((is_first_line(l) && l->ml > 1) ? 0 : 1);
 }
 
 int

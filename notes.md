@@ -13,8 +13,8 @@
 
 * only short option names ?
 * move all messages to config files
-* use strncat and other stdlib functions ? ctype.h
-* replace `{insert,delete}_chars` by `replace_chars` ?
+* use strncat and other stdlib functions (ctype.h, string.h...)
+* replace `{insert,delete}_chars` by `replace_chars`
 * (characters, bytes) struct ?
 * gathers variables in good order in globals.h
 * internalize termbox ?
@@ -22,7 +22,7 @@
 * regex: choose a known syntax, link official documentation
 * move `get_str_index` to char * so that it can be used elsewhere ?
 * suppress settings.language ?
-* move all hexadecimal values to `global.h` with a description ?
+* move all hexadecimal values to `global.h` with a description
 * put variables where they sould be, and how they should be (extern, const...)
 * improve error management, assure safe and graceful fails
 * use ifdef and macros
@@ -32,7 +32,6 @@
 * missing TODO and comments
 * correctness, especially
     * rules
-    * select block starting at line 1
     * what happens when multiple slash on the same line
     * search and replace engine (extensivity)
     * `replace_characters`

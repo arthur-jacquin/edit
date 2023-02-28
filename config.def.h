@@ -131,13 +131,11 @@
 
 // LANGUAGES SUPPORT ***********************************************************
 
-enum rules_start { START_ANY, START_FIRST_OF_LINE, START_FIRST_NON_BLANK };
-
 struct rule { // TODO comment
-    char *mark;
-    int start_at;
-    int to_the_end_of_line;
-    int color;
+    char mark[5];
+    int start_of_line;
+    int color_mark;
+    int color_end_of_line;
 };
 
 struct lang { // TODO comment
@@ -146,7 +144,25 @@ struct lang { // TODO comment
     char **flow_control;
     char **built_ins;
     char **comment;
-    struct rule *rules;
+    struct rule (*rules)[]; // pointer to array of struct rule
+};
+
+// Markdown
+char *md_names = "md ";
+char *md_keywords = "";
+char *md_flow_control = "";
+char *md_built_ins = "";
+char *md_comment = "";
+struct rule md_rules[] = {
+    {"###",  1,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    {"##",   1,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    {"#",    1,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    {"---",  1,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    {">",    1,  COLOR_COMMENT,      COLOR_DEFAULT},
+    {"    ", 1,  COLOR_DEFAULT,      COLOR_DEFAULT},
+    {"*",    0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {"-",    0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {"",     0,  0,                  0},
 };
 
 // C
@@ -166,6 +182,10 @@ char *c_flow_control = "\
 char *c_built_ins = "\
     sizeof malloc strcmp strcpy "; // TODO: cf stdlib.h, string.h...
 char *c_comment = "// ";
+struct rule c_rules[] = {
+    {"#",   1,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    {"",    0,  0,                  0},
+};
 
 // Python
 char *py_names = "py ";
@@ -188,9 +208,13 @@ char *py_built_ins = "\
     setattr slice sorted staticmethod str sum super \
     tuple type vars zip __import__ ";
 char *py_comment = "# ";
+struct rule py_rules[] = {
+    {"",    0,  0,                  0},
+};
 
 // Languages
 struct lang languages[] = {
-    {&c_names, &c_keywords, &c_flow_control, &c_built_ins, &c_comment, NULL},
-    {&py_names, &py_keywords, &py_flow_control, &py_built_ins, &py_comment, NULL},
+    {&md_names, &md_keywords, &md_flow_control, &md_built_ins, &md_comment, &md_rules},
+    {&c_names, &c_keywords, &c_flow_control, &c_built_ins, &c_comment, &c_rules},
+    {&py_names, &py_keywords, &py_flow_control, &py_built_ins, &py_comment, &py_rules},
 };

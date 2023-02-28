@@ -7,16 +7,15 @@
 * shift selections when move line, move to clip, insert from clip, insert line, split lines, concatenate lines...
 * {split, concatenate} lines
 * suppress selections when move to clip
-* syntax highlight rules
 * manage resizing while in dialog mode
 * subpatterns, fields: store bytes length
-* delete_character: specify behaviour on start of selection
+* `delete_character`: specify behaviour on start of selection
 
 ### Restructurations
 
 * only short option names ?
 * move all messages to config files
-* use strncat and other stdlib functions ?
+* use strncat and other stdlib functions ? ctype.h
 * replace `{insert,delete}_chars` by `replace_chars` ?
 * (characters, bytes) struct ?
 * gathers variables in good order in globals.h
@@ -34,8 +33,11 @@
 
 * missing TODO and comments
 * correctness, especially
+    * rules
+    * select block starting at line 1
+    * what happens when multiple slash on the same line
     * search and replace engine (extensivity)
-    * {insert, delete} characters
+    * `replace_characters`
 * look for unstated assumptions
 * has_been_changes, anchor, cursor, selections, ... all globals
 * possibility to make compile-time arguments

@@ -29,6 +29,8 @@ print_line(struct line *l, struct selection *s, int screen_line)
     char c, nc;
     struct tb_cell *buf = malloc((l->dl) * sizeof(struct tb_cell));
     struct lang *syntax = settings.syntax;
+    struct rule *r;
+    int a;
 
     // underline current line
     underline = (UNDERLINE_CURSOR_LINE && screen_line == y) ? TB_UNDERLINE : 0;
@@ -47,49 +49,69 @@ print_line(struct line *l, struct selection *s, int screen_line)
     for (i = 0; i < l->dl; i++)
         buf[i].fg = COLOR_DEFAULT;
     if (settings.syntax_highlight && strcmp(settings.language, "none")) {
+        // ignores blank characters at the beginning of the line
         k = i = 0;
-        while (i < l->dl) {
-            color = COLOR_DEFAULT;
-            nb_to_color = 1;
-            c = l->chars[k];
-            if (utf8_char_length(c) > 1) {
-                k += utf8_char_length(c);
-            } else if (is_word_char(c)) {
-                for (j = 0; is_word_char(nc = l->chars[k+j]) || is_digit(nc); j++)
-                    ;
-                if (is_in(*((syntax)->keywords), l->chars, k, j)) {
-                    color = COLOR_KEYWORD;
-                } else if (is_in(*(syntax->flow_control), l->chars, k, j)) {
-                    color = COLOR_FLOW_CONTROL;
-                } else if (is_in(*(syntax->built_ins), l->chars, k, j)) {
-                    color = COLOR_BUILT_IN;
-                }
-                nb_to_color = j;
-                k += j;
-            } else if (is_digit(c) || (k+1 < l->ml && (c == '-' || c == '.') &&
-                (is_digit(nc = l->chars[k+1]) || nc == '.'))) {
-                for (j = 1; is_digit(nc = l->chars[k+j]) || nc == '.'; j++)
-                    ;
-                color = COLOR_NUMBER;
-                nb_to_color = j;
-                k += j;
-            } else if (c == '"' || c == '\'') {
-                k++;
-                for (j = 2; k < l->ml && !(l->chars[k] == c && l->chars[k-1] != '\\'); j++)
-                    k += utf8_char_length(l->chars[k]);
-                k++;
-                color = COLOR_STRING;
-                nb_to_color = j;
-            } else if (is_in(*(syntax->comment), l->chars, k, strlen(*(syntax->comment)) - 1)) {
-                color = COLOR_COMMENT;
-                nb_to_color = l->dl - i;
-                k = l->ml;
-            } else {
-                k++;
-            }
+        while (l->chars[k] == ' ') {
+            i++; k++;
+        }
 
-            for (j = 0; j < nb_to_color; j++)
-                buf[i++].fg = color | underline;
+        // detect a matching rule
+        for (r = *(syntax->rules); r->mark[0]; r++)
+            if (((i == 0) || !(r->start_of_line)) &&
+                (!strncmp(r->mark, &(l->chars[k]), strlen(r->mark))))
+                    break;
+
+        if (r->mark[0]) {
+            // apply rule
+            for (j = 0; j < strlen(r->mark); j++)
+                buf[i++].fg = r->color_mark;
+            while (i < l->dl)
+                buf[i++].fg = r->color_end_of_line;
+        } else {
+            // no matching rule
+            while (i < l->dl) {
+                color = COLOR_DEFAULT;
+                nb_to_color = 1;
+                c = l->chars[k];
+                if (utf8_char_length(c) > 1) {
+                    k += utf8_char_length(c);
+                } else if (is_word_char(c)) {
+                    for (j = 0; is_word_char(nc = l->chars[k+j]) || is_digit(nc); j++)
+                        ;
+                    if (is_in(*(syntax->keywords), l->chars, k, j)) {
+                        color = COLOR_KEYWORD;
+                    } else if (is_in(*(syntax->flow_control), l->chars, k, j)) {
+                        color = COLOR_FLOW_CONTROL;
+                    } else if (is_in(*(syntax->built_ins), l->chars, k, j)) {
+                        color = COLOR_BUILT_IN;
+                    }
+                    nb_to_color = j;
+                    k += j;
+                } else if (is_digit(c) || (k+1 < l->ml && (c == '-' || c == '.') &&
+                    (is_digit(nc = l->chars[k+1]) || nc == '.'))) {
+                    for (j = 1; is_digit(nc = l->chars[k+j]) || nc == '.'; j++)
+                        ;
+                    color = COLOR_NUMBER;
+                    nb_to_color = j;
+                    k += j;
+                } else if (c == '"' || c == '\'') {
+                    k++;
+                    for (j = 2; k < l->ml && !(l->chars[k] == c && l->chars[k-1] != '\\'); j++)
+                        k += utf8_char_length(l->chars[k]);
+                    k++;
+                    color = COLOR_STRING;
+                    nb_to_color = j;
+                } else if (is_in(*(syntax->comment), l->chars, k, strlen(*(syntax->comment)) - 1)) {
+                    color = COLOR_COMMENT;
+                    nb_to_color = l->dl - i;
+                    k = l->ml;
+                } else {
+                    k++;
+                }
+
+                for (j = 0; j < nb_to_color; j++)
+                    buf[i++].fg = color;
+            }
         }
     }
 
@@ -114,7 +136,7 @@ print_line(struct line *l, struct selection *s, int screen_line)
 
     // actual printing
     for (i = 0; i < l->dl; i++)
-        tb_set_cell(i, screen_line, buf[i].ch, buf[i].fg, buf[i].bg);
+        tb_set_cell(i, screen_line, buf[i].ch, buf[i].fg | underline, buf[i].bg);
     for (; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
 

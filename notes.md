@@ -3,12 +3,10 @@
 ### New features
 
 * parse command line arguments
-* integrate replace engine
 * shift selections when move line, move to clip, insert from clip, insert line, split lines, concatenate lines...
 * {split, concatenate} lines
 * suppress selections when move to clip
 * manage resizing while in dialog mode
-* subpatterns, fields: store bytes length
 * `delete_character`: specify behaviour on start of selection
 
 ### Restructurations

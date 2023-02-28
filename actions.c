@@ -259,22 +259,14 @@ replace(struct line *l, struct selection *s)
         replaced[lj] = '\0';
         j += n;
     }
-//tb_printf(0, 0, COLOR_DEFAULT, COLOR_BG_DEFAULT,
-//        "%d %d %d %d  %s", s->x, s->n, j, lj, replaced);
-//tb_present();
-//tb_poll_event(&ev);
 
     // do the actual replacement
     delete_characters(l, s, sx = s->x, s->n);
     k_chars = insert_characters(l, s, sx, j, lj);
-    //k_chars = replace_characters(l, s, s->x, s->n, j, lj);
+    //k_chars = replace_characters(l, s, s->x, s->n, j, lj); // XXX
     for (a = 0; a < lj; a++)
         l->chars[k_chars + a] = replaced[a];
 
     // forget about replaced
     free(replaced);
-
-//print_all();
-//tb_present();
-//tb_poll_event(&ev);
 }

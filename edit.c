@@ -17,8 +17,6 @@ main(int argc, char *argv[])
     struct pos p;
 
     // PARSING ARGUMENTS *******************************************************
-    // TODO: better error detection, starting with -
-    // TODO: check if file exists
 
     if (argc < 2 || !(strcmp(argv[1], "--help") && strcmp(argv[1], "-h"))) {
         printf("%s\n", HELP_MESSAGE);

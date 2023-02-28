@@ -2,7 +2,6 @@
 
 ### New features
 
-* parse command line arguments
 * shift selections when move line, move to clip, insert from clip, insert line, split lines, concatenate lines...
 * {split, concatenate} lines
 * suppress selections when move to clip

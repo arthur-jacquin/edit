@@ -7,7 +7,7 @@
             config.def.h, config.h
             runtime/compile time
     explain the way to interact with the editor
-        enter
+        invokation
         explain the way elements are layed out
         display-wait-act loop
         modes, how to exit at any point

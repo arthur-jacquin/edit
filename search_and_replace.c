@@ -52,7 +52,7 @@ mark_pattern(char *chars, int x, int n)
     int i, k; // indexes in chars (characters, bytes)
     int j, l; // indexes in sp (characters, bytes)
     int s, st; // number of subpatterns, start of running subpattern
-    int start_block, start_block_i, nb_block, is_block_ok; // block management
+    int start_block, start_block_i, start_block_k, nb_block, is_block_ok; // block management
     int start_elem, start_elem_i, nb_elem, is_elem_ok; // character management
     // can be: char, ., \w, \W, \d, \D, \^, \$, \\, \., class
     int min, max, lsp, a; // sp length, repetition boundaries, generic
@@ -60,10 +60,18 @@ mark_pattern(char *chars, int x, int n)
     char c; // generic
 
     // init subpatterns
+    for (k = i = 0; i < x; i++)
+        k += utf8_char_length(chars[k]);
+    for (a = k; i < x + n; i++)
+        a += utf8_char_length(chars[a]);
     subpatterns[0].st = x;
+    subpatterns[0].mst = k;
     subpatterns[0].n = n;
-    for (a = 1; a < 10; a++)
-        subpatterns[a].n = 0;
+    subpatterns[0].mn = a - k;
+    for (a = 1; a < 10; a++) {
+        subpatterns[a].st = subpatterns[a].mst = 0;
+        subpatterns[a].n = subpatterns[a].mn = 0;
+    }
 
     sp = search_pattern.current;
     lsp = strlen(sp);
@@ -71,7 +79,7 @@ mark_pattern(char *chars, int x, int n)
     in_block = in_class = 0;
     nb_block = nb_elem = 0;
     start_block = start_elem = 0;
-    start_block_i = start_elem_i = 0;
+    start_block_k = start_block_i = start_elem_i = 0;
     last_was = NONE;
     is_block_ok = is_elem_ok = 1;
     s = 1;
@@ -175,6 +183,7 @@ mark_pattern(char *chars, int x, int n)
                     if (nb_block - 1 < min)
                         return 0;
                     subpatterns[s-1].n = start_block_i - subpatterns[s-1].st;
+                    subpatterns[s-1].mn = start_block_k - subpatterns[s-1].mst; // XXX
                     decrement(chars, &i, &k, start_block_i);
                     is_block_ok = 1;
                     last_was = NONE;
@@ -184,12 +193,15 @@ mark_pattern(char *chars, int x, int n)
                 } else if (max && nb_block == max) {
                     // get out
                     subpatterns[s-1].n = i - subpatterns[s-1].st;
+                    subpatterns[s-1].mn = k - subpatterns[s-1].mst; // XXX
                     start_block_i = i;
+                    start_block_k = k;
                     last_was = NONE;
                 } else {
                     // another read
                     s--;
                     start_block_i = i;
+                    start_block_k = k;
                     in_block = 1;
                     last_was = NONE;
                     decrement(sp, &j, &l, start_block);
@@ -248,6 +260,7 @@ mark_pattern(char *chars, int x, int n)
             nb_block = 0;
             start_block = j + 2;
             start_block_i = i;
+            start_block_k = k;
             j += 2; l += 2;
         } else if (l+1 < lsp && sp[l] == '\\' && sp[l+1] == ')') {
             if (!in_block)
@@ -255,9 +268,12 @@ mark_pattern(char *chars, int x, int n)
             in_block = 0;
             last_was = BLOCK;
             is_elem_ok = 1;
-            if (nb_block == 0)
+            if (nb_block == 0) {
                 subpatterns[s].st = start_block_i;
+                subpatterns[s].mst = start_block_k; // XXX
+            }
             subpatterns[s].n = (is_block_ok) ? (i - start_block_i) : 0;
+            subpatterns[s].mn = (is_block_ok) ? (k - start_block_k) : 0; // XXX
             nb_block++;
             s++;
             j += 2; l += 2;
@@ -327,7 +343,7 @@ mark_fields(char *chars, int x, int n)
 
     // read chars
     f = 1;
-    while (i < x + n && f < 9) {
+    while (i < x + n && f < 9) { // XXX 10 ?
         if ((chars[k] == settings.field_separator) &&
             (k == 0 || chars[k-1] != '\\')) {
             fields[f].st = st;
@@ -340,7 +356,7 @@ mark_fields(char *chars, int x, int n)
         }
         i++; k += utf8_char_length(chars[k]);
     }
-    if (f < 9) {
+    if (f < 9) { // XXX 10 ?
         fields[f].st = st;
         fields[f].mst = mst;
         fields[f].n = i - st;

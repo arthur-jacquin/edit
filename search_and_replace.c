@@ -34,7 +34,7 @@ decrement(const char *chars, int *i, int *k, int goal)
     while (*i > goal) {
         (*i)--;
         (*k)--;
-        while ((chars[*k] & 0xc0) == 0x80)
+        while ((chars[*k] & first_bytes_mask[2]) == first_bytes_mask[1])
             (*k)--;
     }
 }

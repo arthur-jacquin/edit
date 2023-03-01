@@ -49,7 +49,8 @@ dialog(const char *prompt, struct interface *interf, int refresh)
 
                 // write ev.ch
                 for (j = len - 1; j > 0; j--) {
-                    interf->current[k + j] = (c & 0x3f) | 0x80;
+                    interf->current[k + j] =
+                        (c & ~first_bytes_mask[2]) | first_bytes_mask[1];
                     c >>= 6;
                 }
                 interf->current[k] = c | utf8_start[len - 1];

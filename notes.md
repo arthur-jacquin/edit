@@ -12,8 +12,6 @@
 * remove all the `go_to(pos_of(...`, just attribute new asked y and x, and execute `go_to(pos_of(x, y))` at start of main loop
 * regex: choose a known syntax, link official documentation
 * move `get_str_index` to char * so that it can be used elsewhere ?
-* suppress settings.language ?
-* move all hexadecimal values to `global.h` with a description
 * put variables where they sould be, and how they should be (extern, const...)
 * improve error management, assure safe and graceful fails
 * use ifdef and macros

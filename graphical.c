@@ -33,7 +33,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
         buf[i].ch = l->chars[k++] & masks[len-1];
         for (j = 1; j < len; j++) {
             buf[i].ch <<= 6;
-            buf[i].ch |= 0x3f & (l->chars[k++]);
+            buf[i].ch |= ~first_bytes_mask[2] & (l->chars[k++]);
         }
     }
 
@@ -152,7 +152,7 @@ print_dialog(void)
         c = nc & masks[len-1];
         for (j = 1; j < len; j++) {
             c <<= 6;
-            c |= 0x3f & dialog_chars[k++];
+            c |= ~first_bytes_mask[2] & dialog_chars[k++];
         }
         tb_set_cell(i, screen_height-1, c, COLOR_DIALOG, COLOR_BG_DEFAULT);
     }

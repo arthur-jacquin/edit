@@ -36,7 +36,7 @@ lower(struct line *l, struct selection *s)
         len = utf8_char_length(c = l->chars[k]);
         if (len == 1 && 'A' <= c && c <= 'Z')
             l->chars[k] |= (1 << 5);
-        if (len == 2 && c == (char) 0xc3)
+        if (len == 2 && c == (char) FIRST_BYTE_ACCENTUATED)
             l->chars[k+1] |= (1 << 5);
         k += len;
     }
@@ -54,7 +54,7 @@ upper(struct line *l, struct selection *s)
         len = utf8_char_length(c = l->chars[k]);
         if (len == 1 && 'a' <= c && c <= 'z')
             l->chars[k] &= ~(1 << 5);
-        if (len == 2 && c == (char) 0xc3)
+        if (len == 2 && c == (char) FIRST_BYTE_ACCENTUATED)
             l->chars[k+1] &= ~(1 << 5);
         k += len;
     }
@@ -71,7 +71,7 @@ insert(struct line *l, struct selection *s)
     len = unicode_char_length(c = ev.ch);
     k = insert_characters(l, s, s->x, 1, len);
     for (j = len - 1; j > 0; j--) {
-        l->chars[k + j] = (c & 0x3f) | 0x80;
+        l->chars[k + j] = (c & ~first_bytes_mask[2]) | first_bytes_mask[1];
         c >>= 6;
     }
     l->chars[k] = c | utf8_start[len - 1];

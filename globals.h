@@ -62,6 +62,7 @@ char first_bytes_mask[6] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8};
 char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
 char utf8_start[4] = {0, 0xc0, 0xe0, 0xf0};
 uint32_t unicode_delimiter[4] = {0x80, 0x800, 0x10000, 0x200000};
+#define FIRST_BYTE_ACCENTUATED      0xc3;
 
 // file properties
 struct interface file_name_int;     // interface for storing file name

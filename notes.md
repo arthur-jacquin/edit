@@ -2,17 +2,15 @@
 
 ### New features
 
-* shift selections when move line, move to clip, insert from clip, insert line, split lines, concatenate lines...
-* {split, concatenate} lines
-* suppress selections when move to clip
+* `reorder_sel`, for `move_line`
 * manage resizing while in dialog mode
-* `delete_character`: specify behaviour on start of selection
 
 ### Restructurations
 
+* clarify functions deps, restructurate in which file goes which functions
 * only short option names ?
 * use strncat and other stdlib functions (ctype.h, string.h...)
-* replace `{insert,delete}_chars` by `replace_chars`
+* replace `{insert,delete}_chars` by `replace_chars`, special behaviour on suppress ?
 * (characters, bytes) struct ?
 * gathers variables in good order in globals.h
 * internalize termbox ?
@@ -31,10 +29,12 @@
 * correctness, especially
     * rules
     * what happens when multiple slash on the same line
+    * insert characters like ' on line created by `insert_line`
     * search and replace engine (extensivity)
     * `replace_characters`
 * look for unstated assumptions
-* has_been_changes, anchor, cursor, selections, ... all globals
+* selections, has_been_changes, anchor, cursor, selections, ... all globals
+* recurrent expr that should be replaced with a macro
 * possibility to make compile-time arguments
 * possibility to make "const" args
 * test other compilers

@@ -161,7 +161,8 @@ main(int argc, char *argv[])
                     break;
                 case KB_INSERT_LINE_BELOW:
                 case KB_INSERT_LINE_ABOVE:
-                    reset_selections();
+                    //reset_selections(); // XXX ?
+                    //anchored = 0; // XXX ?
                     l1 = first_line_on_screen->line_nb + y +
                         ((ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0);
                     insert_line(l1, 1, 0);
@@ -365,11 +366,7 @@ main(int argc, char *argv[])
                     break;
                 case TB_KEY_ENTER:
                     if (in_insert_mode) {
-                //        empty_sels();
-                //        anchored = 0;
-                //        add_running_sels(1);
-                //        act(split_lines, 0);
-                //        go_to(pos_of(first_line_on_screen->line_nb + y + 1, 0));
+                        act(split, 0);
                     } else {
                         go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
                     }

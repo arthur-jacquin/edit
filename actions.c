@@ -78,6 +78,33 @@ insert(struct line *l, struct selection *s)
 }
 
 void
+split(struct line *l, struct selection *s)
+{
+    // split line at s->x
+    
+    struct line *new;
+    char *new_chars;
+    int k;
+
+    // create line below
+    k = get_str_index(l, s->x);
+    new = insert_line(l->line_nb + 1, l->ml - k, l->dl - s->x);
+    strncpy(new->chars, &(l->chars[k]), l->ml - k);
+
+    // shorten current line
+    new_chars = (char *) malloc(k + 1);
+    strncpy(new_chars, l->chars, k);
+    new_chars[k] = '\0';
+    free(l->chars);
+    l->chars = new_chars;
+    l->dl = s->x;
+    l->ml = k + 1;
+
+    // move selections of current line
+    move_sel_end_of_line(s, l->line_nb, s->x, 0);
+}
+
+void
 indent(struct line *l, struct selection *s)
 {
     // indent, until finding a settings.tab_width multiple in insert_mode,
@@ -158,7 +185,7 @@ void
 suppress(struct line *l, struct selection *s)
 {
     // if s->n, supress selected characters, else use asked_remove
-    // TODO: concatenate/split lines
+    // TODO: concatenate lines
     // TODO: manually move cursor if delete
 
     int start, nb_deleted;
@@ -175,14 +202,22 @@ suppress(struct line *l, struct selection *s)
             nb_deleted = asked_remove;
             if (nb_deleted > l->dl - start)
                 nb_deleted = l->dl - start;
+            if (nb_deleted == 0) {
+                if (!is_last_line(l))
+                    concatenate_line(l, s);
+                return;
+            }
         } else {
             start = s->x + asked_remove;
             if (start < 0)
                 start = 0;
             nb_deleted = s->x - start;
+            if (nb_deleted == 0) {
+                if (!is_first_line(l))
+                    concatenate_line(l->prev, s);
+                return;
+            }
         }
-        if (nb_deleted == 0)
-            return;
     }
 
     // delete characters

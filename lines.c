@@ -207,15 +207,77 @@ insert_line(int asked_line_nb, int ml, int dl)
         replaced_line = get_line(asked_line_nb - first_line_on_screen->line_nb);
         shift_line_nb((asked_line_nb >= first_line_on_screen->line_nb) ?
             first_line_on_screen : first_line, asked_line_nb, 0, 1);
-        // TODO: shift_sel_line_nb(saved, asked_line_nb, 0, 1);
+        shift_sel_line_nb(saved, asked_line_nb, 0, 1);
         new = create_line(asked_line_nb, ml, dl);
         new->chars[ml - 1] = '\0';
         link_lines(replaced_line->prev, new);
         link_lines(new, replaced_line);
     }
 
+    // TODO anchor ? cursor ?
+    if (first_line_on_screen->line_nb + y >= asked_line_nb)
+        y++;
+
     nb_lines++;
     return new;
+}
+
+/*void TODO suppress
+delete_line(int asked_line_nb, int ml, int dl)
+{
+    // TODO
+
+    struct line *l;
+
+    l = get_line(asked_line_nb - first_line_on_screen->line_nb);
+    if (is_last_line(l)) {
+        if (is_first_line(l)) {
+            // create empty line
+            first_line = first_line_on_screen = create_line(1, 1, 0);
+            first_line->prev = first_line->next = NULL;
+            strcpy(first_line->chars, "");
+            nb_lines = 1;
+        }
+    } else {
+        if (is_first_line(l))
+            first_line = first_line_on_screen = l->next;
+        shift_line_nb(l, l->line_nb + 1, 0, -1);
+    }
+    link_lines(l->prev, l->next);
+    nb_lines--;
+
+    // suppress and move selections
+    remove_sel_line_range(asked_line_nb, asked_line_nb);
+    shift_sel_line_nb(saved, asked_line_nb, 0, -1);
+
+    // TODO cursor ? anchor ?
+}*/
+
+void
+concatenate_line(struct line *l, struct selection *s)
+{
+    // move l->next (existence assumed) content at the end of l
+
+    char *new_chars;
+
+    // move selections
+    move_sel_end_of_line(s, l->line_nb, l->dl, 1);
+    shift_sel_line_nb(s, l->line_nb + 1, 0, -1);
+    // TODO cursor ? anchor ?
+    
+    // create new chars, refresh metadata
+    new_chars = (char *) malloc(l->ml + l->next->ml - 1);
+    strncpy(new_chars, l->chars, l->ml - 1);
+    strncpy(&(new_chars[l->ml - 1]), l->next->chars, l->next->ml);
+    free(l->chars);
+    l->chars = new_chars;
+    l->ml += l->next->ml - 1;
+    l->dl += l->next->dl;
+    link_lines(l, l->next->next);
+    forget_line(l->next);
+    shift_line_nb(l, l->line_nb + 1, 0, -1);
+    // TODO move line numbers
+    nb_lines--;
 }
 
 struct line *
@@ -314,9 +376,8 @@ move_line(int delta)
     dest = get_line(new_line_nb - first_line_on_screen->line_nb);
 
     // TODO: selection shifting
-    //shift_sel_line_nb(saved, cursor_line, cursor_line, new_line_nb - cursor_line);
+    // shift_sel_line_nb(saved, cursor_line, cursor_line, -cursor_line);
     if (delta > 0) {
-        // TODO: better start for shift ?
         //shift_sel_line_nb(saved, cursor_line + 1, new_line_nb, -1);
         shift_line_nb(first_line, cursor_line + 1, new_line_nb, -1);
         if (src == first_line_on_screen)
@@ -327,7 +388,6 @@ move_line(int delta)
         link_lines(src, dest->next);
         link_lines(dest, src);
     } else {
-        // TODO: better start for shift ?
         //shift_sel_line_nb(saved, new_linecursor_line + 1, new_line_nb, -1);
         shift_line_nb(first_line, new_line_nb, first_line_on_screen->line_nb + y - 1, 1);
         if (dest == first_line_on_screen)
@@ -339,6 +399,7 @@ move_line(int delta)
         link_lines(src, dest);
     }
     src->line_nb = new_line_nb;
+    // shift_sel_line_nb(saved, -1, -1, -cursor_line);
 
     return new_line_nb;
 }
@@ -399,11 +460,14 @@ move_to_clip(int starting_line_nb, int nb)
             first_line->prev = first_line->next = NULL;
             strcpy(first_line->chars, "");
             nb_lines = 1;
+        } else {
+            nb_lines -= nb;
         }
     } else {
         if (is_first_line(starting))
             first_line = first_line_on_screen = ending->next;
         shift_line_nb(ending, ending->line_nb + 1, 0, -nb);
+        nb_lines -= nb;
     }
 
     link_lines(starting->prev, ending->next);
@@ -412,9 +476,11 @@ move_to_clip(int starting_line_nb, int nb)
     shift_line_nb(starting, 0, 0, -starting->line_nb);
     clipboard.start = starting;
     clipboard.nb_lines = nb;
-    nb_lines -= nb;
-}
 
+    // suppress and move selections
+    remove_sel_line_range(starting_line_nb, starting_line_nb + nb - 1);
+    shift_sel_line_nb(saved, starting_line_nb, 0, -nb);
+}
 
 void
 insert_clip(struct line *starting_line, int below)
@@ -432,6 +498,7 @@ insert_clip(struct line *starting_line, int below)
     first_inserted_line_nb = starting_line->line_nb + ((below) ? 1 : 0);
     shift_line_nb(clipboard.start, 0, 0, first_inserted_line_nb);
     shift_line_nb(starting_line, first_inserted_line_nb, 0, clipboard.nb_lines);
+    shift_sel_line_nb(saved, first_inserted_line_nb, 0, clipboard.nb_lines);
     l = clipboard.start;
     for (i = 1; i < clipboard.nb_lines; i++)
         l = l->next;

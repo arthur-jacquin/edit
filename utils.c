@@ -3,13 +3,13 @@ utf8_char_length(char c)
 {
     // compute the length in bytes of character starting by byte c
 
-    if ((char) (c & 0x80) == utf8_start[0]) {
+    if ((char) (c & first_bytes_mask[1]) == utf8_start[0]) {
         return 1;
-    } else if ((char) (c & 0xe0) == utf8_start[1]) {
+    } else if ((char) (c & first_bytes_mask[3]) == utf8_start[1]) {
         return 2;
-    } else if ((char) (c & 0xf0) == utf8_start[2]) {
+    } else if ((char) (c & first_bytes_mask[4]) == utf8_start[2]) {
         return 3;
-    } else if ((char) (c & 0xf8) == utf8_start[3]) {
+    } else if ((char) (c & first_bytes_mask[5]) == utf8_start[3]) {
         return 4;
     }
 }
@@ -19,13 +19,13 @@ unicode_char_length(uint32_t c)
 {
     // compute the length in bytes of unicode codepoint c
 
-    if (c < 0x80) {
+    if (c < unicode_delimiter[0]) {
         return 1;
-    } else if (c < 0x800) {
+    } else if (c < unicode_delimiter[1]) {
         return 2;
-    } else if (c < 0x10000) {
+    } else if (c < unicode_delimiter[2]) {
         return 3;
-    } else if (c < 0x200000) {
+    } else if (c < unicode_delimiter[3]) {
         return 4;
     }
 }

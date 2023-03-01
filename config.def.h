@@ -37,7 +37,6 @@
 
 // DEFAULT VALUES FOR RUNTIME-MODIFIABLE PARAMETERS ****************************
 
-#define AUTOINDENT                  1
 #define SYNTAX_HIGHLIGHT            1
 #define HIGHLIGHT_SELECTIONS        1
 #define CASE_SENSITIVE              1

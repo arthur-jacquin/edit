@@ -2,7 +2,6 @@
 
 ### New features
 
-* `reorder_sel`, for `move_line`
 * manage resizing while in dialog mode
 
 ### Restructurations

@@ -54,7 +54,6 @@ load_file(const char *file_name, int first_line_on_screen_nb)
         line = create_line(line_nb, ml, dl);
         if (first_line == NULL) {
             first_line = last_line = line;
-            line->prev = NULL;
         } else {
             link_lines(last_line, line);
             last_line = line;

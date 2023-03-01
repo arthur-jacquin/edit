@@ -189,7 +189,84 @@ remove_sel_line_range(int min, int max)
 void
 reorder_sel(int l, int new_l)
 {
-    // TODO
+    // reorder selections to adjust to `move_line`
+
+    struct selection *s, *last;
+    struct selection *last_before, *first, *last_first, *second, *last_second;
+    int first_start, first_end, second_end;
+
+    // compute delimiters of ranges to invert
+    first_start = (l > new_l) ? new_l : l;
+    first_end = (l > new_l) ? (l - 1) : l;
+    second_end = (l > new_l) ? l : new_l;
+
+    // skip selections before ranges, identifies last_before
+    s = last = saved;
+    if (s == NULL)
+        return;
+    if (s->l < first_start) {
+        while (s != NULL && s->l < first_start) {
+            last = s;
+            s = s->next;
+        }
+        last_before = last;
+        if (s == NULL)
+            return;
+    } else {
+        last_before = NULL;
+    }
+
+    // shift selections of the first range, identifies first and last_first
+    if (s->l <= first_end) {
+        first = s;
+        while (s != NULL && s->l <= first_end) {
+            s->l = (l > new_l) ? (s->l + 1) : new_l;
+            last = s;
+            s = s->next;
+        }
+        last_first = last;
+        if (s == NULL)
+            return;
+    } else {
+        first = last_first = NULL;
+    }
+
+    // shift selections of the second range, identifiers second and last_second
+    if (s->l <= second_end) {
+        second = s;
+        while (s != NULL && s->l <= second_end) {
+            s->l = (l > new_l) ? new_l : (s->l - 1);
+            last = s;
+            s = s->next;
+        }
+        last_second = last;
+    } else {
+        return;
+    }
+
+    // last_before->next = second
+    if (last_before == NULL) {
+        saved = second;
+    } else {
+        last_before->next = second;
+    }
+
+    // last_second->next = first
+    // last_first->next = s
+    if (first == NULL) {
+        last_second->next = s;
+    } else {
+        last_second->next = first;
+        last_first->next = s;
+    }
+
+    // move anchor
+    if (anchored) {
+        if (first_start <= anchor.l && anchor.l <= first_end)
+            anchor.l = (l > new_l) ? (anchor.l + 1) : new_l;
+        if (first_end < anchor.l && anchor.l <= second_end)
+            anchor.l = (l > new_l) ? new_l : (anchor.l - 1);
+    }
 }
 
 void

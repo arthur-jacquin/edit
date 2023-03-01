@@ -38,7 +38,6 @@ main(int argc, char *argv[])
     // INIT VARIABLES **********************************************************
 
     // settings
-    settings.autoindent = AUTOINDENT;
     settings.tab_width = TAB_WIDTH;
     init_interface(&settings_int, "");
     load_lang(file_name_int.current);

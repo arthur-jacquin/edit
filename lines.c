@@ -362,11 +362,12 @@ move_line(int delta)
 
     src = get_line(y);
     dest = get_line(new_line_nb - first_line_on_screen->line_nb);
+    
+    // reorder selections, anchor
+    reorder_sel(cursor_line, new_line_nb);
 
-    // TODO: selection shifting
-    // shift_sel_line_nb(saved, cursor_line, cursor_line, -cursor_line);
+    // reorder lines
     if (delta > 0) {
-        //shift_sel_line_nb(saved, cursor_line + 1, new_line_nb, -1);
         shift_line_nb(first_line, cursor_line + 1, new_line_nb, -1);
         if (src == first_line_on_screen)
             first_line_on_screen = first_line_on_screen->next;
@@ -376,7 +377,6 @@ move_line(int delta)
         link_lines(src, dest->next);
         link_lines(dest, src);
     } else {
-        //shift_sel_line_nb(saved, new_linecursor_line + 1, new_line_nb, -1);
         shift_line_nb(first_line, new_line_nb, first_line_on_screen->line_nb + y - 1, 1);
         if (dest == first_line_on_screen)
             first_line_on_screen = src;
@@ -387,8 +387,7 @@ move_line(int delta)
         link_lines(src, dest);
     }
     src->line_nb = new_line_nb;
-    // shift_sel_line_nb(saved, -1, -1, -cursor_line);
-
+    
     return new_line_nb;
 }
 

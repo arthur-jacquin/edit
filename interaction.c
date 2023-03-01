@@ -136,9 +136,6 @@ set_parameter(const char *assign)
 
     if (strchr(assign, '=') == NULL) {
         return 0;
-    } else if (sscanf(assign, "autoindent=%d", &b) == 1
-            || sscanf(assign, "i=%d", &b) == 1) {
-        settings.autoindent = b;
     } else if (sscanf(assign, "syntax_highlight=%d", &b) == 1
             || sscanf(assign, "sh=%d", &b) == 1) {
         settings.syntax_highlight = b;

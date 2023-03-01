@@ -55,7 +55,6 @@
 ## Runtime-modifiable parameters
 
     SHORT NAME  LONG NAME               TYPE    DEFAULT
-    i           autoindent              bool    yes
     sh          syntax_highlight        bool    yes
     h           highlight_selections    bool    yes
     c           case_sensitive          bool    yes

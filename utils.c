@@ -31,14 +31,14 @@ unicode_char_length(uint32_t c)
 }
 
 int
-get_str_index(struct line *l, int x)
+get_str_index(const char *chars, int x)
 {
     // compute the index in chars corresponding to column x
 
     int i, k;
 
     for (k = 0, i = 0; i < x; i++)
-        k += utf8_char_length(l->chars[k]);
+        k += utf8_char_length(chars[k]);
 
     return k;
 }
@@ -92,4 +92,39 @@ is_in(const char *list, const char *chars, int x, int length)
     }
 
     return 0;
+}
+
+// NOT OK
+
+int
+is_first_line(const struct line *l)
+{
+    // check if *l is the first line of the list it belongs to
+
+    return (l->prev == NULL);
+}
+
+int
+is_last_line(const struct line *l)
+{
+    // check if *l is the last line of the list it belongs to
+
+    return (l->next == NULL);
+}
+
+void
+init_interface(struct interface *interf, const char *chars)
+{
+    // copy chars in current and previous fields of interf
+
+    strcpy(interf->current, chars);
+    strcpy(interf->previous, chars);
+}
+
+void
+echo(const char *chars)
+{
+    // set dialog line to chars
+
+    strcpy(dialog_chars, chars);
 }

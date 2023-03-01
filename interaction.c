@@ -1,20 +1,3 @@
-void
-display_help(void)
-{
-    // tell the user how to get more complete help
-
-    echo(HELP_MESSAGE);
-}
-
-void
-init_interface(struct interface *interf, const char *chars)
-{
-    // copy chars in current and previous fields of interf
-
-    strcpy(interf->current, chars);
-    strcpy(interf->previous, chars);
-}
-
 int
 dialog(const char *prompt, struct interface *interf, int refresh)
 {
@@ -148,8 +131,8 @@ set_parameter(const char *assign)
     // process a settings modification
 
     int b;
-    char c, s[LANG_WIDTH], old_lang[LANG_WIDTH];
-    struct lang *old_syntax;
+    char c, s[LANG_WIDTH];
+    struct lang *old_lang;
 
     if (strchr(assign, '=') == NULL) {
         return 0;
@@ -173,13 +156,10 @@ set_parameter(const char *assign)
         settings.tab_width = (b >= 0) ? b : TAB_WIDTH;
     } else if (sscanf(assign, "language=%s", s) == 1
             || sscanf(assign, "l=%s", s) == 1) {
-        strcpy(old_lang, settings.language);
-        old_syntax = settings.syntax;
-        strcpy(settings.language, s);
-        load_lang();
+        old_lang = settings.syntax;
+        load_lang(s);
         if (settings.syntax == NULL) {
-            strcpy(settings.language, old_lang);
-            settings.syntax = old_syntax;
+            settings.syntax = old_lang;
             return 0;
         }
     } else {
@@ -234,4 +214,28 @@ parse_range(const char *range)
         saved = range_lines_sel(l1, l2, NULL);
         return 1;
     }
+}
+
+void
+load_lang(const char *extension)
+{
+    // try to apply a syntax from the identified extension
+    
+    int i, j, l;
+
+    // detect last point
+    l = strlen(extension);
+    for (i = l - 1; i >= 0 && (extension[i] != '.'); i--)
+        ;
+    i++;
+
+    // iterate over possible languages
+    for (j = 0; j < sizeof(languages)/sizeof(struct lang); j++) {
+        settings.syntax = &languages[j];
+        if (is_in(*((settings.syntax)->names), extension, i, l - i))
+            return;
+    }
+
+    // fail
+    settings.syntax = NULL;
 }

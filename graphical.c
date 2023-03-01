@@ -10,16 +10,8 @@ resize(int width, int height)
     return 0;
 }
 
-void
-echo(const char *chars)
-{
-    // set dialog line to chars
-
-    strcpy(dialog_chars, chars);
-}
-
 struct selection *
-print_line(struct line *l, struct selection *s, int screen_line)
+print_line(const struct line *l, struct selection *s, int screen_line)
 {
     // print line *l to screen, on line screen_line
     // return selection queue after this line
@@ -48,7 +40,7 @@ print_line(struct line *l, struct selection *s, int screen_line)
     // foreground
     for (i = 0; i < l->dl; i++)
         buf[i].fg = COLOR_DEFAULT;
-    if (settings.syntax_highlight && strcmp(settings.language, "none")) {
+    if (settings.syntax_highlight && settings.syntax != NULL) {
         // ignores blank characters at the beginning of the line
         k = i = 0;
         while (l->chars[k] == ' ') {
@@ -198,7 +190,7 @@ print_all(void)
     tb_clear();
 
     l = get_line(y);
-    c = l->chars[get_str_index(l, x)];
+    c = l->chars[get_str_index(l->chars, x)];
     is_bracket = (c == '{' || c == '}' || c == '[' || c == ']'
         || c == '(' || c == ')' || c == '<' || c == '>');
     if (is_bracket)

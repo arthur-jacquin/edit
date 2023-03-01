@@ -187,6 +187,12 @@ remove_sel_line_range(int min, int max)
 }
 
 void
+reorder_sel(int l, int new_l)
+{
+    // TODO
+}
+
+void
 forget_sel_list(struct selection *a)
 {
     // free the memory used by the list a

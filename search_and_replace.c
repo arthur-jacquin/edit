@@ -1,5 +1,5 @@
 int
-compare_chars(char *s1, int i1, char *s2, int i2)
+compare_chars(const char *s1, int i1, const char *s2, int i2)
 {
     // compare characters from s1 and s2 strings starting at i1 and i2 indexes
     // return 0 if characters are equal
@@ -26,7 +26,7 @@ compare_chars(char *s1, int i1, char *s2, int i2)
 }
 
 void
-decrement(char *chars, int *i, int *k, int goal)
+decrement(const char *chars, int *i, int *k, int goal)
 {
     // assuming *k is an index in chars corresponding to the (*i)-th character,
     // decrement *i to goal (and *k accordingly)
@@ -40,7 +40,7 @@ decrement(char *chars, int *i, int *k, int goal)
 }
 
 int
-mark_pattern(char *chars, int x, int n)
+mark_pattern(const char *chars, int x, int n)
 {
     // try to read searched pattern in chars, store identified subpatterns
     // return length of read pattern if found at x, of length < n, else 0
@@ -317,7 +317,7 @@ mark_pattern(char *chars, int x, int n)
 }
 
 int
-mark_fields(char *chars, int x, int n)
+mark_fields(const char *chars, int x, int n)
 {
     // search for fields
     // return number of fields

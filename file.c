@@ -1,5 +1,5 @@
 int
-load_file(char *file_name, int first_line_on_screen_nb)
+load_file(const char *file_name, int first_line_on_screen_nb)
 {
     // reads the file file_name and store it in first_line list
 
@@ -11,7 +11,7 @@ load_file(char *file_name, int first_line_on_screen_nb)
     int c, reached_EOF, ml, dl;
 
     // get sure first_line list is empty
-    forget_lines_list(first_line);
+    forget_lines(first_line);
     first_line = first_line_on_screen = NULL;
 
     // open connection to src_file
@@ -82,7 +82,7 @@ load_file(char *file_name, int first_line_on_screen_nb)
 }
 
 int
-write_file(char *file_name)
+write_file(const char *file_name)
 {
     // reads the first_line list and store the content in file_name file
 
@@ -112,41 +112,4 @@ write_file(char *file_name)
         return ERR_FILE_CONNECTION;
 
     return 0;
-}
-
-void
-get_extension(void)
-{
-    // extract extension from file name interface
-
-    int i, j;
-
-    for (i = strlen(file_name_int.current) - 1; i >= 0 &&
-        (file_name_int.current[i] != '.'); i--)
-        ;
-    i++;
-    j = 0;
-    while (i < strlen(file_name_int.current))
-        settings.language[j++] = file_name_int.current[i++];
-}
-
-void
-load_lang(void)
-{
-    // try to select a syntax
-
-    int i;
-
-    // iterate over possible languages
-    for (i = 0; i < sizeof(languages)/sizeof(struct lang); i++) {
-        settings.syntax = &languages[i];
-        if (is_in(*((settings.syntax)->names), settings.language, 0,
-            strlen(settings.language))) {
-            return;
-        }
-    }
-
-    // fail
-    settings.syntax = NULL;
-    strcpy(settings.language, "none");
 }

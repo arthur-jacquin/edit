@@ -32,7 +32,7 @@ lower(struct line *l, struct selection *s)
     int i, k, len;
     char c;
 
-    for (k = get_str_index(l, i = s->x); i < s->x + s->n; i++) {
+    for (k = get_str_index(l->chars, i = s->x); i < s->x + s->n; i++) {
         len = utf8_char_length(c = l->chars[k]);
         if (len == 1 && 'A' <= c && c <= 'Z')
             l->chars[k] |= (1 << 5);
@@ -50,7 +50,7 @@ upper(struct line *l, struct selection *s)
     int i, k, len;
     char c;
 
-    for (k = get_str_index(l, i = s->x); i < s->x + s->n; i++) {
+    for (k = get_str_index(l->chars, i = s->x); i < s->x + s->n; i++) {
         len = utf8_char_length(c = l->chars[k]);
         if (len == 1 && 'a' <= c && c <= 'z')
             l->chars[k] &= ~(1 << 5);
@@ -81,13 +81,14 @@ void
 split(struct line *l, struct selection *s)
 {
     // split line at s->x
+    // TODO move to break_line
     
-    struct line *new;
+    /*struct line *new;
     char *new_chars;
     int k;
 
     // create line below
-    k = get_str_index(l, s->x);
+    k = get_str_index(l->chars, s->x);
     new = insert_line(l->line_nb + 1, l->ml - k, l->dl - s->x);
     strncpy(new->chars, &(l->chars[k]), l->ml - k);
 
@@ -101,7 +102,7 @@ split(struct line *l, struct selection *s)
     l->ml = k + 1;
 
     // move selections of current line
-    move_sel_end_of_line(s, l->line_nb, s->x, 0);
+    move_sel_end_of_line(s, l->line_nb, s->x, 0);*/
 }
 
 void
@@ -136,7 +137,7 @@ indent(struct line *l, struct selection *s)
         if (in_insert_mode) {
             asked_indent = -1;
             while ((s->x + asked_indent > 0) &&
-                (l->chars[get_str_index(l, s->x + asked_indent - 1)] == ' ') &&
+                (l->chars[get_str_index(l->chars, s->x + asked_indent - 1)] == ' ') &&
                 (s->x + asked_indent)%(settings.tab_width))
                 asked_indent--;
             start = s->x + asked_indent;

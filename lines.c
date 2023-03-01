@@ -1,17 +1,21 @@
-int
-is_first_line(const struct line *l)
+struct line *
+get_line(int delta_from_first_line_on_screen)
 {
-    // check if *l is the first line of the list it belongs to
+    // returns the pointer to line shifted of delta_from_first_line_on_screen
+    // from first_line_on_screen
 
-    return (l->prev == NULL);
-}
+    struct line *res;
 
-int
-is_last_line(const struct line *l)
-{
-    // check if *l is the last line of the list it belongs to
+    res = first_line_on_screen;
+    if (delta_from_first_line_on_screen > 0) {
+        while (res->next != NULL && delta_from_first_line_on_screen--)
+            res = res->next;
+    } else {
+        while (res->prev != NULL && delta_from_first_line_on_screen++)
+            res = res->prev;
+    }
 
-    return (l->next == NULL);
+    return res;
 }
 
 struct line *
@@ -33,7 +37,54 @@ create_line(int line_nb, int ml, int dl)
 
     return res;
 }
- 
+
+void
+link_lines(struct line *l1, struct line *l2)
+{
+    // ensures *l2 follows *l1 in the double linked list of lines
+    // manage NULL pointers
+
+    if (l1 != NULL)
+        l1->next = l2;
+    if (l2 != NULL)
+        l2->prev = l1;
+}
+
+void
+shift_line_nb(struct line *start, int min, int max, int delta)
+{
+    // shift the line_nb field of delta for lines of start queue if the current
+    // value is between min and max (included)
+    // comparison with max is ignored if max == 0
+
+    struct line *l;
+
+    l = start;
+    while (l != NULL && l->line_nb < min)
+        l = l->next;
+    while (l != NULL && (!max || l->line_nb <= max)) {
+        l->line_nb += delta;
+        l = l->next;
+    }
+}
+
+void
+forget_lines(struct line *start)
+{
+    // free the memory used by the list start
+
+    struct line *l, *next;
+
+    l = start;
+    while (l != NULL) {
+        next = l->next;
+        free(l->chars);
+        free(l);
+        l = next;
+    }
+}
+
+// TODO suppress
 int
 insert_characters(struct line *l, struct selection *a, int start, int n,
     int nb_bytes)
@@ -89,6 +140,7 @@ insert_characters(struct line *l, struct selection *a, int start, int n,
     return k1;
 }
 
+// TODO suppress
 void
 delete_characters(struct line *l, struct selection *a, int start, int n)
 {
@@ -98,8 +150,8 @@ delete_characters(struct line *l, struct selection *a, int start, int n)
     char *new_chars, *old_chars;
 
     // compute length of new_chars
-    k1 = get_str_index(l, start);
-    k2 = get_str_index(l, start + n);
+    k1 = get_str_index(l->chars, start);
+    k2 = get_str_index(l->chars, start + n);
     l->ml -= k2 - k1;
     l->dl -= n;
 
@@ -134,20 +186,22 @@ delete_characters(struct line *l, struct selection *a, int start, int n)
     if (anchored && l->line_nb == anchor.l && start <= anchor.x)
         anchor.x = (anchor.x - n >= start) ? (anchor.x - n) : start;
 }
-/*
+
+
 void
-replace_characters(struct line *l, struct selection *a, int start, int n,
+replace_chars(struct line *l, struct selection *a, int start, int n,
     int new_n, int nb_bytes)
 {
-    // replace n characters after start by new_n characters taking nb_bytes
+    // TODO
+/*    // replace n characters after start by new_n characters taking nb_bytes
     // bytes (characters are not initialised)
 
     int i, k, k1, k2;
     char *new_chars, *old_chars;
 
     // compute length of new_chars
-    k1 = get_str_index(l, start);
-    k2 = get_str_index(l, start + n);
+    k1 = get_str_index(l->chars, start);
+    k2 = get_str_index(l->chars, start + n);
     l->ml += nb_bytes - (k2 - k1);
     l->dl += new_n - n;
 
@@ -189,11 +243,47 @@ replace_characters(struct line *l, struct selection *a, int start, int n,
         else
             //x = (x - n >= start) ? (x - n) : start;
     }
-}*/
+*/
+}
 
-struct line *
+void
+break_line(struct line *l, struct selection *s, int start)
+{
+    // TODO
+}
+
+void
+concatenate_line(struct line *l, struct selection *s)
+{
+    // move l->next (existence assumed) content at the end of l
+
+    char *new_chars;
+
+    // move selections
+    move_sel_end_of_line(s, l->line_nb, l->dl, 1);
+    shift_sel_line_nb(s, l->line_nb + 1, 0, -1);
+    // TODO cursor ? anchor ?
+    
+    // create new chars, refresh metadata
+    new_chars = (char *) malloc(l->ml + l->next->ml - 1);
+    strncpy(new_chars, l->chars, l->ml - 1);
+    strncpy(&(new_chars[l->ml - 1]), l->next->chars, l->next->ml);
+    free(l->chars);
+    l->chars = new_chars;
+    l->ml += l->next->ml - 1;
+    l->dl += l->next->dl;
+    link_lines(l, l->next->next);
+    free(l->next->chars);
+    free(l->next);
+    shift_line_nb(l, l->line_nb + 1, 0, -1);
+    // TODO move line numbers
+    nb_lines--;
+}
+
+void
 insert_line(int asked_line_nb, int ml, int dl)
 {
+    // TODO
     // insert a line with the line_nb closest possible to asked_line_nb
 
     struct line *replaced_line, *new;
@@ -219,7 +309,6 @@ insert_line(int asked_line_nb, int ml, int dl)
         y++;
 
     nb_lines++;
-    return new;
 }
 
 /*void TODO suppress
@@ -252,107 +341,6 @@ delete_line(int asked_line_nb, int ml, int dl)
 
     // TODO cursor ? anchor ?
 }*/
-
-void
-concatenate_line(struct line *l, struct selection *s)
-{
-    // move l->next (existence assumed) content at the end of l
-
-    char *new_chars;
-
-    // move selections
-    move_sel_end_of_line(s, l->line_nb, l->dl, 1);
-    shift_sel_line_nb(s, l->line_nb + 1, 0, -1);
-    // TODO cursor ? anchor ?
-    
-    // create new chars, refresh metadata
-    new_chars = (char *) malloc(l->ml + l->next->ml - 1);
-    strncpy(new_chars, l->chars, l->ml - 1);
-    strncpy(&(new_chars[l->ml - 1]), l->next->chars, l->next->ml);
-    free(l->chars);
-    l->chars = new_chars;
-    l->ml += l->next->ml - 1;
-    l->dl += l->next->dl;
-    link_lines(l, l->next->next);
-    forget_line(l->next);
-    shift_line_nb(l, l->line_nb + 1, 0, -1);
-    // TODO move line numbers
-    nb_lines--;
-}
-
-struct line *
-get_line(int delta_from_first_line_on_screen)
-{
-    // returns the pointer to line shifted of delta_from_first_line_on_screen
-    // from first_line_on_screen
-
-    struct line *res;
-
-    res = first_line_on_screen;
-    if (delta_from_first_line_on_screen > 0) {
-        while (res->next != NULL && delta_from_first_line_on_screen--)
-            res = res->next;
-    } else {
-        while (res->prev != NULL && delta_from_first_line_on_screen++)
-            res = res->prev;
-    }
-
-    return res;
-}
-
-void
-forget_line(struct line *l)
-{
-    // free the memory used by the line *l
-
-    free(l->chars);
-    free(l);
-}
-
-void
-forget_lines_list(struct line *start)
-{
-    // free the memory used by the list start
-
-    struct line *l, *next;
-
-    l = start;
-    while (l != NULL) {
-        next = l->next;
-        forget_line(l);
-        l = next;
-    }
-}
-
-void
-link_lines(struct line *l1, struct line *l2)
-{
-    // ensures *l2 follows *l1 in the double linked list of lines
-    // manage NULL pointers
-
-    if (l1 != NULL)
-        l1->next = l2;
-    if (l2 != NULL)
-        l2->prev = l1;
-}
-
-void
-shift_line_nb(struct line *start, int min, int max, int delta)
-{
-    // shift the line_nb field of delta for lines of start queue if the current
-    // value is between min and max (included)
-    // comparison with max is ignored if max == 0
-
-    struct line *l;
-
-    l = start;
-    while (l != NULL && l->line_nb < min)
-        l = l->next;
-    while (l != NULL && (!max || l->line_nb <= max)) {
-        l->line_nb += delta;
-        l = l->next;
-    }
-}
 
 int
 move_line(int delta)
@@ -413,7 +401,7 @@ copy_to_clip(int starting_line_nb, int nb)
     struct line *l, *cb_l, *old_cb_l;
 
     // empty clipboard
-    forget_lines_list(clipboard.start);
+    forget_lines(clipboard.start);
     clipboard.start = NULL;
 
     // adjust number of lines
@@ -443,7 +431,7 @@ move_to_clip(int starting_line_nb, int nb)
     struct line *starting, *ending;
 
     // empty clipboard
-    forget_lines_list(clipboard.start);
+    forget_lines(clipboard.start);
     clipboard.start = NULL;
 
     // adjust number of lines

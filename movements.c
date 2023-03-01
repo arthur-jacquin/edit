@@ -70,9 +70,9 @@ find_start_of_word(int n)
     n *= sens;
 
     while (n--) {
-        c = l->chars[get_str_index(l, dx)];
+        c = l->chars[get_str_index(l->chars, dx)];
         while (move(&l, &dx, sens)) {
-            nc = l->chars[get_str_index(l, dx)];
+            nc = l->chars[get_str_index(l->chars, dx)];
             if (is_blank(c)) {
                 if (!is_blank(nc))
                     break;
@@ -87,7 +87,7 @@ find_start_of_word(int n)
                     break;
             }
         }
-        while (is_blank(l->chars[get_str_index(l, dx)]))
+        while (is_blank(l->chars[get_str_index(l->chars, dx)]))
             if (!move(&l, &dx, sens))
                 break;
     }
@@ -107,7 +107,7 @@ find_matching_bracket(void)
     l = get_line(y);
     dx = x;
 
-    switch (c = l->chars[get_str_index(l, dx)]) {
+    switch (c = l->chars[get_str_index(l->chars, dx)]) {
     case '(': goal = ')'; sens = 1; break;
     case '{': goal = '}'; sens = 1; break;
     case '[': goal = ']'; sens = 1; break;
@@ -122,7 +122,7 @@ find_matching_bracket(void)
 
     nb = 1;
     while (nb && move(&l, &dx, sens)) {
-        nc = l->chars[get_str_index(l, dx)]; // XXX: not great
+        nc = l->chars[get_str_index(l->chars, dx)]; // XXX: not great
         if (nc == goal)
             nb--;
         if (nc == c)

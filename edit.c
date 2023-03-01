@@ -41,8 +41,7 @@ main(int argc, char *argv[])
     settings.autoindent = AUTOINDENT;
     settings.tab_width = TAB_WIDTH;
     init_interface(&settings_int, "");
-    get_extension();
-    load_lang();
+    load_lang(file_name_int.current);
 
     // editor variables
     m = in_insert_mode = anchored = is_bracket = 0;
@@ -101,7 +100,7 @@ main(int argc, char *argv[])
                     m = 1;
                 switch (ev.ch) {
                 case KB_HELP:
-                    display_help();
+                    echo(HELP_MESSAGE);
                     break;
                 case KB_QUIT:
                 case KB_FORCE_QUIT:
@@ -124,8 +123,7 @@ main(int argc, char *argv[])
                 case KB_WRITE_AS:
                     if (dialog(SAVE_AS_PROMPT, &file_name_int, 0)) {
                         write_file(file_name_int.current);
-                        get_extension();
-                        load_lang();
+                        load_lang(file_name_int.current);
                         has_been_changes = 0;
                         echo(FILE_SAVED_MESSAGE);
                     }
@@ -310,7 +308,7 @@ main(int argc, char *argv[])
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
-                    if (strcmp(settings.language, "none"))
+                    if (settings.syntax != NULL)
                         act(comment, 1);
                     break;
                 case KB_ACT_SUPPRESS:

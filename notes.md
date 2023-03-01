@@ -1,9 +1,5 @@
 ## TODO
 
-### New features
-
-* manage resizing while in dialog mode
-
 ### Restructurations
 
 * clarify functions deps, restructurate in which file goes which functions
@@ -27,6 +23,7 @@
 * missing TODO and comments
 * correctness, especially
     * rules
+    * resize in dialog mode
     * what happens when multiple slash on the same line
     * insert characters like ' on line created by `insert_line`
     * search and replace engine (extensivity)

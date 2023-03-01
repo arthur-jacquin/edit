@@ -5,7 +5,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
     // return 0 if user cancelled, 1 if user confirmed
     // if refresh is set, display search results on each keystroke
 
-    int dpl, dx, n, i, j, k, len;
+    int dpl, dx, n, i, j, k, len, has_been_resized;
     uint32_t c;
 
     for (k = i = 0; prompt[k]; i++)
@@ -13,6 +13,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
     dpl = i;
     strcpy(interf->current, "");
     dx = n = 0;
+    has_been_resized = 0;
 
     while (1) {
         if (refresh) {
@@ -23,7 +24,12 @@ dialog(const char *prompt, struct interface *interf, int refresh)
         }
         strcpy(dialog_chars, prompt);
         strcat(dialog_chars, interf->current);
-        print_dialog();
+        if (has_been_resized) {
+            has_been_resized = 0;
+            print_all();
+        } else {
+            print_dialog();
+        }
         tb_set_cursor(dx + dpl, screen_height - 1);
         tb_present();
         tb_poll_event(&ev);
@@ -110,15 +116,10 @@ dialog(const char *prompt, struct interface *interf, int refresh)
             break;
 
         case TB_EVENT_RESIZE:
-            // TODO: int resize_to_be_treated
+            has_been_resized = 1;
             if (resize(ev.w, ev.h)) {
-                if (has_been_changes)
-                    write_file(BACKUP_FILE_NAME);
-                // TODO: find a way to quit
-                // return ERR_TERM_NOT_BIG_ENOUGH;
-            } else {
-                // TODO: what to do ?
-                // go_to(pos_of(first_line_on_screen->line_nb + y, x));
+                has_been_invalid_resizing = 1;
+                return 0;
             }
             break;
         }

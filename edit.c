@@ -44,6 +44,7 @@ main(int argc, char *argv[])
 
     // editor variables
     m = in_insert_mode = anchored = is_bracket = 0;
+    has_been_invalid_resizing = 0;
 
     // selections
     saved = temp = displayed = NULL;
@@ -67,11 +68,19 @@ main(int argc, char *argv[])
     if (MOUSE_SUPPORT)
         tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
     if (resize(tb_width(), tb_height()))
-        return ERR_TERM_NOT_BIG_ENOUGH;
+        has_been_invalid_resizing = 1;
     echo(WELCOME_MESSAGE);
 
     // main loop
     while (1) {
+        // quit if has been invalid resizing
+        if (has_been_invalid_resizing) {
+            if (has_been_changes)
+                write_file(BACKUP_FILE_NAME);
+            tb_shutdown();
+            return ERR_TERM_NOT_BIG_ENOUGH;
+        }
+
         // compute new displayed selections
         forget_sel_list(temp);
         temp = running_sel();
@@ -416,9 +425,7 @@ main(int argc, char *argv[])
 
         case TB_EVENT_RESIZE:
             if (resize(ev.w, ev.h)) {
-                if (has_been_changes)
-                    write_file(BACKUP_FILE_NAME);
-                return ERR_TERM_NOT_BIG_ENOUGH;
+                has_been_invalid_resizing = 1;
             } else {
                 go_to(pos_of(first_line_on_screen->line_nb + y, x));
             }

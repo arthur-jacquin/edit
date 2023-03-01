@@ -107,6 +107,7 @@ int has_been_changes;
 int is_bracket;
 int m;                              // multiplier
 int asked_indent, asked_remove;
+int has_been_invalid_resizing;
 struct pos anchor;
 struct pos matching_bracket;
 struct tb_event ev;                 // struct to retrieve events

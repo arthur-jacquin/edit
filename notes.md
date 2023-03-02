@@ -2,6 +2,7 @@
 
 ### Restructurations
 
+* verify if no tabs and UTF-8 compliant
 * break_line, concatenate_line 
 * clarify functions deps, restructurate in which file goes which functions
 * use strncat and other stdlib functions (ctype.h, string.h...)
@@ -166,3 +167,4 @@ always forget_sel_list before resetting saved and temp
     1<2: file.c: write_file
     2>3: graphical.c: print_all
     3>4: termbox.h: tb_present
+

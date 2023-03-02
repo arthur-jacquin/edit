@@ -2,6 +2,8 @@
 
 A suckless, simple, featured, modal text editor.
 
+[TODO](asciinema short video)
+
 ### Description
 
 `edit` combines a simple and powerful editing model with a suckless approach:
@@ -19,8 +21,6 @@ A suckless, simple, featured, modal text editor.
 - home-grown search and replace engine with subpatterns and fields support
 - multicursor editing
 - advanced lines management including line clipboard
-
-[TODO](asciinema short video)
 
 ### Opiniated choices
 

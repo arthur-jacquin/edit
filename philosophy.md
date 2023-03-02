@@ -12,7 +12,7 @@ Some are very small:
 Some are innovative:
 - [kakoune](https://kakoune.org/why-kakoune/why-kakoune.html) (C++): cleaner editing model
 - [sam](http://doc.cat-v.org/plan_9/4th_edition/papers/sam/) (C): bringing structural regular expressions
-- [vis](https://github.com/martanne/vis) (C, Lua): intelligent combination of vim and sam
+- [vis](https://github.com/martanne/vis) (C, Lua): smart combination of vim and sam
 - [de](https://github.com/driusan/de) (Go): mix of vim and acme, integrates with p9p plumbing
 
 Some are neither crazy small nor very innovative, but still look solid:
@@ -47,6 +47,8 @@ wether it's on the user side or the code.
 * feature-stable, not meant to grow indefinitely
 * suckless (C, simple, small, idiomatic, no runtime parameter...)
 * <= 3000 SLOC
+
+simplicity, predictability, orthogonality, powerful, intuitive editing model
 
 
 ### Simplicity

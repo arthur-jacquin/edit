@@ -84,117 +84,13 @@ forget_lines(struct line *start)
     }
 }
 
-// TODO suppress
 int
-insert_characters(struct line *l, struct selection *a, int start, int n,
-    int nb_bytes)
-{
-    // insert nb_bytes bytes (corresponding to n characters) after start
-    // displayable characters (bytes are not initialised)
-    // return index of first inserted byte in l->chars
-
-    int i, j, k, k1, len;
-    char *new_chars, *old_chars;
-
-    // create new string
-    new_chars = (char *) malloc(l->ml + nb_bytes);
-
-    // copy bytes before insertion
-    for (k = i = 0; i < start; i++) {
-        len = utf8_char_length(l->chars[k]);
-        for (j = 0; j < len; j++)
-            new_chars[k + j] = l->chars[k + j];
-        k += len;
-    }
-
-    // copy bytes after insertion
-    for (k1 = k; k < l->ml; k++)
-        new_chars[k + nb_bytes] = l->chars[k];
-
-    // refresh metadata
-    old_chars = l->chars;
-    l->chars = new_chars;
-    free(old_chars);
-    l->ml += nb_bytes;
-    l->dl += n;
-
-    // move selections
-    while (a != NULL && a->l < l->line_nb)
-        a = a->next;
-    while (a != NULL && a->l == l->line_nb) {
-        if (start <= a->x + a->n) {
-            if (start <= a->x)
-                a->x += n;
-            else
-                a->n += n;
-        }
-        a = a->next;
-    }
-
-    // move cursor and anchor
-    if (l->line_nb == first_line_on_screen->line_nb + y && start <= x)
-        x += n;
-    if (anchored && l->line_nb == anchor.l && start <= anchor.x)
-        anchor.x += n;
-
-    return k1;
-}
-
-// TODO suppress
-void
-delete_characters(struct line *l, struct selection *a, int start, int n)
-{
-    // delete n characters after start
-
-    int k, k1, k2;
-    char *new_chars, *old_chars;
-
-    // compute length of new_chars
-    k1 = get_str_index(l->chars, start);
-    k2 = get_str_index(l->chars, start + n);
-    l->ml -= k2 - k1;
-    l->dl -= n;
-
-    // create new string
-    new_chars = (char *) malloc(l->ml);
-    for (k = 0; k < k1; k++)
-        new_chars[k] = l->chars[k];
-    for (; k < l->ml; k++)
-        new_chars[k] = l->chars[k + (k2 - k1)];
-
-    // refresh metadata
-    old_chars = l->chars;
-    l->chars = new_chars;
-    free(old_chars);
-
-    // move selections
-    while (a != NULL && a->l < l->line_nb)
-        a = a->next;
-    while (a != NULL && a->l == l->line_nb) {
-        if (start <= a->x + a->n) {
-            if (start <= a->x)
-                a->x -= n;
-            else
-                a->n += start - a->x;
-        }
-        a = a->next;
-    }
-
-    // move cursor and anchor
-    if (l->line_nb == first_line_on_screen->line_nb + y && start <= x)
-        x = (x - n >= start) ? (x - n) : start;
-    if (anchored && l->line_nb == anchor.l && start <= anchor.x)
-        anchor.x = (anchor.x - n >= start) ? (anchor.x - n) : start;
-}
-
-
-void
 replace_chars(struct line *l, struct selection *a, int start, int n,
     int new_n, int nb_bytes)
 {
-    // TODO
-/*    // replace n characters after start by new_n characters taking nb_bytes
+    // replace n characters after start by new_n characters taking nb_bytes
     // bytes (characters are not initialised)
+    // return index of first inserted byte in l->chars
 
     int i, k, k1, k2;
     char *new_chars, *old_chars;
@@ -207,43 +103,46 @@ replace_chars(struct line *l, struct selection *a, int start, int n,
 
     // create new string
     new_chars = (char *) malloc(l->ml);
-    for (k = 0; k < k1; k++)
-        new_chars[k] = l->chars[k];
-    for (k = k1 + nb_bytes; k < l->ml; k++)
-        new_chars[k] = l->chars[k - (nb_bytes - (k2 - k1))];
+    strncpy(new_chars, l->chars, k1);
+    strncpy(&(new_chars[k1+nb_bytes]), &(l->chars[k2]), l->ml - (k1+nb_bytes));
 
     // refresh metadata
     old_chars = l->chars;
     l->chars = new_chars;
     free(old_chars);
-
+    
     // move selections
     while (a != NULL && a->l < l->line_nb)
         a = a->next;
     while (a != NULL && a->l == l->line_nb) {
-        if (start <= a->x + a->n) {
-            if (start <= a->x)
-                a->x += new_n - n;
-            else
-        //        a->n += start - a->x;
+        if (a->x < start) {
+            if (a->x + a->n <= start) {
+            } else if (a->x + a->n <= start + n) {
+                a->n = start - a->x;
+            } else {
+                a->n += new_n - n;
+            }
+        } else if (a->x < start + n) {
+            if (a->x + a->n <= start + n) {
+                a->x = start;
+                a->n = new_n;
+            } else {
+                a->n -= start + new_n - a->x + n;
+                a->x = start + new_n;
+            }
+        } else {
+            a->x += new_n - n;
         }
         a = a->next;
     }
 
     // move cursor and anchor
-    if (l->line_nb == first_line_on_screen->line_nb + y && start <= x) {
-        if (start + n <= x)
-            x += new_n - n;
-        else
-            //x = (x - n >= start) ? (x - n) : start;
-    }
-    if (anchored && l->line_nb == anchor.l && start <= anchor.x) {
-        if (start + n <= anchor.x)
-            anchor.x += new_n - n;
-        else
-            //x = (x - n >= start) ? (x - n) : start;
-    }
-*/
+    if (l->line_nb == first_line_on_screen->line_nb + y && start <= x)
+        x = (x < start + n) ? (start + new_n) : (x + new_n - n);
+    if (anchored && l->line_nb == anchor.l && start <= anchor.x)
+        anchor.x = (anchor.x < start + n) ? start : (anchor.x + new_n - n);
+
+    return k1;
 }
 
 void
@@ -276,7 +175,6 @@ concatenate_line(struct line *l, struct selection *s)
     free(l->next->chars);
     free(l->next);
     shift_line_nb(l, l->line_nb + 1, 0, -1);
-    // TODO move line numbers
     nb_lines--;
 }
 

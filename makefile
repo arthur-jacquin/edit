@@ -12,3 +12,4 @@ count: *.c
 		search_and_replace.c selections.c utils.c
 	wc actions.c edit.c file.c graphical.c interaction.c lines.c movements.c \
 		search_and_replace.c selections.c utils.c
+	du -h ./binary

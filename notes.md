@@ -5,13 +5,11 @@
 * clarify functions deps, restructurate in which file goes which functions
 * only short option names ?
 * use strncat and other stdlib functions (ctype.h, string.h...)
-* replace `{insert,delete}_chars` by `replace_chars`, special behaviour on suppress ?
 * (characters, bytes) struct ?
 * gathers variables in good order in globals.h
 * internalize termbox ?
 * remove all the `go_to(pos_of(...`, just attribute new asked y and x, and execute `go_to(pos_of(x, y))` at start of main loop
 * regex: choose a known syntax, link official documentation
-* move `get_str_index` to char * so that it can be used elsewhere ?
 * put variables where they sould be, and how they should be (extern, const...)
 * improve error management, assure safe and graceful fails
 * use ifdef and macros

@@ -18,7 +18,6 @@
 // ERROR CODES *****************************************************************
 
 // TODO
-// #define ERR_BAD_ARGUMENTS           1
 #define ERR_FILE_CONNECTION         2
 // #define ERR_MALLOC                  3
 #define ERR_TERM_NOT_BIG_ENOUGH     4
@@ -62,7 +61,7 @@ char first_bytes_mask[6] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8};
 char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
 char utf8_start[4] = {0, 0xc0, 0xe0, 0xf0};
 uint32_t unicode_delimiter[4] = {0x80, 0x800, 0x10000, 0x200000};
-#define FIRST_BYTE_ACCENTUATED      0xc3;
+#define FIRST_BYTE_ACCENTUATED      0xc3
 
 // file properties
 struct interface file_name_int;     // interface for storing file name
@@ -171,7 +170,7 @@ struct line *create_line(int line_nb, int ml, int dl);
 void link_lines(struct line *l1, struct line *l2);
 void shift_line_nb(struct line *start, int min, int max, int delta);
 void forget_lines(struct line *start);
-void replace_chars(struct line *l, struct selection *a, int start, int n,
+int replace_chars(struct line *l, struct selection *a, int start, int n,
     int new_n, int nb_bytes);
 void break_line(struct line *l, struct selection *s, int start);
 void concatenate_line(struct line *l, struct selection *s);

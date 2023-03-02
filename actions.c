@@ -69,7 +69,7 @@ insert(struct line *l, struct selection *s)
     uint32_t c;
 
     len = unicode_char_length(c = ev.ch);
-    k = insert_characters(l, s, s->x, 1, len);
+    k = replace_chars(l, s, s->x, 0, 1, len);
     for (j = len - 1; j > 0; j--) {
         l->chars[k + j] = (c & ~first_bytes_mask[2]) | first_bytes_mask[1];
         c >>= 6;
@@ -129,7 +129,7 @@ indent(struct line *l, struct selection *s)
         }
 
         // insert indent
-        k = insert_characters(l, s, start, asked_indent, asked_indent);
+        k = replace_chars(l, s, start, 0, asked_indent, asked_indent);
         for (j = 0; j < asked_indent; j++)
             l->chars[k + j] = ' ';
     } else {
@@ -152,7 +152,7 @@ indent(struct line *l, struct selection *s)
         }
 
         // suppress characters
-        delete_characters(l, s, start, asked_indent);
+        replace_chars(l, s, start, asked_indent, 0, 0);
     }
 }
 
@@ -173,12 +173,11 @@ comment(struct line *l, struct selection *s)
     syntax_length = strlen(comment_syntax);
     if (is_in(comment_syntax, l->chars, k, syntax_length - 1)) {
         // uncomment
-        delete_characters(l, s, k, syntax_length);
+        replace_chars(l, s, k, syntax_length, 0, 0);
     } else {
         // comment
-        k = insert_characters(l, s, k, syntax_length, syntax_length);
-        for (kp = 0; kp < syntax_length; kp++)
-            l->chars[k + kp] = comment_syntax[kp];
+        k = replace_chars(l, s, k, 0, syntax_length, syntax_length);
+        strncpy(&(l->chars[k]), comment_syntax, syntax_length);
     }
 }
 
@@ -222,7 +221,7 @@ suppress(struct line *l, struct selection *s)
     }
 
     // delete characters
-    delete_characters(l, s, start, nb_deleted);
+    replace_chars(l, s, start, nb_deleted, 0, 0);
 }
 
 void
@@ -297,11 +296,8 @@ replace(struct line *l, struct selection *s)
     }
 
     // do the actual replacement
-    delete_characters(l, s, sx = s->x, s->n);
-    k_chars = insert_characters(l, s, sx, j, lj);
-    //k_chars = replace_characters(l, s, s->x, s->n, j, lj); // XXX
-    for (a = 0; a < lj; a++)
-        l->chars[k_chars + a] = replaced[a];
+    k_chars = replace_chars(l, s, s->x, s->n, j, lj);
+    strncpy(&(l->chars[k_chars]), replaced, lj);
 
     // forget about replaced
     free(replaced);

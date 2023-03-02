@@ -132,7 +132,7 @@ void echo(const char *chars); //#define
 int load_file(const char *file_name, int first_line_on_screen_nb);
 int write_file(const char *file_name);
 
-// movements.c TODO
+// movements.c
 int move(struct line **l, int *dx, int sens);
 struct pos pos_of(int l, int x);
 struct pos find_first_non_blank(void);
@@ -143,22 +143,21 @@ int find_start_of_block(int starting_line_nb, int nb);
 int find_end_of_block(int starting_line_nb, int nb);
 void go_to(struct pos p);
 
-// selections.c TODO
+// selections.c
 struct selection *create_sel(int l, int x, int n, struct selection *next);
+int nb_sel(struct selection *a);
+void forget_sel_list(struct selection *a);
+void reset_selections(void);
 int is_inf(struct pos p1, struct pos p2);
 struct pos pos_of_sel(struct selection *s);
 struct pos pos_of_cursor(void);
 int index_closest_after_cursor(struct selection *a);
 struct pos get_pos_of_sel(struct selection *a, int index);
-int nb_sel(struct selection *a);
-void forget_sel_list(struct selection *a);
-void reset_selections(void);
 struct pos column_sel(int m);
 struct selection *merge_sel(struct selection *a, struct selection *b);
 struct selection *range_lines_sel(int start, int end, struct selection *next);
 struct selection *running_sel(void);
 struct selection *search(struct selection *a);
-// move selections and anchor:
 void shift_sel_line_nb(struct selection *a, int min, int max, int delta);
 void move_sel_end_of_line(struct selection *a, int l, int x, int concatenate);
 void remove_sel_line_range(int min, int max);

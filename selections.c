@@ -15,6 +15,43 @@ create_sel(int l, int x, int n, struct selection *next)
 }
 
 int
+nb_sel(struct selection *a)
+{
+    // compute the number of selections in the list a
+
+    int res;
+
+    for (res = 0; a != NULL; res++)
+        a = a->next;
+
+    return res;
+}
+
+void
+forget_sel_list(struct selection *a)
+{
+    // free the memory used by the list a
+
+    struct selection *next;
+
+    while (a != NULL) {
+        next = a->next;
+        free(a);
+        a = next;
+    }
+}
+
+void
+reset_selections(void)
+{
+    // reset selections
+
+    forget_sel_list(saved);
+    saved = NULL;
+    anchored = 0;
+}
+
+int
 is_inf(struct pos p1, struct pos p2)
 {
     // 1 if p1 < p2, else 0
@@ -85,205 +122,6 @@ get_pos_of_sel(struct selection *a, int index)
     }
 
     return pos_of(a->l, a->x);
-}
-
-int
-nb_sel(struct selection *a)
-{
-    // compute the number of selections in the list a
-
-    int res;
-
-    for (res = 0; a != NULL; res++)
-        a = a->next;
-
-    return res;
-}
-
-void
-shift_sel_line_nb(struct selection *a, int min, int max, int delta)
-{
-    // shift the l field of delta for selections of list a if the current
-    // value is between min and max (included)
-    // comparison with max is ignored if max == 0
-
-    while (a != NULL && a->l < min)
-        a = a->next;
-    while (a != NULL && (!max || a->l <= max)) {
-        a->l += delta;
-        a = a->next;
-    }
-
-    // move anchor
-    if (anchored && min <= anchor.l && (!max || anchor.l <= max))
-        anchor.l += delta;
-}
-
-void
-move_sel_end_of_line(struct selection *a, int l, int i, int concatenate)
-{
-    // if concatenate, move selections of line l to the previous line that is i
-    // characters long, else move selections of line l that is i characters long
-    // to next line
-
-    int e = (concatenate) ? 1 : -1;
-
-    while (a != NULL && (a->l < l || (!concatenate && a->x < i)))
-        a = a->next;
-    while (a != NULL && a->l == l) {
-        a->l -= 1*e;
-        a->x += i*e;
-        a = a->next;
-    }
-
-    // move anchor
-    if (anchored && anchor.l == l && (concatenate || anchor.x >= i)) {
-        anchor.l -= 1*e;
-        anchor.x += i*e;
-    }
-}
-
-void
-remove_sel_line_range(int min, int max)
-{
-    // remove saved selections within specified line range
-
-    struct selection *old, *next, *a;
-
-    if (saved == NULL) {
-        return;
-    } else if (saved->l < min) {
-        old = a = saved;
-        while (a != NULL && a->l < min) {
-            old = a;
-            a = a->next;
-        }
-        while (a != NULL && a->l <= max) {
-            next = a->next;
-            free(a);
-            a = next;
-        }
-        old->next = a;
-    } else {
-        a = saved;
-        while (a != NULL && a->l <= max) {
-            next = a->next;
-            free(a);
-            a = next;
-        }
-        saved = a;
-    }
-
-    // move anchor
-    if (anchored && min <= anchor.l && anchor.l <= max)
-        anchored = 0;
-}
-
-void
-reorder_sel(int l, int new_l)
-{
-    // reorder selections to adjust to move_line
-
-    struct selection *s, *last;
-    struct selection *last_before, *first, *last_first, *second, *last_second;
-    int first_start, first_end, second_end;
-
-    // compute delimiters of ranges to invert
-    first_start = (l > new_l) ? new_l : l;
-    first_end = (l > new_l) ? (l - 1) : l;
-    second_end = (l > new_l) ? l : new_l;
-
-    // skip selections before ranges, identifies last_before
-    s = last = saved;
-    if (s == NULL)
-        return;
-    if (s->l < first_start) {
-        while (s != NULL && s->l < first_start) {
-            last = s;
-            s = s->next;
-        }
-        last_before = last;
-        if (s == NULL)
-            return;
-    } else {
-        last_before = NULL;
-    }
-
-    // shift selections of the first range, identifies first and last_first
-    if (s->l <= first_end) {
-        first = s;
-        while (s != NULL && s->l <= first_end) {
-            s->l = (l > new_l) ? (s->l + 1) : new_l;
-            last = s;
-            s = s->next;
-        }
-        last_first = last;
-        if (s == NULL)
-            return;
-    } else {
-        first = last_first = NULL;
-    }
-
-    // shift selections of the second range, identifiers second and last_second
-    if (s->l <= second_end) {
-        second = s;
-        while (s != NULL && s->l <= second_end) {
-            s->l = (l > new_l) ? new_l : (s->l - 1);
-            last = s;
-            s = s->next;
-        }
-        last_second = last;
-    } else {
-        return;
-    }
-
-    // last_before->next = second
-    if (last_before == NULL) {
-        saved = second;
-    } else {
-        last_before->next = second;
-    }
-
-    // last_second->next = first
-    // last_first->next = s
-    if (first == NULL) {
-        last_second->next = s;
-    } else {
-        last_second->next = first;
-        last_first->next = s;
-    }
-
-    // move anchor
-    if (anchored) {
-        if (first_start <= anchor.l && anchor.l <= first_end)
-            anchor.l = (l > new_l) ? (anchor.l + 1) : new_l;
-        if (first_end < anchor.l && anchor.l <= second_end)
-            anchor.l = (l > new_l) ? new_l : (anchor.l - 1);
-    }
-}
-
-void
-forget_sel_list(struct selection *a)
-{
-    // free the memory used by the list a
-
-    struct selection *next;
-
-    while (a != NULL) {
-        next = a->next;
-        free(a);
-        a = next;
-    }
-}
-
-void
-reset_selections(void)
-{
-    // reset selections
-
-    forget_sel_list(saved);
-    saved = NULL;
-    anchored = 0;
 }
 
 struct pos
@@ -490,4 +328,166 @@ search(struct selection *a)
     }
 
     return res;
+}
+
+void
+shift_sel_line_nb(struct selection *a, int min, int max, int delta)
+{
+    // shift the l field of delta for selections of list a if the current
+    // value is between min and max (included)
+    // comparison with max is ignored if max == 0
+
+    while (a != NULL && a->l < min)
+        a = a->next;
+    while (a != NULL && (!max || a->l <= max)) {
+        a->l += delta;
+        a = a->next;
+    }
+
+    // move anchor
+    if (anchored && min <= anchor.l && (!max || anchor.l <= max))
+        anchor.l += delta;
+}
+
+void
+move_sel_end_of_line(struct selection *a, int l, int i, int concatenate)
+{
+    // if concatenate, move selections of line l to the previous line that is i
+    // characters long, else move selections of line l that is i characters long
+    // to next line
+
+    int e = (concatenate) ? 1 : -1;
+
+    while (a != NULL && (a->l < l || (!concatenate && a->x < i)))
+        a = a->next;
+    while (a != NULL && a->l == l) {
+        a->l -= 1*e;
+        a->x += i*e;
+        a = a->next;
+    }
+
+    // move anchor
+    if (anchored && anchor.l == l && (concatenate || anchor.x >= i)) {
+        anchor.l -= 1*e;
+        anchor.x += i*e;
+    }
+}
+
+void
+remove_sel_line_range(int min, int max)
+{
+    // remove saved selections within specified line range
+
+    struct selection *old, *next, *a;
+
+    if (saved == NULL) {
+        return;
+    } else if (saved->l < min) {
+        old = a = saved;
+        while (a != NULL && a->l < min) {
+            old = a;
+            a = a->next;
+        }
+        while (a != NULL && a->l <= max) {
+            next = a->next;
+            free(a);
+            a = next;
+        }
+        old->next = a;
+    } else {
+        a = saved;
+        while (a != NULL && a->l <= max) {
+            next = a->next;
+            free(a);
+            a = next;
+        }
+        saved = a;
+    }
+
+    // move anchor
+    if (anchored && min <= anchor.l && anchor.l <= max)
+        anchored = 0;
+}
+
+void
+reorder_sel(int l, int new_l)
+{
+    // reorder selections to adjust to move_line
+
+    struct selection *s, *last;
+    struct selection *last_before, *first, *last_first, *second, *last_second;
+    int first_start, first_end, second_end;
+
+    // compute delimiters of ranges to invert
+    first_start = (l > new_l) ? new_l : l;
+    first_end = (l > new_l) ? (l - 1) : l;
+    second_end = (l > new_l) ? l : new_l;
+
+    // skip selections before ranges, identifies last_before
+    s = last = saved;
+    if (s == NULL)
+        return;
+    if (s->l < first_start) {
+        while (s != NULL && s->l < first_start) {
+            last = s;
+            s = s->next;
+        }
+        last_before = last;
+        if (s == NULL)
+            return;
+    } else {
+        last_before = NULL;
+    }
+
+    // shift selections of the first range, identifies first and last_first
+    if (s->l <= first_end) {
+        first = s;
+        while (s != NULL && s->l <= first_end) {
+            s->l = (l > new_l) ? (s->l + 1) : new_l;
+            last = s;
+            s = s->next;
+        }
+        last_first = last;
+        if (s == NULL)
+            return;
+    } else {
+        first = last_first = NULL;
+    }
+
+    // shift selections of the second range, identifiers second and last_second
+    if (s->l <= second_end) {
+        second = s;
+        while (s != NULL && s->l <= second_end) {
+            s->l = (l > new_l) ? new_l : (s->l - 1);
+            last = s;
+            s = s->next;
+        }
+        last_second = last;
+    } else {
+        return;
+    }
+
+    // last_before->next = second
+    if (last_before == NULL) {
+        saved = second;
+    } else {
+        last_before->next = second;
+    }
+
+    // last_second->next = first
+    // last_first->next = s
+    if (first == NULL) {
+        last_second->next = s;
+    } else {
+        last_second->next = first;
+        last_first->next = s;
+    }
+
+    // move anchor
+    if (anchored) {
+        if (first_start <= anchor.l && anchor.l <= first_end)
+            anchor.l = (l > new_l) ? (anchor.l + 1) : new_l;
+        if (first_end < anchor.l && anchor.l <= second_end)
+            anchor.l = (l > new_l) ? new_l : (anchor.l - 1);
+    }
 }

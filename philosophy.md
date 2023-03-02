@@ -41,12 +41,13 @@ wether it's on the user side or the code.
 
 ### Style
 
-* The suckless way
-* old school development
-* config.def.h
-* feature-stable, not meant to grow indefinitely
-* suckless (C, simple, small, idiomatic, no runtime parameter...)
-* <= 3000 SLOC
+`edit` development is inspired by the suckless philosophy:
+
+- written in less than 2500 lines of C, with no dependencies
+- produces a standalone executable
+- textual, compile-time configuration, with sane defaults in config.def.h
+- only edits text: does not try to be an IDE or a multiplexer/window manager
+- feature-stable, not meant to grow indefinitely
 
 simplicity, predictability, orthogonality, powerful, intuitive editing model
 
@@ -120,7 +121,7 @@ in vim where the user can found years later features that could have helped him.
 If you're new to advanced text editing, no need to master all of them at first
 read, but you know it exists and where to find the information.
 therefore the learning curve is pretty gentle, unless you want to dig into it
-faster than needed. 
+faster than needed.
 
 If any of this sounds overfeatured, you might have a look at those editors: TODO
 
@@ -147,7 +148,7 @@ or replace with no search pattern previously, e.g. if you want to exchange field
 simplicity, for both code and usability, many features that might be considered
 interesting but that brings too much complexity have been left aside. Reading
 this will help you in deciding if `edit` is enough featured for your workflow,
-and if not, in finding an editor that better suits you. 
+and if not, in finding an editor that better suits you.
 
 Considered feature complete: i'm not advertising you of the *extensive* plugin
 support in any language you might think of or such. plugins are bloat. if you want
@@ -190,4 +191,3 @@ Text completion ?
 Search engine and syntax highlighting are not full fledged.
 
 Support file archives, compressed or over-networks files
-

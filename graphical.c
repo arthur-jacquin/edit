@@ -191,6 +191,7 @@ print_all(void)
 
     l = get_line(y);
     c = l->chars[get_str_index(l->chars, x)];
+    // TODO ifdef HIGHLIGT_MATCHING_BRACKET
     is_bracket = (c == '{' || c == '}' || c == '[' || c == ']'
         || c == '(' || c == ')' || c == '<' || c == '>');
     if (is_bracket)

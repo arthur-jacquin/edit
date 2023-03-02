@@ -12,6 +12,7 @@ A suckless, simple, featured, modal text editor.
 - produces a standalone executable
 - textual, compile-time configuration, with sane defaults in config.def.h
 - only edits text: does not try to be an IDE or a multiplexer/window manager
+- feature-stable, not meant to grow indefinitely
 
 ### Features
 

@@ -1,63 +1,68 @@
-## Default keybinds
+## Commands
 
-### General
+    MANAGING EDITOR
 
-            <ESC>   return to default mode
-                ?   help
+            <ESC>   return to normal mode
+                ?   display the help message
               q/Q   quit/force quit
+                s   change a setting
+
+    MANAGING FILE
+
               w/W   write/write as
                 R   reload
+
+    GETTING IN INSERT MODE
+
                 i   get in insert mode
-                s   change a parameter
-
-### Other ways to get insert mode (after removing selections)
-
               I/A   at start/end of line
               o/O   on an empty line created below/above cursor line
 
-### Manage lines
-
-              y/Y   yank <n> lines/blocks
-              d/D   delete <n> lines/blocks
-              p/P   paste after/before <n> times
-     SHIFT+arrows   move cursor line <n> lines up/down
-
-### Move around
+    MOVING AROUND
 
                 m   matching bracket
             0/^/$   start/first non-blank character/end of line
-              g/G   go to line <n>/end of file
-      arrows, l/h   <n> next/previous character
-      arrows, j/k   <n> next/previous line
-              t/T   <n> next/previous word
-              {/}   <n> next/previous block
-              n/N   <n> next/previous match
+              g/G   line <m>/last line of the file
+      arrows, l/h   <m> next/previous character
+      arrows, j/k   <m> next/previous line
+              t/T   <m> next/previous word
+              }/{   <m> next/previous block
+              n/N   <m> next/previous match
 
-### Manage selections
+    MANAGING SELECTIONS
 
-                c   display number of saved selections
             <ESC>   forget saved selections, unanchor
+                c   display number of saved selections
                 .   select cursor line
-            %/b/:   select all lines of file/<n> following blocks/custom range
+            %/b/:   select all lines of file/<m> following blocks/custom range
              f, /   search for pattern
                 v   anchor/unanchor
-                a   push running selection to pile; unanchor
-                z   duplicate the current selection on the <n> following lines
+                a   save running selections; unanchor
+                z   duplicate the current selection on the <m> following lines
 
-### Act on selections
+    ACTING ON SELECTIONS
 
-              </>   <n> decrease/increase line indent
+    [insert mode]   insert a character before selections
+    >/<, TAB/^TAB   <m> decrease/increase line indent
                 K   comment/uncomment line
-                x   suppress
+          x/<DEL>   suppress selection if non-null, else before/after selection
                 r   replace with pattern elements and fields
               u/U   switch to lowercase/uppercase
 
-## Runtime-modifiable parameters
+    MANAGING LINES
 
-    OPTION                  NAME    TYPE    DEFAULT
-    syntax highlight        sh      bool    yes
-    highlight selections    h       bool    yes
-    case sensitive          c       bool    yes
+              y/Y   yank <m> lines/blocks
+              d/D   delete <m> lines/blocks
+              p/P   paste after/before <m> times
+     SHIFT+arrows   move cursor line <m> lines up/down
+
+
+## Settings management
+
+    SETTING                 NAME    TYPE    DEFAULT VALUE
+    syntax highlight        sh      bool    TRUE
+    highlight selections    h       bool    TRUE
+    case sensitive          c       bool    TRUE
     field separator         fs      char    ,
-    tab_width               tw      int     4
+    tab width               tw      int     4
     language                l       string  (from extension)

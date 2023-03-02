@@ -2,8 +2,8 @@
 
 ### Restructurations
 
+* break_line, concatenate_line 
 * clarify functions deps, restructurate in which file goes which functions
-* only short option names ?
 * use strncat and other stdlib functions (ctype.h, string.h...)
 * (characters, bytes) struct ?
 * gathers variables in good order in globals.h
@@ -12,6 +12,7 @@
 * regex: choose a known syntax, link official documentation
 * put variables where they sould be, and how they should be (extern, const...)
 * improve error management, assure safe and graceful fails
+* moving stuff (has_been_changes, reset_selections..) to load_file 
 * use ifdef and macros
 
 ### Check
@@ -22,7 +23,7 @@
     * resize in dialog mode
     * what happens when multiple slash on the same line
     * insert characters like ' on line created by `insert_line`
-    * search and replace engine (extensivity)
+    * search and replace engine, memory indexes
     * `replace_characters`
 * look for unstated assumptions
 * selections, has_been_changes, anchor, cursor, selections, ... all globals

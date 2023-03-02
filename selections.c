@@ -114,10 +114,9 @@ shift_sel_line_nb(struct selection *a, int min, int max, int delta)
         a = a->next;
     }
 
-    // move anchor, cursor
+    // move anchor
     if (anchored && min <= anchor.l && (!max || anchor.l <= max))
         anchor.l += delta;
-    // TODO what to do with cursor ?
 }
 
 void
@@ -126,8 +125,7 @@ move_sel_end_of_line(struct selection *a, int l, int i, int concatenate)
     // if concatenate, move selections of line l to the previous line that is i
     // characters long, else move selections of line l that is i characters long
     // to next line
-    // XXX to check
-    
+
     int e = (concatenate) ? 1 : -1;
 
     while (a != NULL && (a->l < l || (!concatenate && a->x < i)))
@@ -138,14 +136,10 @@ move_sel_end_of_line(struct selection *a, int l, int i, int concatenate)
         a = a->next;
     }
 
-    // move anchor, cursor
+    // move anchor
     if (anchored && anchor.l == l && (concatenate || anchor.x >= i)) {
         anchor.l -= 1*e;
         anchor.x += i*e;
-    }
-    if (first_line_on_screen->line_nb + y == l && (concatenate || x >= i)) {
-        y -= 1*e;
-        x += i*e;
     }
 }
 
@@ -180,16 +174,15 @@ remove_sel_line_range(int min, int max)
         saved = a;
     }
 
-    // move anchor, cursor
+    // move anchor
     if (anchored && min <= anchor.l && anchor.l <= max)
         anchored = 0;
-    // TODO what to do with cursor ?
 }
 
 void
 reorder_sel(int l, int new_l)
 {
-    // reorder selections to adjust to `move_line`
+    // reorder selections to adjust to move_line
 
     struct selection *s, *last;
     struct selection *last_before, *first, *last_first, *second, *last_second;

@@ -6,7 +6,7 @@
                 ?   help
               q/Q   quit/force quit
               w/W   write/write as
-                r   reload
+                R   reload
                 i   get in insert mode
                 s   change a parameter
 
@@ -49,15 +49,15 @@
               </>   <n> decrease/increase line indent
                 K   comment/uncomment line
                 x   suppress
-                R   replace with pattern elements and fields
+                r   replace with pattern elements and fields
               u/U   switch to lowercase/uppercase
 
 ## Runtime-modifiable parameters
 
-    SHORT NAME  LONG NAME               TYPE    DEFAULT
-    sh          syntax_highlight        bool    yes
-    h           highlight_selections    bool    yes
-    c           case_sensitive          bool    yes
-    fs          field_separator         char    ,
-    tw          tab_width               int     4
-    l           language                string  (from extension)
+    OPTION                  NAME    TYPE    DEFAULT
+    syntax highlight        sh      bool    yes
+    highlight selections    h       bool    yes
+    case sensitive          c       bool    yes
+    field separator         fs      char    ,
+    tab_width               tw      int     4
+    language                l       string  (from extension)

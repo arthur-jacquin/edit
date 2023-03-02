@@ -158,7 +158,7 @@ struct selection *merge_sel(struct selection *a, struct selection *b);
 struct selection *range_lines_sel(int start, int end, struct selection *next);
 struct selection *running_sel(void);
 struct selection *search(struct selection *a);
-
+// move selections and anchor:
 void shift_sel_line_nb(struct selection *a, int min, int max, int delta);
 void move_sel_end_of_line(struct selection *a, int l, int x, int concatenate);
 void remove_sel_line_range(int min, int max);
@@ -174,8 +174,8 @@ int replace_chars(struct line *l, struct selection *a, int start, int n,
     int new_n, int nb_bytes);
 void break_line(struct line *l, struct selection *s, int start);
 void concatenate_line(struct line *l, struct selection *s);
-void insert_line(int asked_line_nb, int ml, int dl);
-int move_line(int delta);
+void insert_line(int line_nb, int ml, int dl);
+void move_line(int delta);
 void copy_to_clip(int starting_line_nb, int nb);
 void move_to_clip(int starting_line_nb, int nb);
 void insert_clip(struct line *starting_line, int below);

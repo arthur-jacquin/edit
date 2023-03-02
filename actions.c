@@ -11,17 +11,15 @@ act(void (*process)(struct line *, struct selection *), int line_op)
     s = (saved != NULL) ? saved : temp;
     l = get_line(s->l - first_line_on_screen->line_nb);
     old_line_nb = 0;
+    has_been_changes = 1;
     while (s != NULL) {
         while (l->line_nb < s->l)
             l = l->next;
-        if (!line_op || s->l > old_line_nb) {
+        if (!line_op || s->l > old_line_nb)
             process(l, s);
-        }
         old_line_nb = s->l;
         s = s->next;
     }
-    
-    has_been_changes = 1;
 }
 
 void
@@ -59,7 +57,7 @@ upper(struct line *l, struct selection *s)
         k += len;
     }
 }
- 
+
 void
 insert(struct line *l, struct selection *s)
 {
@@ -81,28 +79,8 @@ void
 split(struct line *l, struct selection *s)
 {
     // split line at s->x
-    // TODO move to break_line
-    
-    /*struct line *new;
-    char *new_chars;
-    int k;
 
-    // create line below
-    k = get_str_index(l->chars, s->x);
-    new = insert_line(l->line_nb + 1, l->ml - k, l->dl - s->x);
-    strncpy(new->chars, &(l->chars[k]), l->ml - k);
-
-    // shorten current line
-    new_chars = (char *) malloc(k + 1);
-    strncpy(new_chars, l->chars, k);
-    new_chars[k] = '\0';
-    free(l->chars);
-    l->chars = new_chars;
-    l->dl = s->x;
-    l->ml = k + 1;
-
-    // move selections of current line
-    move_sel_end_of_line(s, l->line_nb, s->x, 0);*/
+    break_line(l, s, s->x);
 }
 
 void
@@ -185,8 +163,6 @@ void
 suppress(struct line *l, struct selection *s)
 {
     // if s->n, supress selected characters, else use asked_remove
-    // TODO: concatenate lines
-    // TODO: manually move cursor if delete
 
     int start, nb_deleted;
 
@@ -236,7 +212,6 @@ replace(struct line *l, struct selection *s)
     int lr; // size of replaced buffer
     int a; // no name index
     int n, mst, mn; // substring to append to replaced
-    int sx; // rembering s->x, XXX unecessary with spcified behaviour on delete_chars
 
     // search for fields and subpatterns
     mark_fields(l->chars, s->x, s->n);
@@ -275,7 +250,7 @@ replace(struct line *l, struct selection *s)
             n = 1;
             mst = k;
             mn = utf8_char_length(rp[k]);
-            k += mn; 
+            k += mn;
         }
 
         // manage replaced length
@@ -287,10 +262,10 @@ replace(struct line *l, struct selection *s)
             free(replaced);
             replaced = new_replaced;
         }
-        
+
         // append substring
-        for (a = 0; a < mn; a++)
-            replaced[lj++] = src[mst + a];
+        strncpy(&(replaced[lj]), &(src[mst]), mn);
+        lj += mn;
         replaced[lj] = '\0';
         j += n;
     }

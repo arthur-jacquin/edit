@@ -23,7 +23,7 @@ create_line(int line_nb, int ml, int dl)
 {
     // create a new line in the memory, returns a pointer to it
     // prev and next fields are initialised to NULL
-    // chars content is left undefined
+    // chars content is left undefined, but NULL-terminated
 
     struct line *res;
 
@@ -33,7 +33,7 @@ create_line(int line_nb, int ml, int dl)
     res->ml = ml;
     res->dl = dl;
     res->chars = (char *) malloc(ml);
-    res->chars[ml - 1] = '\0'; // TODO: check for simplification elsewhere
+    res->chars[ml - 1] = '\0';
 
     return res;
 }
@@ -110,7 +110,7 @@ replace_chars(struct line *l, struct selection *a, int start, int n,
     old_chars = l->chars;
     l->chars = new_chars;
     free(old_chars);
-    
+
     // move selections
     while (a != NULL && a->l < l->line_nb)
         a = a->next;
@@ -148,7 +148,30 @@ replace_chars(struct line *l, struct selection *a, int start, int n,
 void
 break_line(struct line *l, struct selection *s, int start)
 {
-    // TODO
+    // break line l at start
+
+    char *new_chars;
+    int k;
+
+    // move selections, anchor
+    shift_sel_line_nb(s, l->line_nb + 1, 0, 1);
+    move_sel_end_of_line(s, l->line_nb, start, 0);
+
+    // create line below
+    k = get_str_index(l->chars, start);
+    insert_line(l->line_nb + 1, l->ml - k, l->dl - start);
+    strncpy(l->next->chars, &(l->chars[k]), l->ml - k);
+
+    // shorten current line
+    new_chars = (char *) malloc(k + 1);
+    strncpy(new_chars, l->chars, k);
+    new_chars[k] = '\0';
+    free(l->chars);
+    l->chars = new_chars;
+    l->dl = start;
+    l->ml = k + 1;
+
+    // TODO cursor
 }
 
 void
@@ -157,97 +180,67 @@ concatenate_line(struct line *l, struct selection *s)
     // move l->next (existence assumed) content at the end of l
 
     char *new_chars;
-
-    // move selections
+    
+    // move selections, anchor
     move_sel_end_of_line(s, l->line_nb, l->dl, 1);
     shift_sel_line_nb(s, l->line_nb + 1, 0, -1);
-    // TODO cursor ? anchor ?
-    
+
     // create new chars, refresh metadata
     new_chars = (char *) malloc(l->ml + l->next->ml - 1);
     strncpy(new_chars, l->chars, l->ml - 1);
     strncpy(&(new_chars[l->ml - 1]), l->next->chars, l->next->ml);
     free(l->chars);
+    free(l->next->chars);
     l->chars = new_chars;
     l->ml += l->next->ml - 1;
     l->dl += l->next->dl;
     link_lines(l, l->next->next);
-    free(l->next->chars);
     free(l->next);
-    shift_line_nb(l, l->line_nb + 1, 0, -1);
+    shift_line_nb(l, l->line_nb + 2, 0, -1);
     nb_lines--;
+
+    // TODO cursor
 }
 
 void
-insert_line(int asked_line_nb, int ml, int dl)
+insert_line(int line_nb, int ml, int dl)
 {
-    // TODO
-    // insert a line with the line_nb closest possible to asked_line_nb
+    // insert a line with number line_nb
+    // chars are left uninitialised
 
     struct line *replaced_line, *new;
 
-    if (asked_line_nb >= nb_lines + 1) {
-        new = create_line(nb_lines + 1, ml, dl);
-        new->chars[ml - 1] = '\0';
+    new = create_line(line_nb, ml, dl);
+    if (line_nb == nb_lines + 1) {
         link_lines(get_line(nb_lines - first_line_on_screen->line_nb), new);
         link_lines(new, NULL);
     } else {
-        replaced_line = get_line(asked_line_nb - first_line_on_screen->line_nb);
-        shift_line_nb((asked_line_nb >= first_line_on_screen->line_nb) ?
-            first_line_on_screen : first_line, asked_line_nb, 0, 1);
-        shift_sel_line_nb(saved, asked_line_nb, 0, 1);
-        new = create_line(asked_line_nb, ml, dl);
-        new->chars[ml - 1] = '\0';
+        // shift line_nb for lines and selections
+        shift_line_nb((line_nb >= first_line_on_screen->line_nb) ?
+            first_line_on_screen : first_line, line_nb, 0, 1);
+        shift_sel_line_nb(saved, line_nb, 0, 1);
+
+        // move cursor
+        if (first_line_on_screen->line_nb + y >= line_nb)
+            go_to(pos_of(first_line_on_screen->line_nb + y + 1, x));
+
+        // insert the new line
+        replaced_line = get_line(line_nb - first_line_on_screen->line_nb);
         link_lines(replaced_line->prev, new);
         link_lines(new, replaced_line);
     }
-
-    // TODO anchor ? cursor ?
-    if (first_line_on_screen->line_nb + y >= asked_line_nb)
-        y++;
-
     nb_lines++;
+    has_been_changes = 1;
 }
 
-/*void TODO suppress
-delete_line(int asked_line_nb, int ml, int dl)
-{
-    // TODO
-
-    struct line *l;
-
-    l = get_line(asked_line_nb - first_line_on_screen->line_nb);
-    if (is_last_line(l)) {
-        if (is_first_line(l)) {
-            // create empty line
-            first_line = first_line_on_screen = create_line(1, 1, 0);
-            first_line->prev = first_line->next = NULL;
-            strcpy(first_line->chars, "");
-            nb_lines = 1;
-        }
-    } else {
-        if (is_first_line(l))
-            first_line = first_line_on_screen = l->next;
-        shift_line_nb(l, l->line_nb + 1, 0, -1);
-    }
-    link_lines(l->prev, l->next);
-    nb_lines--;
-
-    // suppress and move selections
-    remove_sel_line_range(asked_line_nb, asked_line_nb);
-    shift_sel_line_nb(saved, asked_line_nb, 0, -1);
-
-    // TODO cursor ? anchor ?
-}*/
-
-int
+void
 move_line(int delta)
 {
     // move cursor line, return new line_nb
 
     int cursor_line, new_line_nb;
     struct line *src, *dest;
- 
+
     // compute new line number
     cursor_line = first_line_on_screen->line_nb + y;
     new_line_nb = cursor_line + delta;
@@ -256,11 +249,11 @@ move_line(int delta)
     if (new_line_nb > nb_lines)
         new_line_nb = nb_lines;
     if (new_line_nb == cursor_line)
-         return new_line_nb;
+         return;
 
     src = get_line(y);
     dest = get_line(new_line_nb - first_line_on_screen->line_nb);
-    
+
     // reorder selections, anchor
     reorder_sel(cursor_line, new_line_nb);
 
@@ -268,7 +261,7 @@ move_line(int delta)
     if (delta > 0) {
         shift_line_nb(first_line, cursor_line + 1, new_line_nb, -1);
         if (src == first_line_on_screen)
-            first_line_on_screen = first_line_on_screen->next;
+            first_line_on_screen = src->next;
         if (is_first_line(src))
             first_line = src->next;
         link_lines(src->prev, src->next);
@@ -285,8 +278,10 @@ move_line(int delta)
         link_lines(src, dest);
     }
     src->line_nb = new_line_nb;
-    
-    return new_line_nb;
+    has_been_changes = 1;
+
+    // move cursor
+    go_to(pos_of(new_line_nb, x));
 }
 
 void
@@ -310,7 +305,7 @@ copy_to_clip(int starting_line_nb, int nb)
     cb_l = old_cb_l = NULL;
     for (i = 0; i < nb; i++) {
         cb_l = create_line(i, l->ml, l->dl);
-        strcpy(cb_l->chars, l->chars);
+        strncpy(cb_l->chars, l->chars, l->ml);
         link_lines(old_cb_l, cb_l);
         if (i == 0)
             clipboard.start = cb_l;
@@ -342,8 +337,6 @@ move_to_clip(int starting_line_nb, int nb)
         if (is_first_line(starting)) {
             // create empty line
             first_line = first_line_on_screen = create_line(1, 1, 0);
-            first_line->prev = first_line->next = NULL;
-            strcpy(first_line->chars, "");
             nb_lines = 1;
         } else {
             nb_lines -= nb;
@@ -361,10 +354,14 @@ move_to_clip(int starting_line_nb, int nb)
     shift_line_nb(starting, 0, 0, -starting->line_nb);
     clipboard.start = starting;
     clipboard.nb_lines = nb;
+    has_been_changes = 1;
 
     // suppress and move selections
     remove_sel_line_range(starting_line_nb, starting_line_nb + nb - 1);
-    shift_sel_line_nb(saved, starting_line_nb, 0, -nb);
+    shift_sel_line_nb(saved, starting_line_nb + nb, 0, -nb);
+
+    // move cursor
+    go_to(pos_of(starting_line_nb, 0));
 }
 
 void
@@ -391,13 +388,18 @@ insert_clip(struct line *starting_line, int below)
     after = (below) ? starting_line->next : starting_line;
     link_lines(before, clipboard.start);
     link_lines(l, after);
-    if (!below && is_first_line(starting_line))
+    if (before == NULL)
         first_line = clipboard.start;
 
     // refresh metadata
     nb_lines += clipboard.nb_lines;
     clipboard.start = NULL;
+    has_been_changes = 1;
 
     // copy inserted lines to clipboard
     copy_to_clip(first_inserted_line_nb, clipboard.nb_lines);
+
+    // move cursor
+    if (!below)
+        go_to(pos_of(first_line_on_screen->line_nb + y + clipboard.nb_lines, x));
 }

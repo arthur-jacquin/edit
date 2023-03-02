@@ -94,7 +94,7 @@
 #define KB_FORCE_QUIT               'Q'
 #define KB_WRITE                    'w'
 #define KB_WRITE_AS                 'W'
-#define KB_RELOAD                   'r'
+#define KB_RELOAD                   'R'
 #define KB_INSERT_MODE              'i'
 #define KB_CHANGE_SETTING           's'
 
@@ -147,7 +147,7 @@
 #define KB_ACT_DECREASE_INDENT      '<'
 #define KB_ACT_COMMENT              'K'
 #define KB_ACT_SUPPRESS             'x'
-#define KB_ACT_REPLACE              'R'
+#define KB_ACT_REPLACE              'r'
 #define KB_ACT_LOWERCASE            'u'
 #define KB_ACT_UPPERCASE            'U'
 

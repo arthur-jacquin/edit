@@ -45,8 +45,6 @@ mark_pattern(const char *chars, int x, int n)
     // try to read searched pattern in chars, store identified subpatterns
     // return length of read pattern if found at x, of length < n, else 0
 
-    // TODO: subpatterns mst and mn fields
-
     char *sp; // search pattern
     int in_block, in_class, last_was, found_in_class, is_neg_class; // booleans
     int i, k; // indexes in chars (characters, bytes)
@@ -87,7 +85,7 @@ mark_pattern(const char *chars, int x, int n)
     // init indexes
     for (k = i = 0; i < x; i++)
         k += utf8_char_length(chars[k]);
- 
+
     // try to read whole pattern
     for (j = l = 0; l < lsp;) {
         if (last_was != BLOCK && !in_block && !is_block_ok) {
@@ -183,7 +181,7 @@ mark_pattern(const char *chars, int x, int n)
                     if (nb_block - 1 < min)
                         return 0;
                     subpatterns[s-1].n = start_block_i - subpatterns[s-1].st;
-                    subpatterns[s-1].mn = start_block_k - subpatterns[s-1].mst; // XXX
+                    subpatterns[s-1].mn = start_block_k - subpatterns[s-1].mst;
                     decrement(chars, &i, &k, start_block_i);
                     is_block_ok = 1;
                     last_was = NONE;
@@ -193,7 +191,7 @@ mark_pattern(const char *chars, int x, int n)
                 } else if (max && nb_block == max) {
                     // get out
                     subpatterns[s-1].n = i - subpatterns[s-1].st;
-                    subpatterns[s-1].mn = k - subpatterns[s-1].mst; // XXX
+                    subpatterns[s-1].mn = k - subpatterns[s-1].mst;
                     start_block_i = i;
                     start_block_k = k;
                     last_was = NONE;
@@ -270,10 +268,10 @@ mark_pattern(const char *chars, int x, int n)
             is_elem_ok = 1;
             if (nb_block == 0) {
                 subpatterns[s].st = start_block_i;
-                subpatterns[s].mst = start_block_k; // XXX
+                subpatterns[s].mst = start_block_k;
             }
             subpatterns[s].n = (is_block_ok) ? (i - start_block_i) : 0;
-            subpatterns[s].mn = (is_block_ok) ? (k - start_block_k) : 0; // XXX
+            subpatterns[s].mn = (is_block_ok) ? (k - start_block_k) : 0;
             nb_block++;
             s++;
             j += 2; l += 2;
@@ -321,7 +319,7 @@ mark_fields(const char *chars, int x, int n)
 {
     // search for fields
     // return number of fields
-   
+
     int f; // index of running selection
     int i, k; // index in chars (characters, bytes)
     int st, mst; // start of running selection (characters, bytes)

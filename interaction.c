@@ -138,23 +138,17 @@ set_parameter(const char *assign)
 
     if (strchr(assign, '=') == NULL) {
         return 0;
-    } else if (sscanf(assign, "syntax_highlight=%d", &b) == 1
-            || sscanf(assign, "sh=%d", &b) == 1) {
+    } else if (sscanf(assign, "sh=%d", &b) == 1) {
         settings.syntax_highlight = b;
-    } else if (sscanf(assign, "highlight_selections=%d", &b) == 1
-            || sscanf(assign, "h=%d", &b) == 1) {
+    } else if (sscanf(assign, "h=%d", &b) == 1) {
         settings.highlight_selections = b;
-    } else if (sscanf(assign, "case_sensitive=%d", &b) == 1
-            || sscanf(assign, "c=%d", &b) == 1) {
+    } else if (sscanf(assign, "c=%d", &b) == 1) {
         settings.case_sensitive = b;
-    } else if (sscanf(assign, "field_separator=%c", &c) == 1
-            || sscanf(assign, "fs=%c", &c) == 1) {
+    } else if (sscanf(assign, "fs=%c", &c) == 1) {
         settings.field_separator = c;
-    } else if (sscanf(assign, "tab_width=%d", &b) == 1
-            || sscanf(assign, "tw=%d", &b) == 1) {
+    } else if (sscanf(assign, "tw=%d", &b) == 1) {
         settings.tab_width = (b >= 0) ? b : TAB_WIDTH;
-    } else if (sscanf(assign, "language=%s", s) == 1
-            || sscanf(assign, "l=%s", s) == 1) {
+    } else if (sscanf(assign, "l=%s", s) == 1) {
         old_lang = settings.syntax;
         load_lang(s);
         if (settings.syntax == NULL) {
@@ -219,7 +213,7 @@ void
 load_lang(const char *extension)
 {
     // try to apply a syntax from the identified extension
-    
+
     int i, j, l;
 
     // detect last point

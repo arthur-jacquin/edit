@@ -167,15 +167,13 @@ main(int argc, char *argv[])
                     break;
                 case KB_INSERT_LINE_BELOW:
                 case KB_INSERT_LINE_ABOVE:
-                    //reset_selections(); // XXX ?
-                    //anchored = 0; // XXX ?
+                    reset_selections();
+                    in_insert_mode = 1;
+                    echo(INSERT_MODE_MESSAGE);
                     l1 = first_line_on_screen->line_nb + y +
                         ((ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0);
                     insert_line(l1, 1, 0);
                     go_to(pos_of(l1, 0));
-                    in_insert_mode = 1;
-                    has_been_changes = 1;
-                    echo(INSERT_MODE_MESSAGE);
                     break;
                 case KB_CLIP_YANK_LINE:
                     copy_to_clip(first_line_on_screen->line_nb + y, m);
@@ -186,20 +184,15 @@ main(int argc, char *argv[])
                     break;
                 case KB_CLIP_DELETE_LINE:
                     move_to_clip(first_line_on_screen->line_nb + y, m);
-                    go_to(pos_of(first_line_on_screen->line_nb + y, x));
-                    has_been_changes = 1;
                     break;
                 case KB_CLIP_DELETE_BLOCK:
                     l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
                     move_to_clip(l1, find_end_of_block(l1, m) - l1 + 1);
-                    go_to(pos_of(l1, x));
-                    has_been_changes = 1;
                     break;
                 case KB_CLIP_PASTE_AFTER:
                 case KB_CLIP_PASTE_BEFORE:
                     while (m--)
                         insert_clip(get_line(y), ev.ch == KB_CLIP_PASTE_AFTER);
-                    has_been_changes = 1;
                     break;
                 case KB_MOVE_MATCHING:
                     go_to(find_matching_bracket());
@@ -348,16 +341,14 @@ main(int argc, char *argv[])
                     break;
                 case TB_KEY_ARROW_DOWN:
                     if (ev.mod == TB_MOD_SHIFT) {
-                        go_to(pos_of(move_line(m), x));
-                        has_been_changes = 1;
+                        move_line(m);
                     } else {
                         go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
                     }
                     break;
                 case TB_KEY_ARROW_UP:
                     if (ev.mod == TB_MOD_SHIFT) {
-                        go_to(pos_of(move_line(-m), x));
-                        has_been_changes = 1;
+                        move_line(-m);
                     } else {
                         go_to(pos_of(first_line_on_screen->line_nb + y - m, x));
                     }

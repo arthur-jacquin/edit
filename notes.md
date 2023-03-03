@@ -1,24 +1,19 @@
 ## TODO
 
-* add potential features ?
+* `load_file`: verify if no tabs and UTF-8 compliant
 * detect word boundaries, start/end of selection, `*` command
-word boundary:
-    previous does not exist, current is word char
-    previous is not word char, current is word char
-    previous is word char, current is not word char
+* add potential features ?
 
 ### Restructurations
 
 * remove deps from termbox structures
-* verify if no tabs and UTF-8 compliant ?
 * break_line, concatenate_line 
 * clarify functions deps, restructurate in which file goes which functions
 * use strncat and other stdlib functions (ctype.h, string.h...)
 * (characters, bytes) struct ?
 * gathers variables in good order in globals.h
-* internalize termbox ?
-* remove all the `go_to(pos_of(...`, just attribute new asked y and x, and execute `go_to(pos_of(x, y))` at start of main loop
-* regex: choose a known syntax, link official documentation
+* remove all the `go_to(pos_of(...`, just attribute new asked y and x, and
+  execute `go_to(pos_of(x, y))` at start of main loop
 * put variables where they sould be, and how they should be (extern, const...)
 * improve error management, assure safe and graceful fails
 * moving stuff (has_been_changes, reset_selections..) to load_file 
@@ -46,23 +41,18 @@ word boundary:
 
 * new colorscheme
 * .md files
-    * readme
-    * philosophy
-    * manual
-    * doc files
 * website
     * .md files
     * tarball
     * color palette
 * asciinema teaser
-* asciinema long presentation
 * add some languages ?
+
 
 ## Ressources
 
 * [regexp man page](https://man.cat-v.org/plan_9/6/regexp)
 * [pcre](https://github.com/niklongstone/regular-expression-cheat-sheet)
 * [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
-
 * [record screen](https://asciinema.org/)
 * [style](https://suckless.org/coding_style/)

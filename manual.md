@@ -263,12 +263,11 @@ PCRE[^1] and described below in a Backus-Naur form style. If you're new to
 regular expressions, you might want to have a look at `regexp.md` for a more
 detailed guide.
 
-    e3: ASSERTION
+    e2: ASSERTION
       | CHARACTER
-      | '\(' e1 '\)'                    # group for repeaters/subpatterns reuse
-
-    e2: e3
-      | e2 REP                          # match a repeated pattern
+      | CHARACTER REP                   # match a character with a repeater
+      | '\(' e1 '\)'                    # group for subpatterns reuse
+      | '\(' e1 '\)' REP                # match a group with a repeater
 
     e1: e2
       | e1 e2                           # match the concatenation of 2 patterns

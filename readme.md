@@ -47,8 +47,10 @@ Read `manual.md` if you want to know how to use the editor. You will find:
 - an explanation of the editing model
 - a complete walktrough of its features and mechanisms
 
-Read `cheatsheet.md` if you want a quick overview of the default keybinds and
-the name of the runtime options.
+Read `cheatsheet.md` if you want a quick overview of:
+- the default keybinds
+- the name of the runtime options
+- the search and replace syntax
 
 Others `*.md` files are technical notes covering specific points.
 

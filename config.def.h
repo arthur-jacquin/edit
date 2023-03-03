@@ -154,20 +154,25 @@
 
 // LANGUAGES SUPPORT ***********************************************************
 
-struct rule { // TODO comment
+// please read syntax_highlighting.md to understand languages support
+
+struct rule {
     char mark[5];
-    int start_of_line;
+    int start_of_line;      // wether a rule recquires the start of the line
     int color_mark;
     int color_end_of_line;
 };
 
-struct lang { // TODO comment
-    char **names;
+struct lang {               // used for syntax highlighting and autocommenting
+    // pointers to string containing space-separated, space-ended list of words
+    char **names;           // extensions recognised with this language
     char **keywords;
     char **flow_control;
     char **built_ins;
-    char **comment;
-    struct rule (*rules)[]; // pointer to array of struct rule
+    char **comment;         // commenting syntax (one element, space ended)
+    // pointer to array of struct rule
+    // must be ended with non-significant rule with empty ("") mark field
+    struct rule (*rules)[];
 };
 
 // Markdown

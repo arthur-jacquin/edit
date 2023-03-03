@@ -259,8 +259,6 @@ the whole file.
 
 The syntax is heavily inspired by standard regular expressions[^1]:
 
-[^1]: [regexp man page](https://man.cat-v.org/plan_9/2/regexp)
-
     e3: LITERAL                         # match the literal only
       | '\' ESCAPED_LITERAL             # match to-be-escaped literal
       | CHARCLASS                       # match character in the class 
@@ -295,6 +293,8 @@ The syntax is heavily inspired by standard regular expressions[^1]:
     e1: e2
       | e1 e2                           # match the concatenation of 2 patterns
       | e1 '|' e2                       # match one of the 2 patterns
+
+[^1]: [regexp man page](https://man.cat-v.org/plan_9/2/regexp)
 
 ### Using subpatterns and fields in the replace pattern
 

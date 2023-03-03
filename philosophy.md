@@ -63,7 +63,7 @@ fast
 
 sensible defaults. Parameters that makes sense modyfing can be, cf config.def.h.
 
-more hackable, small (<= 3000 SLOC) and hopefully idiomatic codebase
+more hackable, small and hopefully idiomatic codebase
 
 ## Orthogonality, layers
 
@@ -189,5 +189,8 @@ hace an interesting approach, or sam or vis or TODO.
 Text completion ?
 
 Search engine and syntax highlighting are not full fledged.
+1. no deps
+2. uniform replace
+3. using both subpatterns and fields
 
 Support file archives, compressed or over-networks files

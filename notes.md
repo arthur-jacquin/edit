@@ -2,7 +2,8 @@
 
 ### Restructurations
 
-* verify if no tabs and UTF-8 compliant
+* remove deps from termbox structures
+* verify if no tabs and UTF-8 compliant ?
 * break_line, concatenate_line 
 * clarify functions deps, restructurate in which file goes which functions
 * use strncat and other stdlib functions (ctype.h, string.h...)
@@ -87,12 +88,7 @@
 
 ### Regex search
 
-* [regex ECMA](https://262.ecma-international.org/6.0/#sec-patterns)
-* [PCRE](https://www.pcre.org/)
 * [regexp](https://man.cat-v.org/plan_9/6/regexp)
-* [standard](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap09.html)
-* [sd](https://github.com/chmln/sd)
-* [sed](https://www.gnu.org/software/sed/manual/sed.html)
 * [pcre](https://github.com/niklongstone/regular-expression-cheat-sheet)
 
 ### Others

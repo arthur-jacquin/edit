@@ -22,28 +22,28 @@
 
                 m   matching bracket
             0/^/$   start/first non-blank character/end of line
-              g/G   line <m>/last line of the file
-      arrows, l/h   <m> next/previous character
-      arrows, j/k   <m> next/previous line
-              t/T   <m> next/previous word
-              }/{   <m> next/previous block
-              n/N   <m> next/previous match
+              g/G   line {m}/last line of the file
+      arrows, l/h   {m} next/previous character
+      arrows, j/k   {m} next/previous line
+              t/T   {m} next/previous word
+              }/{   {m} next/previous block
+              n/N   {m} next/previous match
 
     MANAGING SELECTIONS
 
             <ESC>   forget saved selections, unanchor
                 c   display number of saved selections
                 .   select cursor line
-            %/b/:   select all lines of file/<m> following blocks/custom range
+            %/b/:   select all lines of file/{m} following blocks/custom range
              f, /   search for pattern
                 v   anchor/unanchor
                 a   save running selections; unanchor
-                z   duplicate the current selection on the <m> following lines
+                z   duplicate the current selection on the {m} following lines
 
     ACTING ON SELECTIONS
 
     [insert mode]   insert a character before selections
-    >/<, TAB/^TAB   <m> decrease/increase line indent
+    >/<, TAB/^TAB   {m} decrease/increase line indent
                 K   comment/uncomment line
           x/<DEL>   suppress selection if non-null, else before/after selection
                 r   replace with pattern elements and fields
@@ -51,10 +51,10 @@
 
     MANAGING LINES
 
-              y/Y   yank <m> lines/blocks
-              d/D   delete <m> lines/blocks
-              p/P   paste after/before <m> times
-     SHIFT+arrows   move cursor line <m> lines up/down
+              y/Y   yank {m} lines/blocks
+              d/D   delete {m} lines/blocks
+              p/P   paste after/before {m} times
+     SHIFT+arrows   move cursor line {m} lines up/down
 
 
 ## Settings management

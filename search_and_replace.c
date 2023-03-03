@@ -341,7 +341,7 @@ mark_fields(const char *chars, int x, int n)
 
     // read chars
     f = 1;
-    while (i < x + n && f < 9) { // XXX 10 ?
+    while (i < x + n && f < 10) {
         if ((chars[k] == settings.field_separator) &&
             (k == 0 || chars[k-1] != '\\')) {
             fields[f].st = st;
@@ -354,7 +354,7 @@ mark_fields(const char *chars, int x, int n)
         }
         i++; k += utf8_char_length(chars[k]);
     }
-    if (f < 9) { // XXX 10 ?
+    if (f < 10) {
         fields[f].st = st;
         fields[f].mst = mst;
         fields[f].n = i - st;

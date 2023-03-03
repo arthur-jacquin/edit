@@ -184,6 +184,7 @@ Here is how you can manage selections:
                 .   select cursor line
             %/b/:   select all lines of file/{m} following blocks/custom range
              f, /   search for pattern
+                *   search for the word that is currently under the cursor
                 v   anchor/unanchor
                 a   save running selections; unanchor
                 z   duplicate the current selection on the {m} following lines
@@ -207,7 +208,7 @@ The command associated to keybind `z` was designed for easy column editing.
 Here is how you can act on selections:
 
     [insert mode]   insert a character before selections
-    >/<, TAB/^TAB   {m} decrease/increase line indent
+    >/<, TAB/^TAB   {m} increase/decrease line indent
                 K   comment/uncomment line
           x/<DEL>   suppress selection if non-null, else before/after selection
                 r   replace with pattern elements and fields
@@ -257,30 +258,47 @@ the whole file.
 
 ### Search pattern syntax
 
-The syntax is heavily inspired by standard regular expressions[^1]:
+The search pattern uses regular expressions, whose syntax is inspired by
+PCRE[^1] and described below in a Backus-Naur form style. If you're new to
+regular expressions, you might want to have a look at `regexp.md` for a more
+detailed guide.
 
-    e3: LITERAL                         # match the literal only
-      | '\' ESCAPED_LITERAL             # match to-be-escaped literal
-      | CHARCLASS                       # match character in the class 
-      | '.'                             # match any character
-      | '^'                             # match the beginning of the screen
-      | '$'                             # match the end of the string
-      | '\(' e1 '\)'                    # mark a subpattern/group for repeaters
+    e3: ASSERTION
+      | CHARACTER
+      | '\(' e1 '\)'                    # group for repeaters/subpatterns reuse
 
-    CHARCLASS: '[' LIST ']'             # match characters in the LIST
-             | '[^' LIST ']'            # match characters not in the LIST
+    e2: e3
+      | e2 REP                          # match a repeated pattern
+
+    e1: e2
+      | e1 e2                           # match the concatenation of 2 patterns
+      | e1 '|' e2                       # match one of the 2 patterns
+
+    ASSERTION: '^'                      # match the beginning of the line
+             | '$'                      # match the end of the line
+             | '\A'                     # match the beginning of the selection
+             | '\Z'                     # match the end of the selection
+             | '\b'                     # match word boundaries
+             | '\B'                     # match non word boundaries
+    
+    CHARACTER: LITERAL                  # match the LITERAL only
+             | '\' ESCAPED_LITERAL      # match to-be-escaped ESCAPED_LITERAL
+             | CHARCLASS                # match characters in CHARCLASS 
+             | '.'                      # match any character
+
+    CHARCLASS: '[' LIST ']'             # match characters in LIST
+             | '[^' LIST ']'            # match characters not in LIST
              | '\d'                     # match digits
              | '\D'                     # match non digits
              | '\w'                     # match word characters
              | '\w'                     # match non word characters
     
-    LIST: LITERAL                       # match the literal only 
-        | LITERAL1 '-' LITERAL2         # match literals between the 2 
-        | r1 r2                         # match literals in r1 or r2
-        | '-' r1                        # match '-' and literals in r1
+    LIST: LIST_MINUS                    # match literals in LIST_MINUS
+        | '-' LIST_MINUS                # match '-' and literals in LIST_MINUS
 
-    e2: e3
-      | e2 REP                          # match a repeated pattern
+    LIST_MINUS: LITERAL                 # match the LITERAL only 
+              | LITERAL1 '-' LITERAL2   # match literals between the 2 
+              | l1 l2                   # match literals in l1 or l2
 
     REP: '*'                            # 0 or more (any number)
        | '+'                            # 1 or more (at least once)
@@ -290,11 +308,7 @@ The syntax is heavily inspired by standard regular expressions[^1]:
        | '{' ',' INTEGER '}'            # at most INTEGER
        | '{' INTEGER1 ',' INTEGER2 '}'  # between INTEGER1 and INTEGER2    
 
-    e1: e2
-      | e1 e2                           # match the concatenation of 2 patterns
-      | e1 '|' e2                       # match one of the 2 patterns
-
-[^1]: [regexp man page](https://man.cat-v.org/plan_9/2/regexp)
+[^1]: [PCRE](https://www.pcre.org/)
 
 ### Using subpatterns and fields in the replace pattern
 
@@ -319,15 +333,13 @@ Here are some examples:
 ## Porting `edit`
 
 Even if `edit` has no dependencies, it won't run everywhere, as the default
-terminal drawing drawing (termbox[^2]) does not support all terminals. For
+terminal drawing library (termbox[^2]) does not support all terminals. For
 example, it won't run on Windows, unless you use WSL or a similar solution.
 
 [^2]: [termbox2](https://github.com/termbox/termbox2)
 
-However, `edit` only uses the following functions from `termbox.h`:
-TODO
-
-Therefore if you want to embed the editor in your own (GPLv3) software, make it
-work on Windows, or build a Graphical User Interface, all you have to do is to
-replace `termbox.h` with a file providing the above functions adapted to your
-targetted environment.
+All the interaction between `edit` and its environment happens through
+`termbox.h`. Therefore if you want to embed the editor in your own (GPLv3)
+software, make it work on Windows, or build a Graphical User Interface, all you
+have to do is to replace `termbox.h` with a file adapted to your targetted
+environment and providing the same API.

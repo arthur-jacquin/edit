@@ -36,6 +36,7 @@
                 .   select cursor line
             %/b/:   select all lines of file/{m} following blocks/custom range
              f, /   search for pattern
+                *   search for the word that is currently under the cursor
                 v   anchor/unanchor
                 a   save running selections; unanchor
                 z   duplicate the current selection on the {m} following lines
@@ -43,7 +44,7 @@
     ACTING ON SELECTIONS
 
     [insert mode]   insert a character before selections
-    >/<, TAB/^TAB   {m} decrease/increase line indent
+    >/<, TAB/^TAB   {m} increase/decrease line indent
                 K   comment/uncomment line
           x/<DEL>   suppress selection if non-null, else before/after selection
                 r   replace with pattern elements and fields

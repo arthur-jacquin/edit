@@ -1,4 +1,6 @@
-## The story/rationale
+# Philosophy
+
+## The story
 
 When I started programming, I found the ubitiquous [vim](https://www.vim.org). I fell in love with its
 logic, efficiency and power. But as I used it, I started to notice areas where
@@ -10,7 +12,7 @@ Some are very small:
 - [kibi](https://github.com/ilai-deutel/kibi) (Rust)
 
 Some are innovative:
-- [kakoune](https://kakoune.org/why-kakoune/why-kakoune.html) (C++): cleaner editing model
+- [kakoune](https://kakoune.org) (C++): cleaner editing model
 - [sam](http://doc.cat-v.org/plan_9/4th_edition/papers/sam/) (C): bringing structural regular expressions
 - [vis](https://github.com/martanne/vis) (C, Lua): smart combination of vim and sam
 - [de](https://github.com/driusan/de) (Go): mix of vim and acme, integrates with p9p plumbing
@@ -39,158 +41,188 @@ for you, you can read about the design choices below. If it sounds good to you,
 do not hesitate to try it! In that case, I would greatly appreciate a feedback,
 wether it's on the user side or the code.
 
-### Style
 
-`edit` development is inspired by the suckless philosophy:
+## Simplicity as the utmost goal
 
-- written in less than 2500 lines of C, with no dependencies
-- produces a standalone executable
-- textual, compile-time configuration, with sane defaults in config.def.h
-- only edits text: does not try to be an IDE or a multiplexer/window manager
-- feature-stable, not meant to grow indefinitely
+The main goal of the editor is simplicity. I believe it helps for the secondary
+goals:
 
-simplicity, predictability, orthogonality, powerful, intuitive editing model
-
-
-### Simplicity
-
-single stroke commands
-no command like in vim
-
-predictable
-
-fast
-
-sensible defaults. Parameters that makes sense modyfing can be, cf config.def.h.
-
-more hackable, small and hopefully idiomatic codebase
-
-## Orthogonality, layers
-
-#### UTF-8 encoding
-
-#### Written in C, with no dependencies!
-
-So stable, first language supported on most systems, therefore edit might be run
-everywhere with no problem.
-(uses the great, minimal, single-header termbox drawing library)
-Ensure great protability.
-
-#### Create a standalone executable!
-
-Dynamic linking mess, Eliminates many runtime potentials bugs
-
-#### Optionnal configuration!
-
-Need no configuration! on vim, a .vimrc is almost mandatory, else not quite usable
-Here, the editor is simple enough so that there are few choice to be made.
-all settings the user could want to modify are in config.def.h, so discoverability
-is awesome. You should really have a look at it. easy to save configuration for
-future: it's a text file. strongly inspired by suckless.
-As editing and compiling is considered to be a part of the editor experience, the
-editor is not to be packaged other than in a tarball.
-
-#### Terminal-based.
-
-No GUI.
-
-#### Modal editor
-
-Like vi(m), kakoune, and others. In insert mode, most keys insert
-their caracters in the beginning of the selections. In normal (default) mode,
-keys have completely different effects: quit, reload the file, move through the
-file, manage selections, act on selections, interact with the lines clipboard...
-In dialog mode, the user is prompted a value for more elaborate tasks
-(e.g. choosing a new file name). Not biaised towards insertion, as it is not the
-main editing task
-
-Mouse support! While the editor is quite keyboard-centric, I think the user sould
-not be completely suppressed its right to use the mouse power.
-Scrolling, moving the cursor.
-(it is a compile time option, if it bothers you)
-
-UTF-8 support! (only encoding supported)
-
-Incremental, regexp search; replace with subpatterns and fields support.
-The power of sed and awk combined.
-
-Finite features. Small number of carefully chosen features. All discoverable by
-either reading the user guide (10 minutes read) or the config.def.h, where a
-key is defined for each possible operations. No feeling of being overwhelmed like
-in vim where the user can found years later features that could have helped him.
-If you're new to advanced text editing, no need to master all of them at first
-read, but you know it exists and where to find the information.
-therefore the learning curve is pretty gentle, unless you want to dig into it
-faster than needed.
-
-If any of this sounds overfeatured, you might have a look at those editors: TODO
-
-### Selections then action philophy
-
-Like Kakoune
-The editor is selections-centric. All editing actions, except the lines clipboard,
-acts on a list of selections. Therefore it's similar to Kakoune in the sense of
-it's selection then action philosophy, and not action then selection like in vi(m).
-provide more interactivity.
-
-This approach easily enables multi-cursor editing, visual block/column editing...
-
-Benefits on search and replace, that are decoupled: searching is an operation on
-selections, while replacing is an action on selections.
-incremental, see what will be replaced, or different actions than replace
-(e.g. switch to uppercase)
-or replace with no search pattern previously, e.g. if you want to exchange fields
+- making it efficient, intuitive and predictable
+- writing small, well-structured, easily-hackable code
+- shipping a sane default configuration, as well as a clear configuration file
+- making sure all commands are accessed with a single keypress
 
 
-### What `edit` is not
+## Old-school development
 
-> Most of the following what I intentionnally not implemented. The main goal being
-simplicity, for both code and usability, many features that might be considered
-interesting but that brings too much complexity have been left aside. Reading
-this will help you in deciding if `edit` is enough featured for your workflow,
-and if not, in finding an editor that better suits you.
+edit development is inspired by the suckless philosophy.
 
-Considered feature complete: i'm not advertising you of the *extensive* plugin
-support in any language you might think of or such. plugins are bloat. if you want
-t add functionnality, patch it, fork it, but an API for plugins is not something i wish
-in an editor. calls for asyncronous... all bloat. Not that much expandable.
+### Written in less than 2500 lines of C, with no dependencies
 
-Does not integrates UNIX tools. (considered complete, might leave the editor if
-you want to do something). Quite not a great unix citizen after all, and that's
-ok.
+The stability (and the technical qualities) of the C language explains its
+longevity and its wide avaibility. Combined with a small codebase with no
+dependencies (except standard library), choosing C ensures great portability.
 
-Not an IDE! No terminal, file manager, git integration, syntax/compilator warnings.
-Not a multiplexer/window manager! no splits, tabs, buffers.
-Not a word processor! No styling, no spell checking.
-It's a text editor.
+### Produces a standalone executable
 
-Not a client-server architecture. While the code could be very easily splitten
-in a client and a server, I've decide to not do that. Many editors does: sam...
-In some cases it might be useful. But I don't really see the *need* in most
-uses cases, and as it adds some complexity, I left it aside. But I might pick it
-up some day.
+It eliminates some potential runtime bugs, increase its portability, and avoid
+the need for a dynamic linker.
 
-No undo-redo!
+### Textual, compile-time configuration, with sane defaults
 
-No line wrap, no folding.
+On vim, a `.vimrc` is almost mandatory to get a sensible editor. With edit,
+configuration is not needed: a default configuration `config.def.h` is provided.
+This file contains all the settings one could want to modify, which eases
+discoverability. It also makes it simple to save the configuration for the
+future.
 
-Clipboard only works with whole lines!
+As editing this file and compiling are considered to be a part of the editor
+experience, the editor is not to be packaged other than in a tarball.
 
-No elaborated data structures! Some are quite elaborated (ropes in xi, database
-in sam and others), and this upfront complexity might be useful or even crucial
-when editing really, really big quantities.
+### Keyboard-centric, terminal-based editor
 
-No scripting language, nor macros. No action-movement like in vim. (e.g. dw for
-delete word).
-Quite difficult to wrap its head around, and
-together produce complexity. If user is interested in that,you might Kakoune that
-hace an interesting approach, or sam or vis or TODO.
+While I prefer the terminal-keyboard combination, I think the user should not be
+retained to use the mouse power. By default, edit supports scrolling and moving
+the cursor with the mouse. If it bothers you, you may disable this compile-time
+option.
 
-Text completion ?
+### Only edits text
 
-Search engine and syntax highlighting are not full fledged.
-1. no deps
-2. uniform replace
-3. using both subpatterns and fields
+edit is text editor. It edits text, not file archives or compressed files.
 
-Support file archives, compressed or over-networks files
+It is not an IDE: it has no built-in terminal, file manager, git integration or
+syntax/compiler warnings and errors.
+
+It is neither a multiplexer nor a window manager: it has no splits, tabs or
+buffers.
+
+It is not a word processor: it has no styling or spell checking.
+
+### Feature-stable
+
+edit is not meant to grow indefinitely. It has a finite number of carefully
+chosen features. These can be all discovered by reading the manual (`manual.md`,
+10 minute read) or the configuration file, where a key is associated to each
+command.
+
+It avoids the feeling of being overwhelmed by the number of features, which can
+happen when starting to use vim. If you're new to advanced text editing, no need
+to master all of them at first read, but you know what exists and where to find
+the information. The learning curve is therefore pretty gentle, unless you want
+to dig into it faster than needed.
+
+Today edit is considered mostly feature stable. Here is what might be added in
+the future:
+
+- execute a shell command ? piping the selections to it ?
+- store optimal cursor column ?
+- scrolloff ?
+- display line numbers ??
+- tab-completion ??
+
+
+## User experience design choices
+
+### Modal edition
+
+In insert mode, most keys insert their characters before the selections, as most
+basic editors do. But the (default) normal mode associates completely different
+meaning to each key: quit, reload the file, move through the file, manage
+selections, act on selections, insert the clipboard... That way the editor is
+not biaised towards insertion (which is not the main editing task).
+
+### Selection-centric, selection then action philosophy
+
+The following points were inspired by kakoune, which has done a great job at
+explaining its philosophy. Refer to their documentation for more details[^1].
+
+[^1]: [kakoune philosophy](https://kakoune.org/why-kakoune/why-kakoune.html)
+
+edit is selection-centric, as most editing commands act on a list of selections.
+This approach easily enables multi-cursor, visual block and column editing.
+
+Selecting happens before action like in kakoune, and not the other way around
+like in vim. It provides more interactivity, as you can see what you will act on
+before action, enabling you to correct the selections without having to undo the
+action.
+
+### No edition language
+
+Following the goal of simplicity, commands behaves individually, and while some
+sequences of commands are more used than others, commands do not explicitely
+combine together. I think it helps lowering the complexity, for the user and for
+the code, without reducing functionnality. As edit does not provide a proper
+"edition language", there is no macro support.
+
+### Home-grown search and replace engine
+
+The search and replace engine is home-grown. While it avoids the need for
+dependencies, it is not to be seen as a weaker, spare replacement. The search is
+incremental and supports regular expressions, and the replace supports the reuse
+of subpatterns and fields from the to-be-replaced string: the power of sed and
+awk combined! Please refer to `manual.md` for a more precise description.
+
+
+## Code-related design choices
+
+The main goal being simplicity for both code and usability, many features that
+might be considered interesting but that brings too much complexity to my tastes
+have intentionnally been left aside.
+
+edit has limited abilities. It is a feature. Some lacks might be a breaker for
+you: reading the following will help in deciding if edit is capable enough for
+your workflow. If not, one of the editor listed at the top of this file might
+better suits you ;)
+
+### No elaborated data structures for storing text
+
+Some editors provides elaborated data structures for storing text: conflict-free
+replicated data type in xi[^2], database in sam...). This upfront complexity
+might be useful or even crucial when editing really, really big files, but
+this is not what edit strives for.
+
+[^2]: [CRDT](https://xi-editor.io/docs/crdt-details.html)
+
+### UTF-8 only
+
+There exists plenty encodings, but UTF-8 makes the most sense. Obviously, plain
+ASCII is also supported as it's a subset of UTF-8. For other encodings, you
+might have to translate it first.
+
+### No undo/redo
+
+When I was using vim, I found out I was saving the file so often that undoing
+was most of the time equivalent to reloading the file. Frequent saves and
+occasionnal reloads avoids the need for autosave and undo/redo system.
+
+### Wrong syntax highlight for multiline elements
+
+Contrary to sam and its structural regular expressions[^3], the line abstraction
+is central in edit. The syntax highlighting system operates on each line
+independently. Therefore, multiline strings and comments are not highlighted as
+one could expect. However, the commenting command use single line comments: the
+user is encouraged to use it over ranges of lines instead of using multiline
+comments.
+
+[^3]: [structural regexp](https://doc.cat-v.org/bell_labs/structural_regexps/se.pdf)
+
+Please refer to `syntax_highlight.md` for a more precise description of the
+system.
+
+### No plugins support
+
+As edit is considered mostly complete feature-wise, I have not seen the
+justification for designing a plugin support. If you want to add functionnality,
+patch it, fork it, but an interface for plugins is not something edit will have.
+
+### Not a client-server architecture
+
+While the structure of the code is quite compatible with a client-server
+architecture, I've decide to not do that. Many editors does, and in some cases
+it might be useful, but I don't really see the *need* in most uses cases, and as
+it adds some complexity, I left it aside. But I might pick it up some day.
+
+### Others limitations
+
+- does no work with tabs
+- does not visually wrap lines

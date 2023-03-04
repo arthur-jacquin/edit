@@ -192,6 +192,7 @@ int parse_range(const char *range);
 void load_lang(const char *extension);
 
 // graphical.c
+void init_termbox(void);
 int resize(int width, int height);
 struct selection *print_line(const struct line *l, struct selection *s, int screen_line);
 void print_dialog(void);

@@ -111,14 +111,13 @@ to master all of them at first read, but you know what exists and where to find
 the information. The learning curve is therefore pretty gentle, unless you want
 to dig into it faster than needed.
 
-Today edit is considered mostly feature stable. Here is what might be added in
-the future:
+Today edit is considered mostly feature stable. The following features are not
+excluded in the future:
 
-* execute a shell command ? piping the selections to it ?
-* store optimal cursor column ?
-* scrolloff ?
-* display line numbers ??
-* tab-completion ??
+* executing a command, with the possibilities of piping selections to it and
+sending it in the background
+* display line numbers
+* tab-completion
 
 
 ## User experience design choices

@@ -1,3 +1,19 @@
+void
+init_termbox(void)
+{
+    // initialise the interface
+
+    tb_init();
+    tb_set_output_mode(OUTPUT_MODE);
+#ifdef MOUSE_SUPPORT
+    tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
+#else
+    tb_set_input_mode(TB_INPUT_ESC);
+#endif // MOUSE_SUPPORT
+    if (resize(tb_width(), tb_height()))
+        has_been_invalid_resizing = 1;
+}
+
 int
 resize(int width, int height)
 {

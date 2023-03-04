@@ -35,15 +35,7 @@ main(int argc, char *argv[])
     clipboard.start = NULL;
 
     // initialise termbox
-    tb_init();
-    tb_set_output_mode(OUTPUT_MODE);
-#ifdef MOUSE_SUPPORT
-    tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
-#else
-    tb_set_input_mode(TB_INPUT_ESC);
-#endif // MOUSE_SUPPORT
-    if (resize(tb_width(), tb_height()))
-        has_been_invalid_resizing = 1;
+    init_termbox();
     echo(WELCOME_MESSAGE);
 
 
@@ -151,6 +143,14 @@ main(int argc, char *argv[])
                         if (!set_parameter(settings_int.current))
                             echo(INVALID_ASSIGNMENT_MESSAGE);
                     break;
+                //case 'e':
+                //    if (dialog("Run a command: ", &command_int, 0)) {
+                //        tb_shutdown();
+                //        system(command_int.current);
+                //        getchar();
+                //        init_termbox();
+                //    }
+                //    break;
                 case KB_INSERT_START_LINE:
                 case KB_INSERT_END_LINE:
                     reset_selections();

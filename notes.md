@@ -2,6 +2,7 @@
 
 ### Adding/rethinking
 
+* 'e', command_int, background ? default command by language ? always 'make' ?
 * best way to store strings ?
 * restructure error management
     * protect against tabs and UTF-8 errors
@@ -13,14 +14,9 @@
 * `*` command
 * remove unwrap_pos ?
 
-* execute a shell command ? (stdlib system)
 * store optimal cursor column ?
 * scrolloff ?
 * ending column ?
-
-* piping selections to the command ??
-* display line numbers ??
-* tab-completion ??
 
 
 ### Final rewrite

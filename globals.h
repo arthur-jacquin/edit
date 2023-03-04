@@ -100,6 +100,7 @@ struct interface search_pattern, replace_pattern;
 
 // graphical
 int y, x;                           // cursor position in file area
+int scrolloff;                      // minimum number of lines around cursor
 int screen_height, screen_width;    // terminal dimensions
 struct printable {                  // information to print a character
     uint32_t ch;                    // Unicode codepoint

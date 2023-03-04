@@ -15,7 +15,6 @@
 * remove unwrap_pos ?
 
 * store optimal cursor column ?
-* scrolloff ?
 
 
 ### Final rewrite
@@ -44,6 +43,7 @@ Progressively integrate each part. At each step:
         manipulating hex values: cast needed ?
         \d matches d
         multiple slash on same line
+    refresh the things to promote in the screencast
 
 Build a dependency graph of functions. Correlate that with list of modified
 globals.

@@ -379,14 +379,13 @@ main(int argc, char *argv[])
             case TB_KEY_MOUSE_WHEEL_UP:
                 old_line_nb = first_line_nb + y;
                 first_line_on_screen = get_line(-SCROLL_LINE_NUMBER);
-                y = old_line_nb - first_line_nb;
-                y = (y > screen_height - 2) ? (screen_height - 2) : y;
+                y = MIN(old_line_nb - first_line_nb,
+                    screen_height - 2 - scrolloff);
                 break;
             case TB_KEY_MOUSE_WHEEL_DOWN:
                 old_line_nb = first_line_nb + y;
                 first_line_on_screen = get_line(SCROLL_LINE_NUMBER);
-                y = old_line_nb - first_line_nb;
-                y = (y < 0) ? 0 : y;
+                y = MAX(old_line_nb - first_line_nb, scrolloff);
                 break;
             }
             break;

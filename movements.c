@@ -235,15 +235,11 @@ move_to_cursor(void)
 
     // compute new first_line_on_screen and y
     delta = nl - first_line_nb;
-    if (0 <= delta && delta < screen_height - 1) {
-        y = delta;
-    } else if (delta >= screen_height - 1) {
-        first_line_on_screen = get_line(delta - (screen_height - 2));
-        y = screen_height - 2;
-    } else {
-        first_line_on_screen = get_line(delta);
-        y = 0;
-    }
+    if (delta < scrolloff)
+        y = MIN(scrolloff, nl - 1);
+    else
+        y = MIN(delta, screen_height - 2 - scrolloff);
+    first_line_on_screen = get_line(delta - y);
 
     // adjust x
     if (x > (nx = get_line(y)->dl))

@@ -295,8 +295,8 @@ mark_pattern(const char *chars, int x, int n)
                 j++; l++;
                 is_elem_ok = (sp[l] == 'w' && is_word_char(chars[k])) ||
                              (sp[l] == 'W' && !is_word_char(chars[k])) ||
-                             (sp[l] == 'd' && is_digit(chars[k])) ||
-                             (sp[l] == 'D' && !is_digit(chars[k])) ||
+                             (sp[l] == 'd' && isdigit(chars[k])) ||
+                             (sp[l] == 'D' && !isdigit(chars[k])) ||
                              (compare_chars(sp, l, chars, k) == 0); // escaped char
                 j++; l += utf8_char_length(sp[l]);
             } else {

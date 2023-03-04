@@ -2,6 +2,14 @@ char utf8_start[4] = {0, 0xc0, 0xe0, 0xf0};
 char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
 
 int
+is_word_char(char c)
+{
+    // check if c is a word character
+
+    return isalpha(c) || (c == '_');
+}
+
+int
 utf8_char_length(char c)
 {
     // compute the length in bytes of character starting by byte c
@@ -15,24 +23,6 @@ utf8_char_length(char c)
     } else if ((char) (c & (char) 0xf0) == utf8_start[3]) {
         return 4;
     }
-}
-
-uint32_t
-unicode(char *chars, int k, int len)
-{
-    // compute the Unicode codepoint associated with UTF-8 encoded char in chars
-    // TODO detect invalid
-
-    uint32_t res;
-    int j;
-
-    res = masks[len - 1] & chars[k++];
-    for (j = 1; j < len; j++) {
-        res <<= 6;
-        res |= chars[k++] & (char) 0x3f;
-    }
-
-    return res;
 }
 
 int
@@ -49,6 +39,24 @@ unicode_char_length(uint32_t c)
     } else if (c < 0x200000) {
         return 4;
     }
+}
+
+uint32_t
+unicode(const char *chars, int k, int len)
+{
+    // compute the Unicode codepoint associated with UTF-8 encoded char in chars
+    // TODO detect invalid
+
+    uint32_t res;
+    int j;
+
+    res = masks[len - 1] & chars[k++];
+    for (j = 1; j < len; j++) {
+        res <<= 6;
+        res |= chars[k++] & (char) 0x3f;
+    }
+
+    return res;
 }
 
 void
@@ -79,30 +87,6 @@ get_str_index(const char *chars, int x)
 }
 
 int
-is_blank(char c)
-{
-    // check if c is a blank charater
-
-    return (c == ' ');
-}
-
-int
-is_word_char(char c)
-{
-    // check if c is a word character
-
-    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || (c == '_');
-}
-
-int
-is_digit(char c)
-{
-    // check if c is a digit
-
-    return ('0' <= c && c <= '9');
-}
-
-int
 is_in(const char *list, const char *chars, int x, int length)
 {
     // check if chars substring starting at position x and of length length is
@@ -127,39 +111,4 @@ is_in(const char *list, const char *chars, int x, int length)
     }
 
     return 0;
-}
-
-// NOT OK
-
-int
-is_first_line(const struct line *l)
-{
-    // check if *l is the first line of the list it belongs to
-
-    return (l->prev == NULL);
-}
-
-int
-is_last_line(const struct line *l)
-{
-    // check if *l is the last line of the list it belongs to
-
-    return (l->next == NULL);
-}
-
-void
-init_interface(struct interface *interf, const char *chars)
-{
-    // copy chars in current and previous fields of interf
-
-    strcpy(interf->current, chars);
-    strcpy(interf->previous, chars);
-}
-
-void
-echo(const char *chars)
-{
-    // set dialog line to chars
-
-    strcpy(dialog_chars, chars);
 }

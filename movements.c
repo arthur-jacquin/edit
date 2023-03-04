@@ -58,7 +58,7 @@ find_first_non_blank(void)
 
     l = get_line(y);
     for (i = nx = l->ml - 1; i >= 0; i--)
-        if (!(is_blank(l->chars[i])))
+        if (l->chars[i] != ' ')
             nx = i;
 
     return nx;
@@ -82,21 +82,21 @@ find_start_of_word(int n)
         c = l->chars[get_str_index(l->chars, dx)];
         while (move(&l, &dx, sens)) {
             nc = l->chars[get_str_index(l->chars, dx)];
-            if (is_blank(c)) {
-                if (!is_blank(nc))
+            if (c == ' ') {
+                if (nc != ' ')
                     break;
             } else if (is_word_char(c)) {
                 if (!is_word_char(nc))
                     break;
-            } else if (is_digit(c)) {
-                if (!is_digit(nc))
+            } else if (isdigit(c)) {
+                if (!isdigit(nc))
                     break;
             } else {
-                if (is_blank(nc) || is_word_char(nc) || is_digit(nc))
+                if ((nc == ' ') || is_word_char(nc) || isdigit(nc))
                     break;
             }
         }
-        while (is_blank(l->chars[get_str_index(l->chars, dx)]))
+        while (l->chars[get_str_index(l->chars, dx)] == ' ')
             if (!move(&l, &dx, sens))
                 break;
     }

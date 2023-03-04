@@ -22,8 +22,8 @@ dialog(const char *prompt, struct interface *interf, int refresh)
             displayed = search(saved);
             print_all();
         }
-        strcpy(dialog_chars, prompt);
-        strcat(dialog_chars, interf->current);
+        strcpy(message, prompt);
+        strcat(message, interf->current);
         if (has_been_resized) {
             has_been_resized = 0;
             print_all();

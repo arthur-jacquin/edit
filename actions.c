@@ -1,14 +1,14 @@
 void
 act(void (*process)(struct line *, struct selection *), int line_op)
 {
-    // execute process on saved selections if any, else on temp selections
+    // execute process on saved selections if any, else on running selections
     // line_op can be set to 1 so that process is executed at most once per line
 
     struct selection *s;
     struct line *l;
     int old_line_nb;
 
-    s = (saved != NULL) ? saved : temp;
+    s = (saved != NULL) ? saved : running;
     l = get_line(s->l - first_line_nb);
     old_line_nb = 0;
     has_been_changes = 1;
@@ -216,7 +216,7 @@ replace(struct line *l, struct selection *s)
     j = lj = 0;
     for (k = 0; k < lrp;) {
         if ((k < lrp - 1) && (rp[k] == '\\' || rp[k] == '$') &&
-            (is_digit(rp[k+1]))) { // field or subpattern
+            (isdigit(rp[k+1]))) { // field or subpattern
             class = (rp[k] == '$') ? fields : subpatterns;
             src = l->chars;
             n = class[rp[k+1] - '0'].n;

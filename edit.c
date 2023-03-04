@@ -1,14 +1,13 @@
-// TODO: manage order
 #include "globals.h"
 #include "utils.c"
 #include "file.c"
-#include "lines.c"
-#include "interaction.c"
-#include "graphical.c"
 #include "movements.c"
 #include "selections.c"
+#include "lines.c"
 #include "actions.c"
 #include "search_and_replace.c"
+#include "interaction.c"
+#include "graphical.c"
 
 int
 main(int argc, char *argv[])
@@ -24,15 +23,15 @@ main(int argc, char *argv[])
     settings.case_sensitive = CASE_SENSITIVE;
     settings.field_separator = FIELD_SEPARATOR;
     settings.tab_width = TAB_WIDTH;
-    init_interface(&range_int, "");
-    init_interface(&search_pattern, "");
-    init_interface(&replace_pattern, "");
-    init_interface(&settings_int, "");
+    init_interface(range_int, "");
+    init_interface(settings_int, "");
+    init_interface(search_pattern, "");
+    init_interface(replace_pattern, "");
 
     // editor variables
     x = y = 0;
     m = in_insert_mode = anchored = is_bracket = has_been_invalid_resizing = 0;
-    saved = temp = displayed = NULL;
+    saved = running = displayed = NULL;
     clipboard.start = NULL;
 
     // initialise termbox
@@ -57,7 +56,7 @@ main(int argc, char *argv[])
         printf("%s\n", VERSION);
         return 0;
     } else {
-        init_interface(&file_name_int, argv[1]);
+        init_interface(file_name_int, argv[1]);
     }
 
     // check if file can be accessed, and loads it if possible
@@ -79,10 +78,10 @@ main(int argc, char *argv[])
         }
 
         // compute new displayed selections
-        forget_sel_list(temp);
-        temp = running_sel();
+        forget_sel_list(running);
+        running = running_sel();
         forget_sel_list(displayed);
-        displayed = merge_sel(temp, saved);
+        displayed = merge_sel(running, saved);
 
         // go to correct position, refresh screen and wait for input
         move_to_cursor();
@@ -98,7 +97,7 @@ main(int argc, char *argv[])
             } else if (ev.ch && !in_insert_mode) {
                 if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
                     m = 10*m + ev.ch - '0';
-                    sprintf(dialog_chars, MULTIPLIER_MESSAGE_PATTERN, m);
+                    echof(MULTIPLIER_MESSAGE_PATTERN, m);
                     break;
                 } else {
                 if (m == 0)
@@ -242,7 +241,7 @@ main(int argc, char *argv[])
                         echo(NO_SEL_UP_MESSAGE);
                     break;
                 case KB_SEL_DISPLAY_COUNT:
-                    sprintf(dialog_chars, SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
+                    echof(SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
                     break;
                 case KB_SEL_CURSOR_LINE:
                 case KB_SEL_ALL_LINES:

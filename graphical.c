@@ -65,7 +65,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                 if (utf8_char_length(c) > 1) {
                     k += utf8_char_length(c);
                 } else if (is_word_char(c)) {
-                    for (j = 0; is_word_char(nc = l->chars[k+j]) || is_digit(nc); j++)
+                    for (j = 0; is_word_char(nc = l->chars[k+j]) || isdigit(nc); j++)
                         ;
                     if (is_in(*(syntax->keywords), l->chars, k, j)) {
                         color = COLOR_KEYWORD;
@@ -76,9 +76,9 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                     }
                     nb_to_color = j;
                     k += j;
-                } else if (is_digit(c) || (k+1 < l->ml && (c == '-' || c == '.') &&
-                    (is_digit(nc = l->chars[k+1]) || nc == '.'))) {
-                    for (j = 1; is_digit(nc = l->chars[k+j]) || nc == '.'; j++)
+                } else if (isdigit(c) || (k+1 < l->ml && (c == '-' || c == '.') &&
+                    (isdigit(nc = l->chars[k+1]) || nc == '.'))) {
+                    for (j = 1; isdigit(nc = l->chars[k+j]) || nc == '.'; j++)
                         ;
                     color = COLOR_NUMBER;
                     nb_to_color = j;
@@ -146,9 +146,9 @@ print_dialog(void)
     char nc;
 
     // decompress UTF-8 and print
-    for (i = k = 0; nc = dialog_chars[k]; i++, k += len)
+    for (i = k = 0; nc = message[k]; i++, k += len)
         tb_set_cell(i, screen_height - 1,
-            unicode(dialog_chars, k, len = utf8_char_length(nc)),
+            unicode(message, k, len = utf8_char_length(nc)),
             COLOR_DIALOG, COLOR_BG_DEFAULT);
 
     // erase end of line

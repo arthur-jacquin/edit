@@ -134,7 +134,7 @@ column_sel(int m)
     int i, delta, wx, wn;
     struct pos cursor;
     struct line *l;
-    struct selection *last;
+    struct selection *last, *tmp;
 
     // calibrate
     cursor = pos_of_cursor();
@@ -162,11 +162,9 @@ column_sel(int m)
     }
 
     // save selections
-    forget_sel_list(temp);
-    temp = merge_sel(saved, last);
+    tmp = merge_sel(saved, last);
     forget_sel_list(saved);
-    saved = temp;
-    temp = NULL;
+    saved = tmp;
 
     // refresh anchor
     if (anchored) {

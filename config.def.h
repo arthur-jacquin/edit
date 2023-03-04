@@ -22,7 +22,7 @@
 #define REPLACE_PATTERN_PROMPT      "Replace pattern: "
 
 
-// PARAMETERS ******************************************************************
+// COMPILE-TIME PARAMETERS *****************************************************
 
 #define TERMINAL_SUPPORTS_256_COLORS
 #define MOUSE_SUPPORT

@@ -28,6 +28,7 @@
 #define MOUSE_SUPPORT
 #define UNDERLINE_CURSOR_LINE
 #define HIGHLIGHT_MATCHING_BRACKET
+#define VISUAL_COLUMN               80
 
 #define BACKUP_FILE_NAME            "edit_backup_file"
 #define MIN_WIDTH                   81
@@ -62,6 +63,7 @@
 #define COLOR_BG_DEFAULT            TB_DEFAULT
 #define COLOR_BG_SELECTIONS         0
 #define COLOR_BG_MATCHING           0
+#define COLOR_BG_COLUMN             0
 #endif
 
 // 256-colors terminal
@@ -84,6 +86,7 @@
 #define COLOR_BG_DEFAULT            TB_DEFAULT
 #define COLOR_BG_SELECTIONS         234
 #define COLOR_BG_MATCHING           45
+#define COLOR_BG_COLUMN             233
 #endif
 
 

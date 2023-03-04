@@ -16,7 +16,6 @@
 
 * store optimal cursor column ?
 * scrolloff ?
-* ending column ?
 
 
 ### Final rewrite

@@ -146,6 +146,12 @@ print_line(const struct line *l, struct selection *s, int screen_line)
         tb_set_cell(i, screen_line, buf[i].ch, buf[i].fg | underline, buf[i].bg);
     for (; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
+#ifdef VISUAL_COLUMN
+    if ((i = VISUAL_COLUMN) < l->dl)
+        tb_set_cell(i, screen_line, buf[i].ch, buf[i].fg | underline, COLOR_BG_COLUMN);
+    else
+        tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_COLUMN);
+#endif // VISUAL_COLUMN
 
     // forget buffer
     free(buf);

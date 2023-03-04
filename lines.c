@@ -92,7 +92,7 @@ replace_chars(struct line *l, struct selection *a, int start, int n,
     // bytes (characters are not initialised)
     // return index of first inserted byte in l->chars
 
-    int i, k, k1, k2;
+    int k1, k2;
     char *new_chars, *old_chars;
 
     // compute length of new_chars

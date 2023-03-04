@@ -13,7 +13,6 @@
 
 #define VERSION                     "alpha"
 #define HELP_MESSAGE                "Help available at https://jacquin.xyz/edit"
-#define MAX_CHARS                   (1 << 8)
 #define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
 #define INTERFACE_MEM_LENGTH        (4*INTERFACE_WIDTH + 1)
 #define MIN_HEIGHT                  2

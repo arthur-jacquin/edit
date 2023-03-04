@@ -1,58 +1,67 @@
 ## TODO
 
+### Adding/rethinking
+
+* best way to store strings ?
 * restructure error management
     * protect against tabs and UTF-8 errors
     * protect against malloc failings
-* detect word boundaries, start/end of selection, `*` command
-* add potential features ?
+    * void exit(int status)
+* search and replace
+    names of variables in engine
+    detect word boundaries, start/end of selection
+* `*` command
+* remove unwrap_pos ?
 
-### Restructurations
+* execute a shell command ? (stdlib system)
+* store optimal cursor column ?
+* scrolloff ?
+* ending column ?
 
-* understand type casting
-* use e = +- 1 for grouping commands
-* break_line, concatenate_line
-* clarify functions deps, restructurate in which file goes which functions
-* use strncat and other stdlib functions (ctype.h, string.h...)
-* (characters, bytes) struct ?
-* gathers variables in good order in globals.h
-* remove unwrap_pos
-* put variables where they sould be, and how they should be (extern, const...)
-* use macros
+* piping selections to the command ??
+* display line numbers ??
+* tab-completion ??
 
-### Check
 
-* missing TODO and comments
-* correctness, especially
-    * rules
-    * resize in dialog mode
-    * what happens when multiple slash on the same line
-    * insert characters like ' at end of line
-    * search and replace engine, memory indexes
-    * `replace_characters`
-* look for unstated assumptions
-* selections, has_been_changes, anchor, cursor, selections, ... all globals
-* recurrent expr that should be replaced with a macro
-* possibility to make compile-time arguments
-* possibility to make "const" args
-* test other compilers
-* code cleanness and comments coverage
+### Final rewrite
+
+Progressively integrate each part. At each step:
+
+    exhibit which globals each functions modifies
+    use standard functions with n: strncpy, strncat, strn?cmp
+    should that be moved elsewhere, or replaced by a macro, or e = +- 1 ?
+    should this feature be optionnal as a compile-time setting ?
+    is this feature covered in manual/... ?
+    are tabs and UTF-8/malloc/file errors detected and treated (exit, fprintf) ?
+    check correctness by hand
+    look at unstated assumptions
+        ASCII only ?
+    document
+        code cleanness, <= 80 chars
+        comments coverage
+        variables names, use (are they even used ?)
+        explain non-obvious behaviours, assumptions
+    look at existing TODO, XXX and any comment
+    extensive testing. Known source of failure:
+        inserting '
+        break_line
+        concatenate_line
+        manipulating hex values: cast needed ?
+        \d matches d
+        multiple slash on same line
+
+Build a dependency graph of functions. Correlate that with list of modified
+globals.
+
 
 ### Publication
 
 * new colorscheme
+* add languages
 * .md files
+* tarball
+* [asciinema](https://asciinema.org)
 * website
     * .md files
     * tarball
     * color palette
-* asciinema teaser
-* add some languages ?
-
-
-## Ressources
-
-* [regexp man page](https://man.cat-v.org/plan_9/6/regexp)
-* [pcre](https://github.com/niklongstone/regular-expression-cheat-sheet)
-* [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
-* [record screen](https://asciinema.org/)
-* [style](https://suckless.org/coding_style/)

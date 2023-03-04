@@ -1,4 +1,4 @@
-int
+static int
 compare_chars(const char *s1, int i1, const char *s2, int i2)
 {
     // compare characters from s1 and s2 strings starting at i1 and i2 indexes
@@ -25,7 +25,7 @@ compare_chars(const char *s1, int i1, const char *s2, int i2)
     }
 }
 
-void
+static void
 decrement(const char *chars, int *i, int *k, int goal)
 {
     // assuming *k is an index in chars corresponding to the (*i)-th character,

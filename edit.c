@@ -61,7 +61,7 @@ main(int argc, char *argv[])
 
     // check if file can be accessed, and loads it if possible
     if (load_file(file_name_int.current, 1) == ERR_FILE_CONNECTION) {
-        printf("%s\n", FILE_CONNECTION_MESSAGE);
+        fprintf(stderr, "%s\n", FILE_CONNECTION_MESSAGE);
         return ERR_FILE_CONNECTION;
     }
 

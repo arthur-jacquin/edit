@@ -79,7 +79,7 @@ pos_of_cursor(void)
 
     struct pos res;
 
-    res.l = first_line_on_screen->line_nb + y;
+    res.l = first_line_nb + y;
     res.x = x;
 
     return res;
@@ -231,7 +231,7 @@ range_lines_sel(int start, int end, struct selection *next)
     struct line *l;
     struct selection *res, *last, *new;
 
-    l = get_line(start - first_line_on_screen->line_nb);
+    l = get_line(start - first_line_nb);
     res = last = NULL;
     for (i = start; i <= end; i++) {
         new = create_sel(i, 0, l->dl, next);
@@ -272,7 +272,7 @@ running_sel(void)
             medium_sel = (begin.l + 1 > end.l - 1) ? end_sel :
                 range_lines_sel(begin.l + 1, end.l - 1, end_sel);
             res = create_sel(begin.l, begin.x, get_line(begin.l -
-                first_line_on_screen->line_nb)->dl - begin.x, medium_sel);
+                first_line_nb)->dl - begin.x, medium_sel);
         } else {
             res = create_sel(cursor.l, anchor.x, cursor.x - anchor.x, NULL);
             if (res->n < 0) {
@@ -301,7 +301,7 @@ search(struct selection *a)
     if (a == NULL)
         return NULL;
 
-    l = get_line(a->l - first_line_on_screen->line_nb);
+    l = get_line(a->l - first_line_nb);
     res = last = NULL;
     while (a != NULL) {
         // get correct line

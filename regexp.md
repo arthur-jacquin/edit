@@ -82,13 +82,13 @@ matches all characters but `-`, `a`, `b`, `c`, `X`, `Y`, `Z` and even digits.
 You can follow a character expression by a repeater. A repeater specifies how
 many times the preceding character should be matched:
 
-- `*` means 0 or more times (any number of times)
-- `+` means 1 or more times (at least once)
-- `?` means 0 or 1 time (at most once)
-- `{n}` means n times
-- `{min,}` means at least min times
-- `{,max}` means at most min times
-- `{min,max}` means between min and max times    
+* `*` means 0 or more times (any number of times)
+* `+` means 1 or more times (at least once)
+* `?` means 0 or 1 time (at most once)
+* `{n}` means n times
+* `{min,}` means at least min times
+* `{,max}` means at most min times
+* `{min,max}` means between min and max times
 
 Let's see some examples:
 
@@ -126,7 +126,7 @@ First, blocks also support repeaters and OR logic:
 
     "a\(ba\){4}" only matches "ababababa"
     "\(apple\)|\(orange\)" only matches "apple" and "orange"
-    
+
 Lastly, characters matched by this portion of the regex can be reused in a
 replace pattern, which is very powerful. Please read `manual.md` for more
 information on how searching and replacing interact.

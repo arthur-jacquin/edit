@@ -10,8 +10,9 @@ load_file(const char *file_name, int first_line_on_screen_nb)
     int line_nb;
     int c, reached_EOF, ml, dl;
 
-    // get sure first_line list is empty
+    // reset variables
     forget_lines(first_line);
+    reset_selections();
     first_line = first_line_on_screen = NULL;
 
     // open connection to src_file
@@ -76,6 +77,7 @@ load_file(const char *file_name, int first_line_on_screen_nb)
     // refresh parameters
     nb_lines = line_nb - 1;
     has_been_changes = 0;
+    load_lang(file_name);
 
     return 0;
 }

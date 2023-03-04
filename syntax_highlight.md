@@ -41,10 +41,10 @@ the line, the mark and the rest of the line will be colored with the colors
 associated with the rule.
 
 If no rule match the line, the system will color:
-- keywords, flow control and built-ins words
-- comments
-- numbers
-- strings
+* keywords, flow control and built-ins words
+* comments
+* numbers
+* strings
 
 Specific words (keywords, flow control and built-ins) are declared in a single
 space-separated string.

@@ -39,20 +39,27 @@ pos_of(int l, int x)
     return res;
 }
 
-struct pos
+void
+unwrap_pos(struct pos p)
+{
+    y = p.l - first_line_nb;
+    x = p.x;
+}
+
+int
 find_first_non_blank(void)
 {
     // find the first non blank character on the cursor line
 
     struct line *l;
-    int i, x;
+    int i, nx;
 
     l = get_line(y);
-    for (i = x = l->ml - 1; i >= 0; i--)
+    for (i = nx = l->ml - 1; i >= 0; i--)
         if (!(is_blank(l->chars[i])))
-            x = i;
+            nx = i;
 
-    return pos_of(l->line_nb, x);
+    return nx;
 }
 
 struct pos
@@ -176,7 +183,7 @@ find_start_of_block(int starting_line_nb, int nb)
 
     struct line *l;
 
-    l = get_line(starting_line_nb - first_line_on_screen->line_nb);
+    l = get_line(starting_line_nb - first_line_nb);
 
     while (nb--) {
         while (!is_first_line(l) && l->ml == 1)
@@ -195,7 +202,7 @@ find_end_of_block(int starting_line_nb, int nb)
 
     struct line *l;
 
-    l = get_line(starting_line_nb - first_line_on_screen->line_nb);
+    l = get_line(starting_line_nb - first_line_nb);
 
     while (nb--) {
         while (!is_last_line(l) && l->ml == 1)
@@ -208,19 +215,24 @@ find_end_of_block(int starting_line_nb, int nb)
 }
 
 void
-go_to(struct pos p)
+move_to_cursor(void)
 {
-    // move to the position closest possible to p
+    // move to the closest possible position
 
-    int delta, n;
+    int nl, nx, delta;
 
-    // reach line
-    if (p.l > nb_lines)
-        p.l = nb_lines;
-    if (p.l < 1)
-        p.l = 1;
+    // identify ideal coordinates
+    nl = first_line_nb + y;
+    nx = x;
 
-    delta = p.l - first_line_on_screen->line_nb;
+    // adjust asked line number
+    if (nl > nb_lines)
+        nl = nb_lines;
+    if (nl < 1)
+        nl = 1;
+
+    // compute new first_line_on_screen and y
+    delta = nl - first_line_nb;
     if (0 <= delta && delta < screen_height - 1) {
         y = delta;
     } else if (delta >= screen_height - 1) {
@@ -232,9 +244,8 @@ go_to(struct pos p)
     }
 
     // adjust x
-    if (p.x > (n = get_line(y)->dl))
-        p.x = n;
-    if (p.x < 0)
-        p.x = 0;
-    x = p.x;
+    if (x > (nx = get_line(y)->dl))
+        x = nx;
+    if (x < 0)
+        x = 0;
 }

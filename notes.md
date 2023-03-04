@@ -1,23 +1,26 @@
 ## TODO
 
+ifdef, macros
+remove go_to
+
 * `load_file`: verify if no tabs and UTF-8 compliant
 * detect word boundaries, start/end of selection, `*` command
 * add potential features ?
 
 ### Restructurations
 
+* use e = +- 1 for grouping commands
+* move UTF-8/Unicode operations and hexadecimals to utils.c
 * remove deps from termbox structures
-* break_line, concatenate_line 
+* break_line, concatenate_line
 * clarify functions deps, restructurate in which file goes which functions
 * use strncat and other stdlib functions (ctype.h, string.h...)
 * (characters, bytes) struct ?
 * gathers variables in good order in globals.h
-* remove all the `go_to(pos_of(...`, just attribute new asked y and x, and
-  execute `go_to(pos_of(x, y))` at start of main loop
+* remove unwrap_pos
 * put variables where they sould be, and how they should be (extern, const...)
 * improve error management, assure safe and graceful fails
-* moving stuff (has_been_changes, reset_selections..) to load_file 
-* use ifdef and macros
+* use macros
 
 ### Check
 

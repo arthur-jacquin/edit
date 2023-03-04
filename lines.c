@@ -137,7 +137,7 @@ replace_chars(struct line *l, struct selection *a, int start, int n,
     }
 
     // move cursor and anchor
-    if (l->line_nb == first_line_on_screen->line_nb + y && start <= x)
+    if (l->line_nb == first_line_nb + y && start <= x)
         x = (x < start + n) ? (start + new_n) : (x + new_n - n);
     if (anchored && l->line_nb == anchor.l && start <= anchor.x)
         anchor.x = (anchor.x < start + n) ? start : (anchor.x + new_n - n);
@@ -180,7 +180,7 @@ concatenate_line(struct line *l, struct selection *s)
     // move l->next (existence assumed) content at the end of l
 
     char *new_chars;
-    
+
     // move selections, anchor
     move_sel_end_of_line(s, l->line_nb, l->dl, 1);
     shift_sel_line_nb(s, l->line_nb + 1, 0, -1);
@@ -212,20 +212,20 @@ insert_line(int line_nb, int ml, int dl)
 
     new = create_line(line_nb, ml, dl);
     if (line_nb == nb_lines + 1) {
-        link_lines(get_line(nb_lines - first_line_on_screen->line_nb), new);
+        link_lines(get_line(nb_lines - first_line_nb), new);
         link_lines(new, NULL);
     } else {
         // shift line_nb for lines and selections
-        shift_line_nb((line_nb >= first_line_on_screen->line_nb) ?
+        shift_line_nb((line_nb >= first_line_nb) ?
             first_line_on_screen : first_line, line_nb, 0, 1);
         shift_sel_line_nb(saved, line_nb, 0, 1);
 
         // move cursor
-        if (first_line_on_screen->line_nb + y >= line_nb)
-            go_to(pos_of(first_line_on_screen->line_nb + y + 1, x));
+        if (first_line_nb + y >= line_nb)
+            y++;
 
         // insert the new line
-        replaced_line = get_line(line_nb - first_line_on_screen->line_nb);
+        replaced_line = get_line(line_nb - first_line_nb);
         link_lines(replaced_line->prev, new);
         link_lines(new, replaced_line);
     }
@@ -242,7 +242,7 @@ move_line(int delta)
     struct line *src, *dest;
 
     // compute new line number
-    cursor_line = first_line_on_screen->line_nb + y;
+    cursor_line = first_line_nb + y;
     new_line_nb = cursor_line + delta;
     if (new_line_nb < 1)
         new_line_nb = 1;
@@ -252,7 +252,7 @@ move_line(int delta)
          return;
 
     src = get_line(y);
-    dest = get_line(new_line_nb - first_line_on_screen->line_nb);
+    dest = get_line(new_line_nb - first_line_nb);
 
     // reorder selections, anchor
     reorder_sel(cursor_line, new_line_nb);
@@ -268,7 +268,7 @@ move_line(int delta)
         link_lines(src, dest->next);
         link_lines(dest, src);
     } else {
-        shift_line_nb(first_line, new_line_nb, first_line_on_screen->line_nb + y - 1, 1);
+        shift_line_nb(first_line, new_line_nb, first_line_nb + y - 1, 1);
         if (dest == first_line_on_screen)
             first_line_on_screen = src;
         if (is_first_line(dest))
@@ -281,7 +281,7 @@ move_line(int delta)
     has_been_changes = 1;
 
     // move cursor
-    go_to(pos_of(new_line_nb, x));
+    y = new_line_nb - first_line_nb;
 }
 
 void
@@ -301,7 +301,7 @@ copy_to_clip(int starting_line_nb, int nb)
         nb = nb_lines + 1 - starting_line_nb;
     clipboard.nb_lines = nb;
 
-    l = get_line(starting_line_nb - first_line_on_screen->line_nb);
+    l = get_line(starting_line_nb - first_line_nb);
     cb_l = old_cb_l = NULL;
     for (i = 0; i < nb; i++) {
         cb_l = create_line(i, l->ml, l->dl);
@@ -330,8 +330,8 @@ move_to_clip(int starting_line_nb, int nb)
     if (starting_line_nb + nb - 1 > nb_lines)
         nb = nb_lines + 1 - starting_line_nb;
 
-    starting = get_line(starting_line_nb - first_line_on_screen->line_nb);
-    ending = get_line(starting_line_nb + nb-1 - first_line_on_screen->line_nb);
+    starting = get_line(starting_line_nb - first_line_nb);
+    ending = get_line(starting_line_nb + nb-1 - first_line_nb);
 
     if (is_last_line(ending)) {
         if (is_first_line(starting)) {
@@ -361,7 +361,7 @@ move_to_clip(int starting_line_nb, int nb)
     shift_sel_line_nb(saved, starting_line_nb + nb, 0, -nb);
 
     // move cursor
-    go_to(pos_of(starting_line_nb, 0));
+    y = starting_line_nb - first_line_nb;
 }
 
 void
@@ -401,5 +401,5 @@ insert_clip(struct line *starting_line, int below)
 
     // move cursor
     if (!below)
-        go_to(pos_of(first_line_on_screen->line_nb + y + clipboard.nb_lines, x));
+        y += clipboard.nb_lines;
 }

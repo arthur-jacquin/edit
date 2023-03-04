@@ -39,8 +39,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                 // insert unicode codepoint ev.ch in interf->current
 
                 // compute number of untouched bytes
-                for (k = 0, i = 0; i < dx; i++)
-                    k += utf8_char_length(interf->current[k]);
+                k = get_str_index(interf->current, i = dx);
 
                 // copy bytes after new character
                 len = unicode_char_length(c = ev.ch);
@@ -71,17 +70,10 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                 case TB_KEY_BACKSPACE2:
                     if (dx > 0) {
                         // delete dx-th displayable character
-
-                        // compute number of untouched bytes
-                        for (k = 0, i = 0; i < dx - 1; i++)
-                            k += utf8_char_length(interf->current[k]);
-
-                        // copy remaining characters
+                        k = get_str_index(interf->current, i = dx);
                         len = utf8_char_length(interf->current[k]);
                         while (interf->current[k] = interf->current[k + len])
                             k++;
-
-                        // refresh metadata
                         dx--;
                         n--;
                     }
@@ -106,6 +98,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
             }
             break;
 
+#ifdef MOUSE_SUPPORT
         case TB_EVENT_MOUSE:
             switch (ev.key) {
             case TB_KEY_MOUSE_LEFT:
@@ -115,6 +108,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                 break;
             }
             break;
+#endif // MOUSE_SUPPORT
 
         case TB_EVENT_RESIZE:
             has_been_resized = 1;
@@ -181,7 +175,7 @@ parse_range(const char *range)
     if (strcmp(range, "") == 0) {
         l1 = 1;
     } else if (strcmp(range, ".") == 0) {
-        l1 = first_line_on_screen->line_nb + y;
+        l1 = first_line_nb + y;
     } else if (sscanf(range, "%d", &l1) == 1) {
         l1 = (l1 < 1) ? 1 : l1;
     } else {
@@ -192,7 +186,7 @@ parse_range(const char *range)
     if (strcmp(ptr, "") == 0) {
         l2 = nb_lines;
     } else if (strcmp(ptr, ".") == 0) {
-        l2 = first_line_on_screen->line_nb + y;
+        l2 = first_line_nb + y;
     } else if (sscanf(ptr, "%d", &l2) == 1) {
         l2 = (l2 > nb_lines) ? nb_lines : l2;
     } else {

@@ -1,3 +1,5 @@
+# Structures
+
 ## File organisation
 
     readme.md           Introduction of the editor, entry point
@@ -9,7 +11,7 @@
     philosophy.md       Rationale
     regexps.md          Guide on regular expressions
     syntax_highlight.md Description of the syntax highlighting system
-    structures.md       Notes on
+    structures.md       Notes on the code
 
     config.def.h        Default configuration
     globals.h           Main header, where most of the declarations are
@@ -31,14 +33,14 @@
 
 ## Data structures
 
-lines buffer: doubly linked lists:
-- main one with pointers to first line and to first line on screen.
-- clipboard
+lines buffer: 2 doubly linked lists:
+* main one with pointers to first line and to first line on screen.
+* clipboard
 
-3 selections queues
-saved and temps contains actual selections, displayed is just a reference to it
-never call forget_sel_list on temp
-always forget_sel_list before resetting saved and temp
+selections: 3 lists:
+* saved
+* temp (running selections)
+* displayed (most of the time a merge of the 2 previous)
 
 ## How to read the code
 

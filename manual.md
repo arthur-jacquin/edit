@@ -19,12 +19,13 @@ tastes, or to bring your own configuration file from a previous build.
 
 Note that you don't need to know how to code for modifying the configuration
 file. For example, you can easily:
-- modify the keybinds
-- choose between 8 or 256 colors modes and modify the colorscheme
-- enable/disable mouse support
-- modify editor messages
-- choose the default values for runtime-modifiable settings
-- add new languages for syntax highlighting (see `syntax_highlighting.md`)
+
+* modify the keybinds
+* choose between 8 or 256 colors modes and modify the colorscheme
+* enable/disable mouse support
+* modify editor messages
+* choose the default values for runtime-modifiable settings
+* add new languages for syntax highlighting (see `syntax_highlighting.md`)
 
 
 ## Interacting with the editor
@@ -279,10 +280,10 @@ detailed guide.
              | '\Z'                     # match the end of the selection
              | '\b'                     # match word boundaries
              | '\B'                     # match non word boundaries
-    
+
     CHARACTER: LITERAL                  # match the LITERAL only
              | '\' ESCAPED_LITERAL      # match to-be-escaped ESCAPED_LITERAL
-             | CHARCLASS                # match characters in CHARCLASS 
+             | CHARCLASS                # match characters in CHARCLASS
              | '.'                      # match any character
 
     CHARCLASS: '[' LIST ']'             # match characters in LIST
@@ -291,12 +292,12 @@ detailed guide.
              | '\D'                     # match non digits
              | '\w'                     # match word characters
              | '\w'                     # match non word characters
-    
+
     LIST: LIST_MINUS                    # match literals in LIST_MINUS
         | '-' LIST_MINUS                # match '-' and literals in LIST_MINUS
 
-    LIST_MINUS: LITERAL                 # match the LITERAL only 
-              | LITERAL1 '-' LITERAL2   # match literals between the 2 
+    LIST_MINUS: LITERAL                 # match the LITERAL only
+              | LITERAL1 '-' LITERAL2   # match literals between the 2
               | l1 l2                   # match literals in l1 or l2
 
     REP: '*'                            # 0 or more (any number)
@@ -305,7 +306,7 @@ detailed guide.
        | '{' INTEGER '}'                # exactly INTEGER
        | '{' INTEGER ',' '}'            # at least INTEGER
        | '{' ',' INTEGER '}'            # at most INTEGER
-       | '{' INTEGER1 ',' INTEGER2 '}'  # between INTEGER1 and INTEGER2    
+       | '{' INTEGER1 ',' INTEGER2 '}'  # between INTEGER1 and INTEGER2
 
 [^1]: [PCRE](https://www.pcre.org/)
 
@@ -313,12 +314,12 @@ detailed guide.
 
 The replace pattern can contain special sequences:
 
-- `$0` and `\0` will be expended to the whole initial string
-- `${i}` (1 <= {i} <= 9) will be expended to the {i}-th field of the initial
+* `$0` and `\0` will be expended to the whole initial string
+* `${i}` (1 <= {i} <= 9) will be expended to the {i}-th field of the initial
     string, where fields are delimited by the runtime-modifiable field separator
-- `\{i}` (1 <= {i} <= 9) will be expended to the {i}-th subpattern matched by
+* `\{i}` (1 <= {i} <= 9) will be expended to the {i}-th subpattern matched by
     the search pattern in the initial string
-- `\\` and `\$` produces repectively `\` and `$` (escaping sequences)
+* `\\` and `\$` produces repectively `\` and `$` (escaping sequences)
 
 Here are some examples:
 

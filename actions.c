@@ -9,7 +9,7 @@ act(void (*process)(struct line *, struct selection *), int line_op)
     int old_line_nb;
 
     s = (saved != NULL) ? saved : temp;
-    l = get_line(s->l - first_line_on_screen->line_nb);
+    l = get_line(s->l - first_line_nb);
     old_line_nb = 0;
     has_been_changes = 1;
     while (s != NULL) {
@@ -34,7 +34,7 @@ lower(struct line *l, struct selection *s)
         len = utf8_char_length(c = l->chars[k]);
         if (len == 1 && 'A' <= c && c <= 'Z')
             l->chars[k] |= (1 << 5);
-        if (len == 2 && c == (char) FIRST_BYTE_ACCENTUATED)
+        if (len == 2 && c == 0xc3)
             l->chars[k+1] |= (1 << 5);
         k += len;
     }
@@ -52,7 +52,7 @@ upper(struct line *l, struct selection *s)
         len = utf8_char_length(c = l->chars[k]);
         if (len == 1 && 'a' <= c && c <= 'z')
             l->chars[k] &= ~(1 << 5);
-        if (len == 2 && c == (char) FIRST_BYTE_ACCENTUATED)
+        if (len == 2 && c == 0xc3)
             l->chars[k+1] &= ~(1 << 5);
         k += len;
     }
@@ -210,42 +210,29 @@ replace(struct line *l, struct selection *s)
     int lrp; // length of rp
     int j, lj; // index in replaced (characters, bytes)
     int lr; // size of replaced buffer
-    int a; // no name index
     int n, mst, mn; // substring to append to replaced
+    struct substring *class; // pointing to either fields or subpatterns
 
     // search for fields and subpatterns
     mark_fields(l->chars, s->x, s->n);
     mark_pattern(l->chars, s->x, s->n);
 
     // malloc then populate replaced, adjust its length dynamically
-    rp = replace_pattern.current;
-    k = 0;
-    lrp = strlen(rp);
+    lrp = strlen(rp = replace_pattern.current);
     replaced = (char *) malloc(lr = DEFAULT_BUF_SIZE);
-    replaced[0] = '\0';
     j = lj = 0;
-    while (k < lrp) {
+    for (k = 0; k < lrp;) {
         if ((k < lrp - 1) && (rp[k] == '\\' || rp[k] == '$') &&
-            (is_digit(rp[k+1]))) {
+            (is_digit(rp[k+1]))) { // field or subpattern
+            class = (rp[k] == '$') ? fields : subpatterns;
             src = l->chars;
-            if (rp[k] == '\\') {
-                // append corresponding subpattern
-                n = subpatterns[rp[k+1] - '0'].n;
-                mst = subpatterns[rp[k+1] - '0'].mst;
-                mn = subpatterns[rp[k+1] - '0'].mn;
-            } else {
-                // append corresponding field
-                n = fields[rp[k+1] - '0'].n;
-                mst = fields[rp[k+1] - '0'].mst;
-                mn = fields[rp[k+1] - '0'].mn;
-            }
+            n = class[rp[k+1] - '0'].n;
+            mst = class[rp[k+1] - '0'].mst;
+            mn = class[rp[k+1] - '0'].mn;
             k += 2;
         } else {
-            // manage escaped character
-            if (k < lrp - 1 && rp[k] == '\\') {
+            if (k < lrp - 1 && rp[k] == '\\') // escaped character
                 k++;
-            }
-            // append character starting at rp[k]
             src = rp;
             n = 1;
             mst = k;
@@ -266,7 +253,6 @@ replace(struct line *l, struct selection *s)
         // append substring
         strncpy(&(replaced[lj]), &(src[mst]), mn);
         lj += mn;
-        replaced[lj] = '\0';
         j += n;
     }
 

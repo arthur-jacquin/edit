@@ -13,8 +13,40 @@
 int
 main(int argc, char *argv[])
 {
-    int l1, old_line_nb;
+    int l1, l2, old_line_nb;
     struct pos p;
+
+    // INIT VARIABLES **********************************************************
+
+    // settings and interfaces
+    settings.syntax_highlight = SYNTAX_HIGHLIGHT;
+    settings.highlight_selections = HIGHLIGHT_SELECTIONS;
+    settings.case_sensitive = CASE_SENSITIVE;
+    settings.field_separator = FIELD_SEPARATOR;
+    settings.tab_width = TAB_WIDTH;
+    init_interface(&range_int, "");
+    init_interface(&search_pattern, "");
+    init_interface(&replace_pattern, "");
+    init_interface(&settings_int, "");
+
+    // editor variables
+    x = y = 0;
+    m = in_insert_mode = anchored = is_bracket = has_been_invalid_resizing = 0;
+    saved = temp = displayed = NULL;
+    clipboard.start = NULL;
+
+    // initialise termbox
+    tb_init();
+    tb_set_output_mode(OUTPUT_MODE);
+#ifdef MOUSE_SUPPORT
+    tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
+#else
+    tb_set_input_mode(TB_INPUT_ESC);
+#endif // MOUSE_SUPPORT
+    if (resize(tb_width(), tb_height()))
+        has_been_invalid_resizing = 1;
+    echo(WELCOME_MESSAGE);
+
 
     // PARSING ARGUMENTS *******************************************************
 
@@ -35,43 +67,8 @@ main(int argc, char *argv[])
     }
 
 
-    // INIT VARIABLES **********************************************************
+    // MAIN LOOP ***************************************************************
 
-    // settings
-    settings.tab_width = TAB_WIDTH;
-    init_interface(&settings_int, "");
-    load_lang(file_name_int.current);
-
-    // editor variables
-    m = in_insert_mode = anchored = is_bracket = 0;
-    has_been_invalid_resizing = 0;
-
-    // selections
-    saved = temp = displayed = NULL;
-    init_interface(&range_int, "");
-
-    // search and replace engine
-    settings.case_sensitive = CASE_SENSITIVE;
-    settings.field_separator = FIELD_SEPARATOR;
-    init_interface(&search_pattern, "");
-    init_interface(&replace_pattern, "");
-
-    // clipboard
-    clipboard.start = NULL;
-
-    // initialise termbox
-    settings.syntax_highlight = SYNTAX_HIGHLIGHT;
-    settings.highlight_selections = HIGHLIGHT_SELECTIONS;
-    x = y = 0;
-    tb_init();
-    tb_set_output_mode(OUTPUT_MODE);
-    if (MOUSE_SUPPORT)
-        tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
-    if (resize(tb_width(), tb_height()))
-        has_been_invalid_resizing = 1;
-    echo(WELCOME_MESSAGE);
-
-    // main loop
     while (1) {
         // quit if has been invalid resizing
         if (has_been_invalid_resizing) {
@@ -87,7 +84,8 @@ main(int argc, char *argv[])
         forget_sel_list(displayed);
         displayed = merge_sel(temp, saved);
 
-        // refresh screen and wait for input
+        // go to correct position, refresh screen and wait for input
+        move_to_cursor();
         print_all();
         tb_present();
         tb_poll_event(&ev);
@@ -97,7 +95,6 @@ main(int argc, char *argv[])
         case TB_EVENT_KEY:
             if (ev.ch && in_insert_mode) {
                 act(insert, 0);
-                has_been_changes = 1;
             } else if (ev.ch && !in_insert_mode) {
                 if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
                     m = 10*m + ev.ch - '0';
@@ -138,11 +135,9 @@ main(int argc, char *argv[])
                     break;
                 case KB_RELOAD:
                     if (has_been_changes) {
-                        reset_selections();
-                        old_line_nb = first_line_on_screen->line_nb + y;
-                        load_file(file_name_int.current, first_line_on_screen->line_nb);
-                        go_to(pos_of(old_line_nb, x));
-                        has_been_changes = 0;
+                        old_line_nb = first_line_nb + y;
+                        load_file(file_name_int.current, first_line_nb);
+                        y = old_line_nb - first_line_nb;
                         echo(FILE_RELOADED_MESSAGE);
                     } else {
                         echo(NOTHING_TO_REVERT_MESSAGE);
@@ -160,8 +155,7 @@ main(int argc, char *argv[])
                 case KB_INSERT_START_LINE:
                 case KB_INSERT_END_LINE:
                     reset_selections();
-                    go_to(pos_of(first_line_on_screen->line_nb + y,
-                        (ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0));
+                    x = (ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0;
                     in_insert_mode = 1;
                     echo(INSERT_MODE_MESSAGE);
                     break;
@@ -170,23 +164,21 @@ main(int argc, char *argv[])
                     reset_selections();
                     in_insert_mode = 1;
                     echo(INSERT_MODE_MESSAGE);
-                    l1 = first_line_on_screen->line_nb + y +
-                        ((ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0);
-                    insert_line(l1, 1, 0);
-                    go_to(pos_of(l1, 0));
+                    y += (ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0;
+                    insert_line(first_line_nb + y, 1, 0);
                     break;
                 case KB_CLIP_YANK_LINE:
-                    copy_to_clip(first_line_on_screen->line_nb + y, m);
+                    copy_to_clip(first_line_nb + y, m);
                     break;
                 case KB_CLIP_YANK_BLOCK:
-                    l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
+                    l1 = find_start_of_block(first_line_nb + y, 1);
                     copy_to_clip(l1, find_end_of_block(l1, m) - l1 + 1);
                     break;
                 case KB_CLIP_DELETE_LINE:
-                    move_to_clip(first_line_on_screen->line_nb + y, m);
+                    move_to_clip(first_line_nb + y, m);
                     break;
                 case KB_CLIP_DELETE_BLOCK:
-                    l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
+                    l1 = find_start_of_block(first_line_nb + y, 1);
                     move_to_clip(l1, find_end_of_block(l1, m) - l1 + 1);
                     break;
                 case KB_CLIP_PASTE_AFTER:
@@ -195,59 +187,57 @@ main(int argc, char *argv[])
                         insert_clip(get_line(y), ev.ch == KB_CLIP_PASTE_AFTER);
                     break;
                 case KB_MOVE_MATCHING:
-                    go_to(find_matching_bracket());
+                    unwrap_pos(find_matching_bracket());
                     break;
                 case KB_MOVE_START_LINE:
-                    go_to(pos_of(first_line_on_screen->line_nb + y, 0));
+                    x = 0;
                     break;
                 case KB_MOVE_NON_BLANK:
-                    go_to(find_first_non_blank());
+                    x = find_first_non_blank();
                     break;
                 case KB_MOVE_END_LINE:
-                    go_to(pos_of(first_line_on_screen->line_nb + y,
-                        get_line(y)->dl));
-                    break;
-                case KB_MOVE_SPECIFIC_LINE:
-                    go_to(pos_of(m, x));
+                    x = get_line(y)->dl;
                     break;
                 case KB_MOVE_END_FILE:
-                    go_to(pos_of(nb_lines, x));
+                    m = nb_lines;
+                    // fall-through
+                case KB_MOVE_SPECIFIC_LINE:
+                    y = m - first_line_nb;
                     break;
                 case KB_MOVE_NEXT_CHAR:
-                    go_to(pos_of(first_line_on_screen->line_nb + y, x + m));
+                    x += m;
                     break;
                 case KB_MOVE_PREV_CHAR:
-                    go_to(pos_of(first_line_on_screen->line_nb + y, x - m));
+                    x -= m;
                     break;
                 case KB_MOVE_NEXT_LINE:
-                    go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
+                    y += m;
                     break;
                 case KB_MOVE_PREV_LINE:
-                    go_to(pos_of(first_line_on_screen->line_nb + y - m, x));
+                    y -= m;
                     break;
                 case KB_MOVE_NEXT_WORD:
-                    go_to(find_start_of_word(m));
-                    break;
                 case KB_MOVE_PREV_WORD:
-                    go_to(find_start_of_word(-m));
+                    unwrap_pos(find_start_of_word(
+                        (ev.ch == KB_MOVE_NEXT_WORD) ? m: -m));
                     break;
                 case KB_MOVE_NEXT_BLOCK:
-                    go_to(pos_of(find_end_of_block(
-                        first_line_on_screen->line_nb + y, m), x));
+                    y = find_end_of_block(first_line_nb + y, m)
+                        - first_line_nb;
                     break;
                 case KB_MOVE_PREV_BLOCK:
-                    go_to(pos_of(find_start_of_block(
-                        first_line_on_screen->line_nb + y, m), x));
+                    y = find_start_of_block(first_line_nb + y, m)
+                        - first_line_nb;
                     break;
                 case KB_MOVE_NEXT_SEL:
                     if ((p = find_next_selection(m)).l)
-                        go_to(p);
+                        unwrap_pos(p);
                     else
                         echo(NO_SEL_DOWN_MESSAGE);
                     break;
                 case KB_MOVE_PREV_SEL:
                     if ((p = find_next_selection(-m)).l)
-                        go_to(p);
+                        unwrap_pos(p);
                     else
                         echo(NO_SEL_UP_MESSAGE);
                     break;
@@ -255,27 +245,30 @@ main(int argc, char *argv[])
                     sprintf(dialog_chars, SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
                     break;
                 case KB_SEL_CURSOR_LINE:
+                case KB_SEL_ALL_LINES:
+                case KB_SEL_LINES_BLOCK:
+                    if (ev.ch == KB_SEL_CURSOR_LINE) {
+                        l1 = l2 = first_line_nb + y;
+                    } else if (ev.ch == KB_SEL_ALL_LINES) {
+                        l1 = 1;
+                        l2 = nb_lines;
+                    } else {
+                        l1 = find_start_of_block(first_line_nb + y, 1);
+                        l2 = find_end_of_block(l1, m);
+                    }
                     forget_sel_list(saved);
-                    saved = range_lines_sel(first_line_on_screen->line_nb + y,
-                        first_line_on_screen->line_nb + y, NULL);
+                    saved = range_lines_sel(l1, l2, NULL);
                     break;
                 case KB_SEL_CUSTOM_RANGE:
                     if (dialog(RANGE_PROMPT, &range_int, 0))
                         if (!parse_range(range_int.current))
                             echo(INVALID_RANGE_MESSAGE);
                     break;
-                case KB_SEL_ALL_LINES:
-                    forget_sel_list(saved);
-                    saved = range_lines_sel(1, nb_lines, NULL);
-                    break;
-                case KB_SEL_LINES_BLOCK:
-                    forget_sel_list(saved);
-                    l1 = find_start_of_block(first_line_on_screen->line_nb + y, 1);
-                    saved = range_lines_sel(l1, find_end_of_block(l1, m), NULL);
-                    break;
+                case KB_SEL_APPEND:
                 case KB_SEL_FIND:
                 case KB_SEL_SEARCH:
-                    if (dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
+                    if (ev.ch == KB_SEL_APPEND ||
+                        dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
                         forget_sel_list(saved);
                         saved = displayed;
                         displayed = NULL;
@@ -290,17 +283,11 @@ main(int argc, char *argv[])
                         anchored = 1;
                     }
                     break;
-                case KB_SEL_APPEND:
-                    forget_sel_list(saved);
-                    saved = displayed;
-                    displayed = NULL;
-                    anchored = 0;
-                    break;
                 case KB_SEL_COLUMN:
                     if (anchored && anchor.l != pos_of_cursor().l)
                         echo(COLUMN_SEL_ERROR_MESSAGE);
                     else
-                        go_to(column_sel(m));
+                        unwrap_pos(column_sel(m));
                     break;
                 case KB_ACT_INCREASE_INDENT:
                 case KB_ACT_DECREASE_INDENT:
@@ -334,39 +321,35 @@ main(int argc, char *argv[])
                     m = 1;
                 switch (ev.key) {
                 case TB_KEY_ARROW_RIGHT:
-                    go_to(pos_of(first_line_on_screen->line_nb + y, x + m));
+                    x += m;
                     break;
                 case TB_KEY_ARROW_LEFT:
-                    go_to(pos_of(first_line_on_screen->line_nb + y, x - m));
+                    x -= m;
                     break;
                 case TB_KEY_ARROW_DOWN:
-                    if (ev.mod == TB_MOD_SHIFT) {
+                    if (ev.mod == TB_MOD_SHIFT)
                         move_line(m);
-                    } else {
-                        go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
-                    }
+                    else
+                        y += m;
                     break;
                 case TB_KEY_ARROW_UP:
-                    if (ev.mod == TB_MOD_SHIFT) {
+                    if (ev.mod == TB_MOD_SHIFT)
                         move_line(-m);
-                    } else {
-                        go_to(pos_of(first_line_on_screen->line_nb + y - m, x));
-                    }
+                    else
+                        y -= m;
                     break;
                 case TB_KEY_ESC:
-                    if (in_insert_mode) {
+                    if (in_insert_mode)
                         in_insert_mode = 0;
-                    } else {
+                    else
                         reset_selections();
-                    }
                     echo("");
                     break;
                 case TB_KEY_ENTER:
-                    if (in_insert_mode) {
+                    if (in_insert_mode)
                         act(split, 0);
-                    } else {
-                        go_to(pos_of(first_line_on_screen->line_nb + y + m, x));
-                    }
+                    else
+                        y += m;
                     break;
                 case TB_KEY_BACKSPACE:
                 case TB_KEY_BACKSPACE2:
@@ -385,41 +368,34 @@ main(int argc, char *argv[])
             }
             break;
 
+#ifdef MOUSE_SUPPORT
         case TB_EVENT_MOUSE:
             switch (ev.key) {
             case TB_KEY_MOUSE_LEFT:
-                if (ev.y < screen_height - 1)
-                    go_to(pos_of(first_line_on_screen->line_nb + ev.y, ev.x));
+                if (ev.y < screen_height - 1) {
+                    y = ev.y;
+                    x = ev.x;
+                }
                 break;
             case TB_KEY_MOUSE_WHEEL_UP:
-                old_line_nb = first_line_on_screen->line_nb + y;
+                old_line_nb = first_line_nb + y;
                 first_line_on_screen = get_line(-SCROLL_LINE_NUMBER);
-                // TODO: replace by a min
-                if (old_line_nb > first_line_on_screen->line_nb + screen_height - 2) {
-                    go_to(pos_of(first_line_on_screen->line_nb + screen_height - 2, x));
-                } else {
-                    go_to(pos_of(old_line_nb, x));
-                }
+                y = old_line_nb - first_line_nb;
+                y = (y > screen_height - 2) ? (screen_height - 2) : y;
                 break;
             case TB_KEY_MOUSE_WHEEL_DOWN:
-                old_line_nb = first_line_on_screen->line_nb + y;
+                old_line_nb = first_line_nb + y;
                 first_line_on_screen = get_line(SCROLL_LINE_NUMBER);
-                // TODO: replace by a max
-                if (old_line_nb < first_line_on_screen->line_nb) {
-                    go_to(pos_of(first_line_on_screen->line_nb, x));
-                } else {
-                    go_to(pos_of(old_line_nb, x));
-                }
+                y = old_line_nb - first_line_nb;
+                y = (y < 0) ? 0 : y;
                 break;
             }
             break;
+#endif // MOUSE_SUPPORT
 
         case TB_EVENT_RESIZE:
-            if (resize(ev.w, ev.h)) {
+            if (resize(ev.w, ev.h))
                 has_been_invalid_resizing = 1;
-            } else {
-                go_to(pos_of(first_line_on_screen->line_nb + y, x));
-            }
             break;
         }
     }

@@ -24,8 +24,11 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     struct rule *r;
     int a;
 
-    // underline current line
-    underline = (UNDERLINE_CURSOR_LINE && screen_line == y) ? TB_UNDERLINE : 0;
+#ifdef UNDERLINE_CURSOR_LINE
+    underline = (screen_line == y) ? TB_UNDERLINE : 0;
+#else
+    underline = 0;
+#endif // UNDERLINE_CURSOR_LINE
 
     // decompress UTF-8
     for (k = i = 0; i < l->dl; i++) {
@@ -119,12 +122,14 @@ print_line(const struct line *l, struct selection *s, int screen_line)
             s = s->next;
         }
     }
-    if (HIGHLIGHT_MATCHING_BRACKET && is_bracket) {
-        if (l->line_nb == first_line_on_screen->line_nb + y)
+#ifdef HIGHLIGHT_MATCHING_BRACKET
+    if (is_bracket) {
+        if (l->line_nb == first_line_nb + y)
             buf[x].bg = COLOR_BG_MATCHING;
         if (l->line_nb == matching_bracket.l)
             buf[matching_bracket.x].bg = COLOR_BG_MATCHING;
     }
+#endif // HIGHLIGHT_MATCHING_BRACKET
 
     // actual printing
     for (i = 0; i < l->dl; i++)
@@ -173,7 +178,7 @@ print_ruler(void)
         tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
     tb_printf(screen_width - RULER_WIDTH, screen_height - 1,
         COLOR_RULER, COLOR_BG_DEFAULT,
-        "%d:%d", first_line_on_screen->line_nb + y, x);
+        "%d:%d", first_line_nb + y, x);
 }
 
 void
@@ -186,19 +191,17 @@ print_all(void)
     int sc_line;
     char c;
 
-    // clear the interface
-    tb_clear();
-
+#ifdef HIGHLIGHT_MATCHING_BRACKET
     l = get_line(y);
     c = l->chars[get_str_index(l->chars, x)];
-    // TODO ifdef HIGHLIGT_MATCHING_BRACKET
-    is_bracket = (c == '{' || c == '}' || c == '[' || c == ']'
-        || c == '(' || c == ')' || c == '<' || c == '>');
-    if (is_bracket)
+    if (is_bracket = (c == '{' || c == '}' || c == '[' || c == ']'
+        || c == '(' || c == ')' || c == '<' || c == '>'))
         matching_bracket = find_matching_bracket();
+#endif // HIGHLIGT_MATCHING_BRACKET
 
     s = displayed;
     l = first_line_on_screen;
+    tb_clear();
     for (sc_line = 0; l != NULL && sc_line < screen_height - 1; sc_line++) {
         s = print_line(l, s, sc_line);
         l = l->next;

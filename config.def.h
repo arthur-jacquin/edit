@@ -25,9 +25,10 @@
 // PARAMETERS ******************************************************************
 
 #define TERMINAL_SUPPORTS_256_COLORS
-#define MOUSE_SUPPORT               1
-#define UNDERLINE_CURSOR_LINE       1
-#define HIGHLIGHT_MATCHING_BRACKET  1
+#define MOUSE_SUPPORT
+#define UNDERLINE_CURSOR_LINE
+#define HIGHLIGHT_MATCHING_BRACKET
+
 #define BACKUP_FILE_NAME            "edit_backup_file"
 #define MIN_WIDTH                   81
 #define RULER_WIDTH                 8

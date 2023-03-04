@@ -8,21 +8,21 @@ vim not fitted my needs the way I wanted, and I searched for alternatives.
 Good news: there are plenty! Here is a curated list:
 
 Some are very small:
-- [kilo](https://github.com/antirez/kilo) (C)
-- [kibi](https://github.com/ilai-deutel/kibi) (Rust)
+* [kilo](https://github.com/antirez/kilo) (C)
+* [kibi](https://github.com/ilai-deutel/kibi) (Rust)
 
 Some are innovative:
-- [kakoune](https://kakoune.org) (C++): cleaner editing model
-- [sam](http://doc.cat-v.org/plan_9/4th_edition/papers/sam/) (C): bringing structural regular expressions
-- [vis](https://github.com/martanne/vis) (C, Lua): smart combination of vim and sam
-- [de](https://github.com/driusan/de) (Go): mix of vim and acme, integrates with p9p plumbing
+* [kakoune](https://kakoune.org) (C++): cleaner editing model
+* [sam](http://doc.cat-v.org/plan_9/4th_edition/papers/sam/) (C): bringing structural regular expressions
+* [vis](https://github.com/martanne/vis) (C, Lua): smart combination of vim and sam
+* [de](https://github.com/driusan/de) (Go): mix of vim and acme, integrates with p9p plumbing
 
 Some are neither crazy small nor very innovative, but still look solid:
-- [mle](https://github.com/adsr/mle) (C)
-- [micro](https://github.com/zyedidia/micro) (Go)
-- [aretex](https://github.com/aretext/aretext) (Go)
-- [smith](https://github.com/IGI-111/Smith) (Rust)
-- [iota](https://github.com/gchp/iota) (Rust)
+* [mle](https://github.com/adsr/mle) (C)
+* [micro](https://github.com/zyedidia/micro) (Go)
+* [aretex](https://github.com/aretext/aretext) (Go)
+* [smith](https://github.com/IGI-111/Smith) (Rust)
+* [iota](https://github.com/gchp/iota) (Rust)
 
 So why writing a new one ? There are two main reasons.
 
@@ -47,10 +47,10 @@ wether it's on the user side or the code.
 The main goal of the editor is simplicity. I believe it helps for the secondary
 goals:
 
-- making it efficient, intuitive and predictable
-- writing small, well-structured, easily-hackable code
-- shipping a sane default configuration, as well as a clear configuration file
-- making sure all commands are accessed with a single keypress
+* making it efficient, intuitive and predictable
+* writing small, well-structured, easily-hackable code
+* shipping a sane default configuration, as well as a clear configuration file
+* making sure all commands are accessed with a single keypress
 
 
 ## Old-school development
@@ -114,11 +114,11 @@ to dig into it faster than needed.
 Today edit is considered mostly feature stable. Here is what might be added in
 the future:
 
-- execute a shell command ? piping the selections to it ?
-- store optimal cursor column ?
-- scrolloff ?
-- display line numbers ??
-- tab-completion ??
+* execute a shell command ? piping the selections to it ?
+* store optimal cursor column ?
+* scrolloff ?
+* display line numbers ??
+* tab-completion ??
 
 
 ## User experience design choices
@@ -224,5 +224,5 @@ it adds some complexity, I left it aside. But I might pick it up some day.
 
 ### Others limitations
 
-- does no work with tabs
-- does not visually wrap lines
+* does no work with tabs
+* does not visually wrap lines

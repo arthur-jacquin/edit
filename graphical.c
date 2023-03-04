@@ -23,8 +23,8 @@ resize(int width, int height)
         (screen_height = height) < MIN_HEIGHT)
         return ERR_TERM_NOT_BIG_ENOUGH;
 
-    // scrolloff is aborted if not possible
-    scrolloff = (screen_height - 1 < 2*SCROLLOFF + 1) ? 0 : SCROLLOFF;
+    // scroll offset is aborted if not possible
+    scroll_offset = (screen_height < 2*SCROLL_OFFSET + 2) ? 0 : SCROLL_OFFSET;
 
     return 0;
 }

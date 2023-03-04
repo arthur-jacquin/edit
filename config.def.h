@@ -31,7 +31,7 @@
 #define VISUAL_COLUMN               80
 
 #define SCROLL_LINE_NUMBER          3
-#define SCROLLOFF                   0
+#define SCROLL_OFFSET               0
 #define BACKUP_FILE_NAME            "edit_backup_file"
 #define MIN_WIDTH                   81
 #define RULER_WIDTH                 8

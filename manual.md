@@ -26,7 +26,7 @@ file. For example, you can easily:
 * modify editor messages
 * choose the default values for runtime-modifiable settings
 * add new languages for syntax highlighting (see `syntax_highlighting.md`)
-* set a scrolloff value and a visual column
+* set a non-null scroll offset value and a visual column
 
 
 ## Interacting with the editor

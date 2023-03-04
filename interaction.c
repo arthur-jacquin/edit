@@ -37,24 +37,11 @@ dialog(const char *prompt, struct interface *interf, int refresh)
         case TB_EVENT_KEY:
             if (ev.ch && n < INTERFACE_WIDTH - dpl - 1) {
                 // insert unicode codepoint ev.ch in interf->current
-
-                // compute number of untouched bytes
                 k = get_str_index(interf->current, i = dx);
-
-                // copy bytes after new character
                 len = unicode_char_length(c = ev.ch);
                 for (j = strlen(interf->current); j >= k; j--) // copy NULL
                     interf->current[j + len] = interf->current[j];
-
-                // write ev.ch
-                for (j = len - 1; j > 0; j--) {
-                    interf->current[k + j] =
-                        (c & ~first_bytes_mask[2]) | first_bytes_mask[1];
-                    c >>= 6;
-                }
-                interf->current[k] = c | utf8_start[len - 1];
-
-                // refresh metadata
+                insert_utf8(interf->current, k, len, c);
                 dx++;
                 n++;
             } else {

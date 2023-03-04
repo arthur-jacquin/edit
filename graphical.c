@@ -19,7 +19,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     // variables
     int k, i, j, len, color, nb_to_color, underline;
     char c, nc;
-    struct tb_cell *buf = malloc((l->dl) * sizeof(struct tb_cell));
+    struct printable *buf = malloc((l->dl) * sizeof(struct printable));
     struct lang *syntax = settings.syntax;
     struct rule *r;
     int a;
@@ -31,14 +31,8 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 #endif // UNDERLINE_CURSOR_LINE
 
     // decompress UTF-8
-    for (k = i = 0; i < l->dl; i++) {
-        len = utf8_char_length(l->chars[k]);
-        buf[i].ch = l->chars[k++] & masks[len-1];
-        for (j = 1; j < len; j++) {
-            buf[i].ch <<= 6;
-            buf[i].ch |= ~first_bytes_mask[2] & (l->chars[k++]);
-        }
-    }
+    for (k = i = 0; i < l->dl; i++, k += len)
+        buf[i].ch = unicode(l->chars, k, len = utf8_char_length(l->chars[k]));
 
     // foreground
     for (i = 0; i < l->dl; i++)
@@ -149,18 +143,13 @@ print_dialog(void)
     // display the dialog line
 
     int len, i, j, k;
-    uint32_t c, nc;
+    char nc;
 
     // decompress UTF-8 and print
-    for (i = k = 0; nc = dialog_chars[k++]; i++) {
-        len = utf8_char_length(nc);
-        c = nc & masks[len-1];
-        for (j = 1; j < len; j++) {
-            c <<= 6;
-            c |= ~first_bytes_mask[2] & dialog_chars[k++];
-        }
-        tb_set_cell(i, screen_height-1, c, COLOR_DIALOG, COLOR_BG_DEFAULT);
-    }
+    for (i = k = 0; nc = dialog_chars[k]; i++, k += len)
+        tb_set_cell(i, screen_height - 1,
+            unicode(dialog_chars, k, len = utf8_char_length(nc)),
+            COLOR_DIALOG, COLOR_BG_DEFAULT);
 
     // erase end of line
     while (i < screen_width - RULER_WIDTH)

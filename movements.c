@@ -42,6 +42,8 @@ pos_of(int l, int x)
 void
 unwrap_pos(struct pos p)
 {
+    // set cursor to pos p
+
     y = p.l - first_line_nb;
     x = p.x;
 }

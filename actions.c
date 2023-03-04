@@ -63,16 +63,11 @@ insert(struct line *l, struct selection *s)
 {
     // insert ev.ch at the beginning of selections
 
-    int k, j, len;
-    uint32_t c;
+    int k, len;
 
-    len = unicode_char_length(c = ev.ch);
+    len = unicode_char_length(ev.ch);
     k = replace_chars(l, s, s->x, 0, 1, len);
-    for (j = len - 1; j > 0; j--) {
-        l->chars[k + j] = (c & ~first_bytes_mask[2]) | first_bytes_mask[1];
-        c >>= 6;
-    }
-    l->chars[k] = c | utf8_start[len - 1];
+    insert_utf8(l->chars, k, len, ev.ch);
 }
 
 void
@@ -149,11 +144,9 @@ comment(struct line *l, struct selection *s)
         return;
 
     syntax_length = strlen(comment_syntax);
-    if (is_in(comment_syntax, l->chars, k, syntax_length - 1)) {
-        // uncomment
+    if (is_in(comment_syntax, l->chars, k, syntax_length - 1)) { // uncomment
         replace_chars(l, s, k, syntax_length, 0, 0);
-    } else {
-        // comment
+    } else { // comment
         k = replace_chars(l, s, k, 0, syntax_length, syntax_length);
         strncpy(&(l->chars[k]), comment_syntax, syntax_length);
     }

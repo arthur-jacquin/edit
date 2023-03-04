@@ -17,11 +17,10 @@
 
 // ERROR CODES *****************************************************************
 
-// TODO
-#define ERR_FILE_CONNECTION         2
-// #define ERR_MALLOC                  3
+#define ERR_FILE_CONNECTION         1
+#define ERR_UNICODE_OR_TAB          2
+#define ERR_MALLOC                  3
 #define ERR_TERM_NOT_BIG_ENOUGH     4
-// #define ERR_UNICODE                 5
 
 
 // STRUCTS *********************************************************************
@@ -53,14 +52,13 @@ struct interface {              // interface for dialog mode
     char current[4*INTERFACE_WIDTH + 1], previous[4*INTERFACE_WIDTH + 1];
 };
 
+struct printable {              // information to print a character
+    uint32_t ch;                // Unicode codepoint
+    uint16_t fg, bg;            // foreground and background attributes
+};
+
 
 // VARIABLES *******************************************************************
-
-// UTF-8/Unicode management TODO comment
-char first_bytes_mask[6] = {0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8};
-char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
-char utf8_start[4] = {0, 0xc0, 0xe0, 0xf0};
-uint32_t unicode_delimiter[4] = {0x80, 0x800, 0x10000, 0x200000};
 
 // file properties
 struct interface file_name_int;     // interface for storing file name

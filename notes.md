@@ -1,17 +1,15 @@
 ## TODO
 
-ifdef, macros
-remove go_to
-
-* `load_file`: verify if no tabs and UTF-8 compliant
+* restructure error management
+    * protect against tabs and UTF-8 errors
+    * protect against malloc failings
 * detect word boundaries, start/end of selection, `*` command
 * add potential features ?
 
 ### Restructurations
 
+* understand type casting
 * use e = +- 1 for grouping commands
-* move UTF-8/Unicode operations and hexadecimals to utils.c
-* remove deps from termbox structures
 * break_line, concatenate_line
 * clarify functions deps, restructurate in which file goes which functions
 * use strncat and other stdlib functions (ctype.h, string.h...)
@@ -19,7 +17,6 @@ remove go_to
 * gathers variables in good order in globals.h
 * remove unwrap_pos
 * put variables where they sould be, and how they should be (extern, const...)
-* improve error management, assure safe and graceful fails
 * use macros
 
 ### Check
@@ -29,7 +26,7 @@ remove go_to
     * rules
     * resize in dialog mode
     * what happens when multiple slash on the same line
-    * insert characters like ' on line created by `insert_line`
+    * insert characters like ' at end of line
     * search and replace engine, memory indexes
     * `replace_characters`
 * look for unstated assumptions

@@ -44,7 +44,7 @@ load_file(const char *file_name, int first_line_on_screen_nb)
                 break;
             } else {
                 buf[ml] = (char) c;
-                if ((buf[ml] & first_bytes_mask[2]) != first_bytes_mask[1])
+                if ((buf[ml] & (char) 0xc0) != (char) 0x80)
                     dl++;
                 ml++;
             }

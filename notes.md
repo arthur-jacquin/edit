@@ -4,7 +4,6 @@
 
 * store optimal cursor column ?
 * best way to store strings ?
-* find_next_word: use is_word_boundary ?
 * correct syntax: | can't follow REP
 
 

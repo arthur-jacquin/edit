@@ -79,25 +79,11 @@ find_start_of_word(int n)
     n *= sens;
 
     while (n--) {
-        c = l->chars[get_str_index(l->chars, dx)];
-        while (move(&l, &dx, sens)) {
-            nc = l->chars[get_str_index(l->chars, dx)];
-            if (c == ' ') {
-                if (nc != ' ')
-                    break;
-            } else if (is_word_char(c)) {
-                if (!is_word_char(nc))
-                    break;
-            } else if (isdigit(c)) {
-                if (!isdigit(nc))
-                    break;
-            } else {
-                if ((nc == ' ') || is_word_char(nc) || isdigit(nc))
-                    break;
-            }
-        }
-        while (l->chars[get_str_index(l->chars, dx)] == ' ')
-            if (!move(&l, &dx, sens))
+        while (move(&l, &dx, sens))
+            if (!is_word_char(l->chars[get_str_index(l->chars, dx)]))
+                break;
+        while (move(&l, &dx, sens))
+            if (is_word_char(l->chars[get_str_index(l->chars, dx)]))
                 break;
     }
 

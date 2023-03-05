@@ -29,7 +29,7 @@ main(int argc, char *argv[])
     init_interface(replace_pattern, "");
 
     // editor variables
-    y = x = 0;
+    y = x = 0; attribute_x = 1;
     m = in_insert_mode = anchored = is_bracket = has_been_invalid_resizing = 0;
     saved = running = displayed = NULL;
     clipboard.start = NULL;
@@ -148,6 +148,7 @@ main(int argc, char *argv[])
                 case KB_INSERT_END_LINE:
                     reset_selections();
                     x = (ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0;
+                    attribute_x = 1;
                     in_insert_mode = 1;
                     echo(INSERT_MODE_MESSAGE);
                     break;
@@ -182,13 +183,13 @@ main(int argc, char *argv[])
                     unwrap_pos(find_matching_bracket());
                     break;
                 case KB_MOVE_START_LINE:
-                    x = 0;
+                    x = 0; attribute_x = 1;
                     break;
                 case KB_MOVE_NON_BLANK:
-                    x = find_first_non_blank();
+                    x = find_first_non_blank(); attribute_x = 1;
                     break;
                 case KB_MOVE_END_LINE:
-                    x = get_line(y)->dl;
+                    x = get_line(y)->dl; attribute_x = 1;
                     break;
                 case KB_MOVE_END_FILE:
                     m = nb_lines;
@@ -197,10 +198,10 @@ main(int argc, char *argv[])
                     y = m - first_line_nb;
                     break;
                 case KB_MOVE_NEXT_CHAR:
-                    x += m;
+                    x += m; attribute_x = 1;
                     break;
                 case KB_MOVE_PREV_CHAR:
-                    x -= m;
+                    x -= m; attribute_x = 1;
                     break;
                 case KB_MOVE_NEXT_LINE:
                     y += m;
@@ -317,10 +318,10 @@ main(int argc, char *argv[])
                     m = 1;
                 switch (ev.key) {
                 case TB_KEY_ARROW_RIGHT:
-                    x += m;
+                    x += m; attribute_x = 1;
                     break;
                 case TB_KEY_ARROW_LEFT:
-                    x -= m;
+                    x -= m; attribute_x = 1;
                     break;
                 case TB_KEY_ARROW_DOWN:
                     if (ev.mod == TB_MOD_SHIFT)
@@ -370,7 +371,7 @@ main(int argc, char *argv[])
             case TB_KEY_MOUSE_LEFT:
                 if (ev.y < screen_height - 1) {
                     y = ev.y;
-                    x = ev.x - LINE_NUMBERS_WIDTH;
+                    x = ev.x - LINE_NUMBERS_WIDTH; attribute_x = 1;
                 }
                 break;
             case TB_KEY_MOUSE_WHEEL_UP:

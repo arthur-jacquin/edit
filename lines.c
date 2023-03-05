@@ -137,8 +137,10 @@ replace_chars(struct line *l, struct selection *a, int start, int n,
     }
 
     // move cursor and anchor
-    if (l->line_nb == first_line_nb + y && start <= x)
+    if (l->line_nb == first_line_nb + y && start <= x) {
         x = (x < start + n) ? (start + new_n) : (x + new_n - n);
+        attribute_x = 1;
+    }
     if (anchored && l->line_nb == anchor.l && start <= anchor.x)
         anchor.x = (anchor.x < start + n) ? start : (anchor.x + new_n - n);
 

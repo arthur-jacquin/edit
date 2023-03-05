@@ -45,7 +45,7 @@ unwrap_pos(struct pos p)
     // set cursor to pos p
 
     y = p.l - first_line_nb;
-    x = p.x;
+    x = p.x; attribute_x = 1;
 }
 
 int
@@ -208,6 +208,7 @@ move_to_cursor(void)
     // move to the closest possible position
 
     int nl, nx, delta;
+    static int saved_x;
 
     // adjust asked line number
     nl = first_line_nb + y;
@@ -225,6 +226,10 @@ move_to_cursor(void)
     first_line_on_screen = get_line(delta - y);
 
     // adjust x
+    if (attribute_x)
+        saved_x = x;
+    x = saved_x;
+    attribute_x = 0;
     if (x > (nx = MIN(get_line(y)->dl, screen_width - 1 - LINE_NUMBERS_WIDTH)))
         x = nx;
     if (x < 0)

@@ -2,7 +2,6 @@
 
 ### Adding/rethinking
 
-* store optimal cursor column ?
 * best way to store strings ?
 * correct syntax: | can't follow REP
 
@@ -28,6 +27,7 @@ Progressively integrate each part. At each step:
         explain non-obvious behaviours, assumptions
     look at existing TODO, XXX and any comment
     extensive testing. Known source of failure:
+        attributing x without flagging attribute_x
         is_word_char is only ASCII
         slashs, non-ended string display
         break_line

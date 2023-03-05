@@ -294,19 +294,19 @@ mark_subpatterns(const char *chars, int dl, int ss, int x, int n)
             last_was = ELEM;
             start_elem_j = j;
             start_elem_i = i;
-            // considering known class
-            if (c == '\\') {
+            if (c == '\\') { // known classes and escaped characters
                 j++; l++;
-                is_elem_ok = (sp[l] == 'w' && is_word_char(chars[k])) ||
-                             (sp[l] == 'W' && !is_word_char(chars[k])) ||
-                             (sp[l] == 'd' && isdigit(chars[k])) ||
-                             (sp[l] == 'D' && !isdigit(chars[k]));
-            } else {
-                is_elem_ok = (sp[l] == '.');
+                c = sp[l];
+                is_elem_ok = (c == 'w' && is_word_char(chars[k])) ||
+                             (c == 'W' && !is_word_char(chars[k])) ||
+                             (c == 'd' && isdigit(chars[k])) ||
+                             (c == 'D' && !isdigit(chars[k])) ||
+                             (strchr("\\^$|*+?{[.", c) != NULL &&
+                              compare_chars(sp, l, chars, k) == 0);
+            } else { // normal characters
+                is_elem_ok = (sp[l] == '.') ||
+                    (compare_chars(sp, l, chars, k) == 0);
             }
-            // else raw comparison
-            if (!is_elem_ok)
-                is_elem_ok = (compare_chars(sp, l, chars, k) == 0);
             j++; l += utf8_char_length(sp[l]);
             i++; k += utf8_char_length(chars[k]);
         }

@@ -30,13 +30,10 @@ Progressively integrate each part. At each step:
     look at existing TODO, XXX and any comment
     extensive testing. Known source of failure:
         is_word_char is only ASCII
-        suppressing in dialog mode
-        inserting '
+        slashs, non-ended string display
         break_line
         concatenate_line
         manipulating hex values: cast needed ?
-        \d matches d
-        multiple slash on same line
     is echoing interface is well exploited ?
     sould this be a get_str_index stuff ?
     potentially append to the "hot stuff to promote" list

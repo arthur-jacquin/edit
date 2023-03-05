@@ -4,11 +4,12 @@
 
 * store optimal cursor column ?
 * best way to store strings ?
-* search and replace
-    names of variables in engine
-    detect word boundaries, start/end of selection
+* find_next_word: use is_word_boundary ?
 * `*` command
-* line numbers
+
+    // XXX characters that need to be escaped: \ ^ $ | * + ? { [ .
+    // XXX no escapes in classes
+    // XXX correct syntax: | can't follow REP
 
 
 ### Final rewrite
@@ -32,6 +33,7 @@ Progressively integrate each part. At each step:
         explain non-obvious behaviours, assumptions
     look at existing TODO, XXX and any comment
     extensive testing. Known source of failure:
+        is_word_char is only ASCII
         suppressing in dialog mode
         inserting '
         break_line
@@ -51,6 +53,7 @@ globals.
 ### Publication
 
 * new colorscheme
+* strong defaults
 * add languages
 * .md files
 * tarball

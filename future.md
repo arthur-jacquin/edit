@@ -14,9 +14,4 @@ The following could be nice:
 However I'm still looking for a suckless way to integrate these features.
 
 
-## Displaying line numbers
-
-Will be disabled by default.
-
-
 ## Tab completion

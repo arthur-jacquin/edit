@@ -10,7 +10,7 @@ test(char *sp, char *chars, int x, int n, int expected)
     int res;
 
     strcpy(search_pattern.current, sp);
-    res = mark_pattern(chars, x, n);
+    res = mark_subpatterns(chars, x + n, x, x, n);
     if (res != expected)
         printf("sp = \"%s\", chars = \"%s\", x = %d: expected %d, got %d.\n",
             sp, chars, x, expected, res);

@@ -7,9 +7,6 @@ config.h: config.def.h
 test: binary
 	./binary ~/input.c
 
-count: *.c
-	cloc actions.c edit.c file.c graphical.c interaction.c lines.c movements.c \
-		search_and_replace.c selections.c utils.c
-	wc actions.c edit.c file.c graphical.c interaction.c lines.c movements.c \
-		search_and_replace.c selections.c utils.c
+count:
+	cloc *.h *.c
 	du -h ./binary

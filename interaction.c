@@ -57,7 +57,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                 case TB_KEY_BACKSPACE2:
                     if (dx > 0) {
                         // delete dx-th displayable character
-                        k = get_str_index(interf->current, i = dx);
+                        k = get_str_index(interf->current, dx - 1);
                         len = utf8_char_length(interf->current[k]);
                         while (interf->current[k] = interf->current[k + len])
                             k++;

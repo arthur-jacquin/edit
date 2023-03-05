@@ -128,6 +128,7 @@ int unicode_char_length(uint32_t c);
 uint32_t unicode(const char *chars, int k, int len);
 void insert_utf8(char *chars, int k, int len, uint32_t c);
 int get_str_index(const char *chars, int x);
+void decrement(const char *chars, int *i, int *k, int goal);
 int is_in(const char *list, const char *chars, int x, int length);
 void *_malloc(int size);
 
@@ -162,6 +163,7 @@ struct selection *merge_sel(struct selection *a, struct selection *b);
 struct selection *range_lines_sel(int start, int end, struct selection *next);
 struct selection *running_sel(void);
 struct selection *search(struct selection *a);
+int select_word_under_cursor(void);
 void shift_sel_line_nb(struct selection *a, int min, int max, int delta);
 void move_sel_end_of_line(struct selection *a, int l, int x, int concatenate);
 void remove_sel_line_range(int min, int max);

@@ -25,20 +25,6 @@ compare_chars(const char *s1, int i1, const char *s2, int i2)
     }
 }
 
-static void
-decrement(const char *chars, int *i, int *k, int goal)
-{
-    // assuming *k is an index in chars corresponding to the (*i)-th character,
-    // decrement *i to goal (and *k accordingly)
-
-    while (*i > goal) {
-        (*i)--;
-        (*k)--;
-        while ((chars[*k] & 0xc0) == 0x80)
-            (*k)--;
-    }
-}
-
 int
 is_word_boundary(const char *chars, int k)
 {

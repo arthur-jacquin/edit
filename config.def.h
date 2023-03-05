@@ -20,6 +20,7 @@
 #define INVALID_RANGE_MESSAGE       "Invalid range."
 #define SEARCH_PATTERN_PROMPT       "Search pattern: "
 #define REPLACE_PATTERN_PROMPT      "Replace pattern: "
+#define NO_WORD_CURSOR_MESSAGE      "There is no word under the cursor."
 
 
 // COMPILE-TIME PARAMETERS *****************************************************
@@ -148,6 +149,7 @@
 #define KB_SEL_LINES_BLOCK          'b'
 #define KB_SEL_FIND                 'f'
 #define KB_SEL_SEARCH               '/'
+#define KB_SEL_CURSOR_WORD          '*'
 #define KB_SEL_ANCHOR               'v'
 #define KB_SEL_APPEND               'a'
 #define KB_SEL_COLUMN               'z'

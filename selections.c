@@ -328,6 +328,51 @@ search(struct selection *a)
     return res;
 }
 
+int
+search_word_under_cursor(void)
+{
+    // search for the word under cursor padded with \b
+    // return non null on success
+
+    struct line *l;
+    int i, k;           // indexes (characters, bytes) in l->chars
+    int k1, k2;         // delimiting the word in memory
+
+    l = get_line(y);
+    k = get_str_index(l->chars, i = x);
+
+    if (!is_word_char(l->chars[k]))
+        return 0;
+
+    // delimits the word
+    while (is_word_char(l->chars[k])) {
+        k1 = k;
+        if (k > 0)
+            decrement(l->chars, &i, &k, i - 1);
+        else
+            break;
+    }
+    k2 = k1;
+    while (is_word_char(l->chars[k2]))
+        k2 += utf8_char_length(l->chars[k2]);
+
+    // compute and search for the word
+    if (k2 - k1 + 5 > INTERFACE_MEM_LENGTH)
+        return 0; // word is too long to be searched
+    search_pattern.current[0] = search_pattern.current[k2 - k1 + 2] = '\\';
+    search_pattern.current[1] = search_pattern.current[k2 - k1 + 3] = 'b';
+    search_pattern.current[k2 - k1 + 4] = '\0';
+    strncpy(&(search_pattern.current[2]), &(l->chars[k1]), k2 - k1);
+    strcpy(search_pattern.previous, search_pattern.current);
+    forget_sel_list(displayed);
+    displayed = search(saved);
+    forget_sel_list(saved);
+    saved = displayed;
+    displayed = NULL;
+
+    return 1;
+}
+
 void
 shift_sel_line_nb(struct selection *a, int min, int max, int delta)
 {

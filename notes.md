@@ -5,11 +5,7 @@
 * store optimal cursor column ?
 * best way to store strings ?
 * find_next_word: use is_word_boundary ?
-* `*` command
-
-    // XXX characters that need to be escaped: \ ^ $ | * + ? { [ .
-    // XXX no escapes in classes
-    // XXX correct syntax: | can't follow REP
+* correct syntax: | can't follow REP
 
 
 ### Final rewrite

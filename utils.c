@@ -89,6 +89,20 @@ get_str_index(const char *chars, int x)
     return k;
 }
 
+void
+decrement(const char *chars, int *i, int *k, int goal)
+{
+    // assuming *k is an index in chars corresponding to the (*i)-th character,
+    // decrement *i to goal (and *k accordingly)
+
+    while (*i > goal) {
+        (*i)--;
+        (*k)--;
+        while ((chars[*k] & 0xc0) == 0x80)
+            (*k)--;
+    }
+}
+
 int
 is_in(const char *list, const char *chars, int x, int length)
 {

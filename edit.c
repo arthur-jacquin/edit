@@ -256,9 +256,9 @@ main(int argc, char *argv[])
                         if (!parse_range(range_int.current))
                             echo(INVALID_RANGE_MESSAGE);
                     break;
-                case KB_SEL_APPEND:
                 case KB_SEL_FIND:
                 case KB_SEL_SEARCH:
+                case KB_SEL_APPEND:
                     if (ev.ch == KB_SEL_APPEND ||
                         dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
                         forget_sel_list(saved);
@@ -266,6 +266,10 @@ main(int argc, char *argv[])
                         displayed = NULL;
                         anchored = 0;
                     }
+                    break;
+                case KB_SEL_CURSOR_WORD:
+                    if (!search_word_under_cursor())
+                        echo(NO_WORD_CURSOR_MESSAGE);
                     break;
                 case KB_SEL_ANCHOR:
                     if (anchored) {

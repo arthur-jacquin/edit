@@ -3,12 +3,12 @@
 ### Adding/rethinking
 
 * store optimal cursor column ?
-* `e`, command_int, background ? default command by language ? always 'make' ?
 * best way to store strings ?
 * search and replace
     names of variables in engine
     detect word boundaries, start/end of selection
 * `*` command
+* line numbers
 
 
 ### Final rewrite

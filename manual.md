@@ -143,6 +143,7 @@ Here are the basic commands, with their default keybinds:
                 R   reload
                 i   get in insert mode
                 s   change a setting
+                e   execute 'make' in the shell and get back to edit
 
 If you change a setting, you will be prompted a modification. This modification
 must be formatted like "{name}={value}" where {name} is in the table below and

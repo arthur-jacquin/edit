@@ -32,6 +32,7 @@
 
 #define SCROLL_LINE_NUMBER          3
 #define SCROLL_OFFSET               0
+#define SHELL_COMMAND               "make"
 #define BACKUP_FILE_NAME            "edit_backup_file"
 #define MIN_WIDTH                   81
 #define RULER_WIDTH                 8
@@ -102,6 +103,7 @@
 #define KB_RELOAD                   'R'
 #define KB_INSERT_MODE              'i'
 #define KB_CHANGE_SETTING           's'
+#define KB_RUN_SHELL_COMMAND        'e'
 
 // get in insert mode after removing selections
 #define KB_INSERT_START_LINE        'I'

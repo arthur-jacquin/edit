@@ -8,6 +8,7 @@
                 ?   display the help message
               q/Q   quit/force quit
                 s   change a setting
+                e   execute 'make' in the shell and get back to edit
 
     MANAGING FILE
 

@@ -138,14 +138,12 @@ main(int argc, char *argv[])
                         if (!set_parameter(settings_int.current))
                             echo(INVALID_ASSIGNMENT_MESSAGE);
                     break;
-                //case 'e':
-                //    if (dialog("Run a command: ", &command_int, 0)) {
-                //        tb_shutdown();
-                //        system(command_int.current);
-                //        getchar();
-                //        init_termbox();
-                //    }
-                //    break;
+                case KB_RUN_SHELL_COMMAND:
+                    tb_shutdown();
+                    system(SHELL_COMMAND);
+                    getchar();
+                    init_termbox();
+                    break;
                 case KB_INSERT_START_LINE:
                 case KB_INSERT_END_LINE:
                     reset_selections();
@@ -393,3 +391,4 @@ main(int argc, char *argv[])
         }
     }
 }
+

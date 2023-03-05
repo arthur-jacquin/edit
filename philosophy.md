@@ -111,13 +111,8 @@ to master all of them at first read, but you know what exists and where to find
 the information. The learning curve is therefore pretty gentle, unless you want
 to dig into it faster than needed.
 
-Today edit is considered mostly feature stable. The following features are not
-excluded in the future:
-
-* executing a command, with the possibilities of piping selections to it and
-sending it in the background
-* display line numbers
-* tab-completion
+Today edit is considered mostly feature stable. The features that might be added
+in the  future are discussed in `future.md`.
 
 
 ## User experience design choices

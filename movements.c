@@ -1,3 +1,7 @@
+#define DECLARE_BRACKETS(A, B) \
+    case (A): goal = (B); sens = 1; break; \
+    case (B): goal = (A); sens = -1; break;
+
 int
 move(struct line **l, int *dx, int sens)
 {
@@ -103,14 +107,10 @@ find_matching_bracket(void)
     dx = x;
 
     switch (c = l->chars[get_str_index(l->chars, dx)]) {
-    case '(': goal = ')'; sens = 1; break;
-    case '{': goal = '}'; sens = 1; break;
-    case '[': goal = ']'; sens = 1; break;
-    case '<': goal = '>'; sens = 1; break;
-    case ')': goal = '('; sens = -1; break;
-    case '}': goal = '{'; sens = -1; break;
-    case ']': goal = '['; sens = -1; break;
-    case '>': goal = '<'; sens = -1; break;
+    DECLARE_BRACKETS('(', ')')
+    DECLARE_BRACKETS('{', '}')
+    DECLARE_BRACKETS('[', ']')
+    DECLARE_BRACKETS('<', '>')
     default:
         return pos_of(l->line_nb, x);
     }
@@ -226,12 +226,15 @@ move_to_cursor(void)
     first_line_on_screen = get_line(delta - y);
 
     // adjust x
+#ifdef REMEMBER_CURSOR_COLUMN
     if (attribute_x)
         saved_x = x;
     x = saved_x;
+#endif // REMEMBER_CURSOR_COLUMN
     attribute_x = 0;
     if (x > (nx = MIN(get_line(y)->dl, screen_width - 1 - LINE_NUMBERS_WIDTH)))
         x = nx;
     if (x < 0)
         x = 0;
 }
+

@@ -1,3 +1,5 @@
+#define IS_TYPE(TYPE, L)        is_in(*(syntax->TYPE), l->chars, k, (L))
+
 void
 init_termbox(void)
 {
@@ -50,7 +52,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 #endif // UNDERLINE_CURSOR_LINE
 
     // decompress UTF-8
-    for (k = i = 0; i < l->dl; i++, k += len)
+    for (i = k = 0; i < l->dl; i++, k += len)
         buf[i].ch = unicode(l->chars, k, len = utf8_char_length(l->chars[k]));
 
     // foreground
@@ -58,10 +60,8 @@ print_line(const struct line *l, struct selection *s, int screen_line)
         buf[i].fg = COLOR_DEFAULT;
     if (settings.syntax_highlight && settings.syntax != NULL) {
         // ignores blank characters at the beginning of the line
-        k = i = 0;
-        while (l->chars[k] == ' ') {
-            i++; k++;
-        }
+        for (i = k = 0; l->chars[k] == ' '; i++, k++)
+            ;
 
         // detect a matching rule
         for (r = *(syntax->rules); r->mark[0]; r++)
@@ -70,31 +70,36 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                     break;
 
         if (r->mark[0]) {
-            // apply rule
+            // RULE
             for (j = 0; j < strlen(r->mark); j++)
                 buf[i++].fg = r->color_mark;
             while (i < l->dl)
                 buf[i++].fg = r->color_end_of_line;
         } else {
-            // no matching rule
             while (i < l->dl) {
                 color = COLOR_DEFAULT;
                 nb_to_color = 1;
                 c = l->chars[k];
+
+                // NON ASCII CHARACTER
                 if (utf8_char_length(c) > 1) {
                     k += utf8_char_length(c);
+
+                // WORD
                 } else if (is_word_char(c)) {
                     for (j = 0; is_word_char(nc = l->chars[k+j]) || isdigit(nc); j++)
                         ;
-                    if (is_in(*(syntax->keywords), l->chars, k, j)) {
+                    if (IS_TYPE(keywords, j)) {
                         color = COLOR_KEYWORD;
-                    } else if (is_in(*(syntax->flow_control), l->chars, k, j)) {
+                    } else if (IS_TYPE(flow_control, j)) {
                         color = COLOR_FLOW_CONTROL;
-                    } else if (is_in(*(syntax->built_ins), l->chars, k, j)) {
+                    } else if (IS_TYPE(built_ins, j)) {
                         color = COLOR_BUILT_IN;
                     }
                     nb_to_color = j;
                     k += j;
+
+                // NUMBER
                 } else if (isdigit(c) || (k+1 < l->ml && (c == '-' || c == '.') &&
                     (isdigit(nc = l->chars[k+1]) || nc == '.'))) {
                     for (j = 1; isdigit(nc = l->chars[k+j]) || nc == '.'; j++)
@@ -102,17 +107,23 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                     color = COLOR_NUMBER;
                     nb_to_color = j;
                     k += j;
+
+                // STRING
                 } else if (c == '"' || c == '\'') {
                     k++;
                     for (j = 2; k < l->ml && !(l->chars[k] == c && l->chars[k-1] != '\\'); j++)
                         k += utf8_char_length(l->chars[k]);
-                    k++;
                     color = COLOR_STRING;
-                    nb_to_color = j;
-                } else if (is_in(*(syntax->comment), l->chars, k, strlen(*(syntax->comment)) - 1)) {
+                    nb_to_color = j - ((k == l->ml) ? 2 : 0);
+                    k++;
+
+                // COMMENT
+                } else if (IS_TYPE(comment, strlen(*(syntax->comment)) - 1)) {
                     color = COLOR_COMMENT;
                     nb_to_color = l->dl - i;
                     k = l->ml;
+
+                // SOMETHING ELSE
                 } else {
                     k++;
                 }

@@ -30,7 +30,6 @@ Progressively integrate each part. At each step:
         add line at end of file ?
         attributing x without flagging attribute_x
         is_word_char is only ASCII
-        slashs, non-ended string display
         break_line
         concatenate_line
         manipulating hex values: cast needed ?

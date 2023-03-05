@@ -1,7 +1,17 @@
-int
-load_file(const char *file_name, int first_line_on_screen_nb)
+static void
+file_connection_error(void)
 {
-    // reads the file file_name and store it in first_line list
+    // exit after failure
+
+    tb_shutdown();
+    fprintf(stderr, "%s\n", FILE_CONNECTION_MESSAGE);
+    exit(ERR_FILE_CONNECTION);
+}
+
+void
+load_file(int first_line_on_screen_nb)
+{
+    // reads the file and store it in first_line list
 
     FILE *src_file = NULL;
     int buf_size = DEFAULT_BUF_SIZE;
@@ -16,13 +26,13 @@ load_file(const char *file_name, int first_line_on_screen_nb)
     first_line = first_line_on_screen = NULL;
 
     // open connection to src_file
-    if ((src_file = fopen(file_name, "r")) == NULL)
-        return ERR_FILE_CONNECTION;
+    if ((src_file = fopen(file_name_int.current, "r")) == NULL)
+        file_connection_error();
     reached_EOF = 0;
     line_nb = 1;
 
     // prepare buffer
-    buf = (char *) malloc(buf_size);
+    buf = (char *) _malloc(buf_size);
     buf[buf_size - 1] = '\0';
 
     // read content into memory
@@ -31,7 +41,7 @@ load_file(const char *file_name, int first_line_on_screen_nb)
         while (1) {
             if (ml == buf_size - 1) {
                 buf_size <<= 1;
-                new_buf = (char *) malloc(buf_size);
+                new_buf = (char *) _malloc(buf_size);
                 new_buf[buf_size - 1] = '\0';
                 strcpy(new_buf, buf);
                 free(buf);
@@ -72,17 +82,15 @@ load_file(const char *file_name, int first_line_on_screen_nb)
 
     // close connection to src_file
     if (fclose(src_file) == EOF)
-        return ERR_FILE_CONNECTION;
+        file_connection_error();
 
     // refresh parameters
     nb_lines = line_nb - 1;
     has_been_changes = 0;
-    load_lang(file_name);
-
-    return 0;
+    load_lang(file_name_int.current);
 }
 
-int
+void
 write_file(const char *file_name)
 {
     // reads the first_line list and store the content in file_name file
@@ -94,7 +102,7 @@ write_file(const char *file_name)
 
     // open connection to dest_file
     if ((dest_file = fopen(file_name, "w")) == NULL)
-        return ERR_FILE_CONNECTION;
+        file_connection_error();
 
     // copy content of first_line list to dest_file
     l = first_line;
@@ -102,15 +110,13 @@ write_file(const char *file_name)
         chars = l->chars;
         while (c = *chars++)
             if (putc(c, dest_file) == EOF)
-                return ERR_FILE_CONNECTION;
+                file_connection_error();
         if (putc('\n', dest_file) == EOF)
-            return ERR_FILE_CONNECTION;
+            file_connection_error();
         l = l->next;
     }
 
     // close connection to dest_file
-    if (fclose(dest_file))
-        return ERR_FILE_CONNECTION;
-
-    return 0;
+    if (fclose(dest_file) == EOF)
+        file_connection_error();
 }

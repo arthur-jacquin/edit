@@ -38,7 +38,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     // variables
     int k, i, j, len, color, nb_to_color, underline;
     char c, nc;
-    struct printable *buf = malloc((l->dl) * sizeof(struct printable));
+    struct printable *buf = _malloc((l->dl) * sizeof(struct printable));
     struct lang *syntax = settings.syntax;
     struct rule *r;
     int a;

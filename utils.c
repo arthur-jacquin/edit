@@ -115,3 +115,18 @@ is_in(const char *list, const char *chars, int x, int length)
 
     return 0;
 }
+
+void *
+_malloc(int size)
+{
+    // wrap a malloc call with error detection
+
+    void *res;
+
+    if ((res = malloc(size)) == NULL) {
+        tb_shutdown();
+        exit(ERR_MALLOC);
+    }
+
+    return res;
+}

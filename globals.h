@@ -118,10 +118,11 @@ uint32_t unicode(const char *chars, int k, int len);
 void insert_utf8(char *chars, int k, int len, uint32_t c);
 int get_str_index(const char *chars, int x);
 int is_in(const char *list, const char *chars, int x, int length);
+void *_malloc(int size);
 
 // file.c
-int load_file(const char *file_name, int first_line_on_screen_nb);
-int write_file(const char *file_name);
+void load_file(int first_line_on_screen_nb);
+void write_file(const char *file_name);
 
 // movements.c
 int move(struct line **l, int *dx, int sens);

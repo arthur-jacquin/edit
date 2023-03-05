@@ -27,12 +27,12 @@ create_line(int line_nb, int ml, int dl)
 
     struct line *res;
 
-    res = (struct line *) malloc(sizeof(struct line));
+    res = (struct line *) _malloc(sizeof(struct line));
     res->prev = res->next = NULL;
     res->line_nb = line_nb;
     res->ml = ml;
     res->dl = dl;
-    res->chars = (char *) malloc(ml);
+    res->chars = (char *) _malloc(ml);
     res->chars[ml - 1] = '\0';
 
     return res;
@@ -102,7 +102,7 @@ replace_chars(struct line *l, struct selection *a, int start, int n,
     l->dl += new_n - n;
 
     // create new string
-    new_chars = (char *) malloc(l->ml);
+    new_chars = (char *) _malloc(l->ml);
     strncpy(new_chars, l->chars, k1);
     strncpy(&(new_chars[k1+nb_bytes]), &(l->chars[k2]), l->ml - (k1+nb_bytes));
 
@@ -163,7 +163,7 @@ break_line(struct line *l, struct selection *s, int start)
     strncpy(l->next->chars, &(l->chars[k]), l->ml - k);
 
     // shorten current line
-    new_chars = (char *) malloc(k + 1);
+    new_chars = (char *) _malloc(k + 1);
     strncpy(new_chars, l->chars, k);
     new_chars[k] = '\0';
     free(l->chars);
@@ -186,7 +186,7 @@ concatenate_line(struct line *l, struct selection *s)
     shift_sel_line_nb(s, l->line_nb + 1, 0, -1);
 
     // create new chars, refresh metadata
-    new_chars = (char *) malloc(l->ml + l->next->ml - 1);
+    new_chars = (char *) _malloc(l->ml + l->next->ml - 1);
     strncpy(new_chars, l->chars, l->ml - 1);
     strncpy(&(new_chars[l->ml - 1]), l->next->chars, l->next->ml);
     free(l->chars);

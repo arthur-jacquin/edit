@@ -5,7 +5,7 @@ create_sel(int l, int x, int n, struct selection *next)
 
     struct selection *res;
 
-    res = (struct selection *) malloc(sizeof(struct selection));
+    res = (struct selection *) _malloc(sizeof(struct selection));
     res->l = l;
     res->x = x;
     res->n = n;

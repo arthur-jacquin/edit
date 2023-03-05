@@ -212,7 +212,7 @@ replace(struct line *l, struct selection *s)
 
     // malloc then populate replaced, adjust its length dynamically
     lrp = strlen(rp = replace_pattern.current);
-    replaced = (char *) malloc(lr = DEFAULT_BUF_SIZE);
+    replaced = (char *) _malloc(lr = DEFAULT_BUF_SIZE);
     j = lj = 0;
     for (k = 0; k < lrp;) {
         if ((k < lrp - 1) && (rp[k] == '\\' || rp[k] == '$') &&
@@ -237,7 +237,7 @@ replace(struct line *l, struct selection *s)
         if (lj + mn >= lr) {
             while (lj + mn >= lr)
                 lr <<= 1;
-            new_replaced = (char *) malloc(lr);
+            new_replaced = (char *) _malloc(lr);
             strncpy(new_replaced, replaced, lj);
             free(replaced);
             replaced = new_replaced;

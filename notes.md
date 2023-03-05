@@ -2,19 +2,13 @@
 
 ### Adding/rethinking
 
-* 'e', command_int, background ? default command by language ? always 'make' ?
+* store optimal cursor column ?
+* `e`, command_int, background ? default command by language ? always 'make' ?
 * best way to store strings ?
-* restructure error management
-    * protect against tabs and UTF-8 errors
-    * protect against malloc failings
-    * void exit(int status)
 * search and replace
     names of variables in engine
     detect word boundaries, start/end of selection
 * `*` command
-* remove unwrap_pos ?
-
-* store optimal cursor column ?
 
 
 ### Final rewrite
@@ -26,7 +20,7 @@ Progressively integrate each part. At each step:
     should that be moved elsewhere, or replaced by a macro, or e = +- 1 ?
     should this feature be optionnal as a compile-time setting ?
     is this feature covered in manual/... ?
-    are tabs and UTF-8/malloc/file errors detected and treated (exit, fprintf) ?
+    are tabs and UTF-8 errors detected and treated (exit, fprintf) ?
     check correctness by hand
     look at unstated assumptions
         ASCII only ?
@@ -43,7 +37,8 @@ Progressively integrate each part. At each step:
         manipulating hex values: cast needed ?
         \d matches d
         multiple slash on same line
-    refresh the things to promote in the screencast
+    potentially append to the "hot stuff to promote" list
+    potentially append to the "this isn't perfect" list
 
 Build a dependency graph of functions. Correlate that with list of modified
 globals.

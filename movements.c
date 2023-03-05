@@ -223,11 +223,8 @@ move_to_cursor(void)
 
     int nl, nx, delta;
 
-    // identify ideal coordinates
-    nl = first_line_nb + y;
-    nx = x;
-
     // adjust asked line number
+    nl = first_line_nb + y;
     if (nl > nb_lines)
         nl = nb_lines;
     if (nl < 1)

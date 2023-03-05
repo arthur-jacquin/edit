@@ -29,7 +29,7 @@ main(int argc, char *argv[])
     init_interface(replace_pattern, "");
 
     // editor variables
-    x = y = 0;
+    y = x = 0;
     m = in_insert_mode = anchored = is_bracket = has_been_invalid_resizing = 0;
     saved = running = displayed = NULL;
     clipboard.start = NULL;
@@ -49,12 +49,7 @@ main(int argc, char *argv[])
         return 0;
     } else {
         init_interface(file_name_int, argv[1]);
-    }
-
-    // check if file can be accessed, and loads it if possible
-    if (load_file(file_name_int.current, 1) == ERR_FILE_CONNECTION) {
-        fprintf(stderr, "%s\n", FILE_CONNECTION_MESSAGE);
-        return ERR_FILE_CONNECTION;
+        load_file(1);
     }
 
 
@@ -127,7 +122,7 @@ main(int argc, char *argv[])
                 case KB_RELOAD:
                     if (has_been_changes) {
                         old_line_nb = first_line_nb + y;
-                        load_file(file_name_int.current, first_line_nb);
+                        load_file(first_line_nb);
                         y = old_line_nb - first_line_nb;
                         echo(FILE_RELOADED_MESSAGE);
                     } else {

@@ -28,10 +28,11 @@
 #define MOUSE_SUPPORT
 #define UNDERLINE_CURSOR_LINE
 #define HIGHLIGHT_MATCHING_BRACKET
-#define VISUAL_COLUMN               80
+#define VISUAL_COLUMN               79
 
+#define LINE_NUMBERS_WIDTH          4
 #define SCROLL_LINE_NUMBER          3
-#define SCROLL_OFFSET               0
+#define SCROLL_OFFSET               3
 #define SHELL_COMMAND               "make"
 #define BACKUP_FILE_NAME            "edit_backup_file"
 #define MIN_WIDTH                   81
@@ -56,6 +57,7 @@
 #define COLOR_DEFAULT               TB_DEFAULT
 #define COLOR_RULER                 COLOR_DEFAULT
 #define COLOR_DIALOG                COLOR_DEFAULT
+#define COLOR_LINE_NUMBERS          COLOR_DEFAULT
 #define COLOR_KEYWORD               TB_BLUE
 #define COLOR_FLOW_CONTROL          TB_GREEN
 #define COLOR_BUILT_IN              TB_RED
@@ -79,6 +81,7 @@
 #define COLOR_DEFAULT               TB_DEFAULT
 #define COLOR_RULER                 COLOR_DEFAULT
 #define COLOR_DIALOG                COLOR_DEFAULT
+#define COLOR_LINE_NUMBERS          238
 #define COLOR_KEYWORD               99
 #define COLOR_FLOW_CONTROL          32
 #define COLOR_BUILT_IN              32

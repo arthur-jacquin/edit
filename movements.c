@@ -239,7 +239,7 @@ move_to_cursor(void)
     first_line_on_screen = get_line(delta - y);
 
     // adjust x
-    if (x > (nx = get_line(y)->dl))
+    if (x > (nx = MIN(get_line(y)->dl, screen_width - 1 - LINE_NUMBERS_WIDTH)))
         x = nx;
     if (x < 0)
         x = 0;

@@ -23,10 +23,10 @@ file. For example, you can easily:
 * modify the keybinds
 * choose between 8 or 256 colors modes and modify the colorscheme
 * enable/disable mouse support
+* enable/disable line numbering, visual column or scroll offset
 * modify editor messages
 * choose the default values for runtime-modifiable settings
 * add new languages for syntax highlighting (see `syntax_highlighting.md`)
-* set a non-null scroll offset value and a visual column
 
 
 ## Interacting with the editor

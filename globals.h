@@ -106,6 +106,17 @@ struct printable {                  // information to print a character
     uint32_t ch;                    // Unicode codepoint
     uint16_t fg, bg;                // foreground and background attributes
 };
+#if LINE_NUMBERS_WIDTH < 1
+    #define LINE_NUMBERS_MODULUS    1
+#elif LINE_NUMBERS_WIDTH == 2
+    #define LINE_NUMBERS_MODULUS    10
+#elif LINE_NUMBERS_WIDTH == 3
+    #define LINE_NUMBERS_MODULUS    100
+#elif LINE_NUMBERS_WIDTH == 4
+    #define LINE_NUMBERS_MODULUS    1000
+#else
+    #define LINE_NUMBERS_MODULUS    10000
+#endif // LINE_NUMBERS_WIDTH
 
 
 // FUNCTIONS *******************************************************************

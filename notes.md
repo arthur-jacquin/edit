@@ -21,6 +21,7 @@ Progressively integrate each part. At each step:
     should this feature be optionnal as a compile-time setting ?
     is this feature covered in manual/... ?
     are tabs and UTF-8 errors detected and treated (exit, fprintf) ?
+    is this line numbers compliant ?
     check correctness by hand
     look at unstated assumptions
         ASCII only ?
@@ -31,12 +32,15 @@ Progressively integrate each part. At each step:
         explain non-obvious behaviours, assumptions
     look at existing TODO, XXX and any comment
     extensive testing. Known source of failure:
+        suppressing in dialog mode
         inserting '
         break_line
         concatenate_line
         manipulating hex values: cast needed ?
         \d matches d
         multiple slash on same line
+    is echoing interface is well exploited ?
+    sould this be a get_str_index stuff ?
     potentially append to the "hot stuff to promote" list
     potentially append to the "this isn't perfect" list
 

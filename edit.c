@@ -366,7 +366,7 @@ main(int argc, char *argv[])
             case TB_KEY_MOUSE_LEFT:
                 if (ev.y < screen_height - 1) {
                     y = ev.y;
-                    x = ev.x;
+                    x = ev.x - LINE_NUMBERS_WIDTH;
                 }
                 break;
             case TB_KEY_MOUSE_WHEEL_UP:

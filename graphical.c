@@ -145,15 +145,19 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 #endif // HIGHLIGHT_MATCHING_BRACKET
 
     // actual printing
+    if (LINE_NUMBERS_WIDTH > 1)
+        tb_printf(0, screen_line, COLOR_LINE_NUMBERS, COLOR_BG_DEFAULT,
+            "%*d", LINE_NUMBERS_WIDTH - 1, (l->line_nb)%LINE_NUMBERS_MODULUS);
     for (i = 0; i < l->dl; i++)
-        tb_set_cell(i, screen_line, buf[i].ch, buf[i].fg | underline, buf[i].bg);
-    for (; i < screen_width; i++)
+        tb_set_cell(i + LINE_NUMBERS_WIDTH, screen_line, buf[i].ch,
+            buf[i].fg | underline, buf[i].bg);
+    for (i += LINE_NUMBERS_WIDTH; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
 #ifdef VISUAL_COLUMN
-    if ((i = VISUAL_COLUMN) < l->dl)
-        tb_set_cell(i, screen_line, buf[i].ch, buf[i].fg | underline, COLOR_BG_COLUMN);
-    else
-        tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_COLUMN);
+    tb_set_cell(VISUAL_COLUMN + LINE_NUMBERS_WIDTH, screen_line,
+        (VISUAL_COLUMN < l->dl) ? (buf[VISUAL_COLUMN].ch) : COLOR_DEFAULT,
+        (VISUAL_COLUMN < l->dl) ? (buf[VISUAL_COLUMN].fg | underline) : ' ',
+        COLOR_BG_COLUMN);
 #endif // VISUAL_COLUMN
 
     // forget buffer
@@ -221,7 +225,7 @@ print_all(void)
         l = l->next;
     }
 
-    tb_set_cursor(x, y);
+    tb_set_cursor(x + LINE_NUMBERS_WIDTH, y);
     print_dialog();
     print_ruler();
 }

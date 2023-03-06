@@ -7,6 +7,7 @@
 #define TB_IMPL
 #include "termbox.h"
 #include "config.h"
+#include "languages.h"
 
 
 // CONSTANTS *******************************************************************
@@ -17,6 +18,7 @@
 #define INTERFACE_MEM_LENGTH        (4*INTERFACE_WIDTH + 1)
 #define MIN_HEIGHT                  2
 #define LANG_WIDTH                  5
+#define DEFAULT_BUF_SIZE            (1 << 7)
 
 
 // ERROR CODES *****************************************************************

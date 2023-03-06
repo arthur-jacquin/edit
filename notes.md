@@ -1,8 +1,19 @@
 ## TODO
 
+Linear development, commits quite regularly, pushs on version bumps:
+
+    bump to v0.1.0: initial commit, documentation
+    bump to v0.2.0: support for more languages, better colorscheme
+
+Better management of `scroll_offset` on start of file, by defining a potentially
+negative `first_line_nb` variable ?
+
+Ask Thomas about string storing
+
+
 ### Adding/rethinking
 
-* best way to store strings ?
+* make sure each file is explained (tests.h...)
 * correct syntax: | can't follow REP
 
 

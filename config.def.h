@@ -25,6 +25,7 @@
 
 // COMPILE-TIME PARAMETERS *****************************************************
 
+// might be undefined
 #define TERMINAL_SUPPORTS_256_COLORS
 #define MOUSE_SUPPORT
 #define REMEMBER_CURSOR_COLUMN
@@ -32,14 +33,16 @@
 #define HIGHLIGHT_MATCHING_BRACKET
 #define VISUAL_COLUMN               79
 
+// must be defined (but might be set to 0)
 #define LINE_NUMBERS_WIDTH          4
 #define SCROLL_LINE_NUMBER          3
 #define SCROLL_OFFSET               3
+
+// must de defined
 #define SHELL_COMMAND               "make"
 #define BACKUP_FILE_NAME            "edit_backup_file"
-#define MIN_WIDTH                   81
+#define MIN_WIDTH                   80
 #define RULER_WIDTH                 8
-#define DEFAULT_BUF_SIZE            (1 << 7)
 
 
 // DEFAULT VALUES FOR RUNTIME-MODIFIABLE PARAMETERS ****************************
@@ -165,97 +168,14 @@
 #define KB_ACT_UPPERCASE            'U'
 
 
-// LANGUAGES SUPPORT ***********************************************************
+// LANGUAGES *******************************************************************
 
-// please read syntax_highlighting.md to understand languages support
+// Languages supported:
+// 0.1.0: C, MARKDOWN, PYTHON
 
-struct rule {
-    char mark[5];
-    int start_of_line;      // wether a rule recquires the start of the line
-    int color_mark;
-    int color_end_of_line;
-};
+// If a language you want isn't supported yet, you can add it yourself in
+// languages.h. Refer to syntax_highlight.md for more information.
 
-struct lang {               // used for syntax highlighting and autocommenting
-    // pointers to string containing space-separated, space-ended list of words
-    char **names;           // extensions recognised with this language
-    char **keywords;
-    char **flow_control;
-    char **built_ins;
-    char **comment;         // commenting syntax (one element, space ended)
-    // pointer to array of struct rule
-    // must be ended with non-significant rule with empty ("") mark field
-    struct rule (*rules)[];
-};
-
-// Markdown
-char *md_names = "md ";
-char *md_keywords = "";
-char *md_flow_control = "";
-char *md_built_ins = "";
-char *md_comment = "";
-struct rule md_rules[] = {
-    {"###",  1,  COLOR_KEYWORD,      COLOR_KEYWORD},
-    {"##",   1,  COLOR_KEYWORD,      COLOR_KEYWORD},
-    {"#",    1,  COLOR_KEYWORD,      COLOR_KEYWORD},
-    {"---",  1,  COLOR_KEYWORD,      COLOR_KEYWORD},
-    {">",    1,  COLOR_COMMENT,      COLOR_DEFAULT},
-    {"    ", 1,  COLOR_DEFAULT,      COLOR_DEFAULT},
-    {"*",    0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
-    {"-",    0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
-    {"",     0,  0,                  0},
-};
-
-// C
-char *c_names = "c h ";
-char *c_keywords = "\
-    int long short char void \
-    signed unsigned float double \
-    typedef struct union enum \
-    static register auto volatile extern const \
-    FILE DIR NULL \
-    int8_t int16_t int32_t int64_t \
-    uint8_t uint16_t uint32_t uint64_t \
-    define include ";
-char *c_flow_control = "\
-    while for do if else switch case default \
-    goto break return continue ";
-char *c_built_ins = "\
-    sizeof malloc strcmp strcpy "; // TODO: cf stdlib.h, string.h...
-char *c_comment = "// ";
-struct rule c_rules[] = {
-    {"#",   1,  COLOR_KEYWORD,      COLOR_KEYWORD},
-    {"",    0,  0,                  0},
-};
-
-// Python
-char *py_names = "py ";
-char *py_keywords = "\
-    False None True and in is not or \
-    as assert del global ";
-char *py_flow_control = "\
-	while for if else elif try except finally with \
-    break continue pass return yield lambda \
-    class def import from raise async await ";
-char *py_built_ins = "\
-    abs all any ascii bin bool breakpoint bytearray \
-    bytes callable chr classmethod compile complex \
-    delattr dict dir divmod enumerate eval exec \
-    filter float format frozenset getattr globals \
-    hasattr hash help hex id input int isinstance \
-    issubclass iter len list locals map max \
-    memoryview min next object oct open ord pow \
-    print property range repr reversed round set \
-    setattr slice sorted staticmethod str sum super \
-    tuple type vars zip __import__ ";
-char *py_comment = "# ";
-struct rule py_rules[] = {
-    {"",    0,  0,                  0},
-};
-
-// Languages
-struct lang languages[] = {
-    {&md_names, &md_keywords, &md_flow_control, &md_built_ins, &md_comment, &md_rules},
-    {&c_names, &c_keywords, &c_flow_control, &c_built_ins, &c_comment, &c_rules},
-    {&py_names, &py_keywords, &py_flow_control, &py_built_ins, &py_comment, &py_rules},
-};
+#define C
+#define MARKDOWN
+#define PYTHON

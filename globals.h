@@ -24,7 +24,7 @@
 // ERROR CODES *****************************************************************
 
 #define ERR_FILE_CONNECTION         1
-#define ERR_UNICODE_OR_TAB          2
+#define ERR_UNICODE_OR_UTF8         2
 #define ERR_MALLOC                  3
 #define ERR_TERM_NOT_BIG_ENOUGH     4
 

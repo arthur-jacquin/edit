@@ -25,6 +25,9 @@ utf8_char_length(char c)
         return 3;
     } else if ((char) (c & (char) 0xf0) == utf8_start[3]) {
         return 4;
+    } else {
+        exit(ERR_UNICODE_OR_UTF8);
+        return ERR_UNICODE_OR_UTF8;
     }
 }
 
@@ -41,6 +44,9 @@ unicode_char_length(uint32_t c)
         return 3;
     } else if (c < 0x200000) {
         return 4;
+    } else {
+        exit(ERR_UNICODE_OR_UTF8);
+        return ERR_UNICODE_OR_UTF8;
     }
 }
 

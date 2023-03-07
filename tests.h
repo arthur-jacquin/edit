@@ -1,3 +1,5 @@
+// This file enables easy testing of the search engine
+
 #include "globals.h"
 #include "utils.c"
 #include "search_and_replace.c"

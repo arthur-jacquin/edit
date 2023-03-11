@@ -1,5 +1,5 @@
 binary: *.c *.h
-	tcc -o binary edit.c
+	tcc -static -o binary edit.c
 
 config.h: config.def.h
 	cp config.def.h config.h
@@ -9,4 +9,5 @@ test: binary
 
 count:
 	cloc *.h *.c
+	file ./binary
 	du -h ./binary

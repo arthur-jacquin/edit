@@ -1,12 +1,5 @@
 ## TODO
 
-Better management of `scroll_offset` on start of file, by defining a potentially
-negative `first_line_nb` variable ?
-
-Ask Thomas about string storing
-
-Better slash suppport for string delimiting
-
 `load_file`: handle and document tab treatment, check utf8-valid, don't add line
 at end of file
 

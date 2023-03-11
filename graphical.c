@@ -109,12 +109,20 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 
                 // STRING
                 } else if (c == '"' || c == '\'') {
-                    k++;
-                    for (j = 2; k < l->ml && !(l->chars[k] == c && l->chars[k-1] != '\\'); j++)
-                        k += utf8_char_length(l->chars[k]);
+                    k++; j = 1;
+                    while (1) {
+                        if (l->chars[k] == c) {
+                            k += utf8_char_length(l->chars[k]); j++;
+                            break;
+                        } else if (l->chars[k] == '\\') {
+                            k++; j++;
+                        }
+                        if (l->chars[k] == '\0')
+                            break;
+                        k += utf8_char_length(l->chars[k]); j++;
+                    }
                     color = COLOR_STRING;
-                    nb_to_color = j - ((k == l->ml) ? 2 : 0);
-                    k++;
+                    nb_to_color = j;
 
                 // COMMENT
                 } else if (IS_TYPE(comment, strlen(*(syntax->comment)) - 1)) {

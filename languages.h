@@ -10,15 +10,16 @@ struct rule {
 };
 
 struct lang {               // used for syntax highlighting and autocommenting
+    // pointer to array of struct rule
+    // must be ended with non-significant rule with empty ("") mark field
+    struct rule (*rules)[];
+    int highlight_elements; // wether non-rules elements should be highlighted
     // pointers to string containing space-separated, space-ended list of words
     char **names;           // extensions recognised with this language
     char **keywords;
     char **flow_control;
     char **built_ins;
     char **comment;         // commenting syntax (one element, space ended)
-    // pointer to array of struct rule
-    // must be ended with non-significant rule with empty ("") mark field
-    struct rule (*rules)[];
 };
 
 
@@ -44,10 +45,6 @@ struct rule c_rules[] = {
 
 #ifdef MARKDOWN
 char *md_names = "md ";
-char *md_kw = "";
-char *md_fc = "";
-char *md_bi = "";
-char *md_comment = "";
 struct rule md_rules[] = {
     {"###",  1,  COLOR_KEYWORD,      COLOR_KEYWORD},
     {"##",   1,  COLOR_KEYWORD,      COLOR_KEYWORD},
@@ -87,12 +84,12 @@ struct rule py_rules[] = {
 
 struct lang languages[] = {
 #ifdef C
-    {&c_names,  &c_kw,  &c_fc,  &c_bi,  &c_comment,     &c_rules},
+    {&c_rules,  1,  &c_names,   &c_kw,  &c_fc,  &c_bi,  &c_comment},
 #endif // C
 #ifdef MARKDOWN
-    {&md_names, &md_kw, &md_fc, &md_bi, &md_comment,    &md_rules},
+    {&md_rules, 0,  &md_names,  NULL,   NULL,   NULL,   NULL},
 #endif // MARKDOWN
 #ifdef PYTHON
-    {&py_names, &py_kw, &py_fc, &py_bi, &py_comment,    &py_rules},
+    {&py_rules, 1,  &py_names,  &py_kw, &py_fc, &py_bi, &py_comment},
 #endif // PYTHON
 };

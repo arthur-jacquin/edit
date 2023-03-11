@@ -296,7 +296,8 @@ main(int argc, char *argv[])
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
-                    if (settings.syntax != NULL)
+                    if (settings.syntax != NULL &&
+                        settings.syntax->highlight_elements)
                         act(comment, 1);
                     break;
                 case KB_ACT_SUPPRESS:

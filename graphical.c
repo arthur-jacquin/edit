@@ -74,7 +74,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                 buf[i++].fg = r->color_mark;
             while (i < l->dl)
                 buf[i++].fg = r->color_end_of_line;
-        } else {
+        } else if (syntax->highlight_elements) {
             while (i < l->dl) {
                 color = COLOR_DEFAULT;
                 nb_to_color = 1;

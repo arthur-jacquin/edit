@@ -1,8 +1,5 @@
 ## TODO
 
-`load_file`: handle and document tab treatment, check utf8-valid, don't add line
-at end of file
-
 correct syntax: | can't follow REP
 
 
@@ -45,12 +42,23 @@ Build a dependency graph of functions. Correlate that with list of modified
 globals.
 
 
+### Warnings
+
+tabs are converted in spaces on loading the document
+regex engine is not perfect: please send erroneous behaviours
+
+### Hot stuff
+
+### Not perfect stuff
+
+
 ### Publication
 
 * new colorscheme
 * strong defaults
 * add languages
 * .md files
+    * make tutorial
 * tarball
 * [asciinema](https://asciinema.org)
 * website

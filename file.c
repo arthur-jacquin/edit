@@ -18,7 +18,7 @@ load_file(int first_line_on_screen_nb)
     char *buf, *new_buf;
     struct line *line, *last_line;
     int line_nb;
-    int c, reached_EOF, ml, dl;
+    int c, reached_EOF, ml, dl, l, k;
 
     // reset variables
     forget_lines(first_line);
@@ -33,43 +33,67 @@ load_file(int first_line_on_screen_nb)
 
     // prepare buffer
     buf = (char *) _malloc(buf_size);
-    buf[buf_size - 1] = '\0';
 
     // read content into memory
     while (!reached_EOF) {
         ml = dl = 0;
         while (1) {
-            if (ml == buf_size - 1) {
-                buf_size <<= 1;
-                new_buf = (char *) _malloc(buf_size);
-                new_buf[buf_size - 1] = '\0';
-                strcpy(new_buf, buf);
-                free(buf);
-                buf = new_buf;
-            }
             if ((c = getc(src_file)) == EOF) {
                 reached_EOF = 1;
                 break;
             } else if (c == '\n') {
                 break;
             } else {
-                buf[ml] = (char) c;
-                if ((buf[ml] & (char) 0xc0) != (char) 0x80)
-                    dl++;
-                ml++;
+                // compute number of bytes to add
+                if (c == '\t') {
+                    l = 1;
+                    while ((dl + l)%(settings.tab_width))
+                        l++;
+                } else {
+                    l = utf8_char_length(c);
+                }
+                // potentially resize buf
+                if (ml + l > buf_size) {
+                    while (ml + l > buf_size)
+                        buf_size <<= 1;
+                    new_buf = (char *) _malloc(buf_size);
+                    strncpy(new_buf, buf, ml);
+                    free(buf);
+                    buf = new_buf;
+                }
+                // store bytes
+                if (c == '\t') {
+                    for (k = 0; k < l; k++)
+                        buf[ml + k] = ' ';
+                    ml += l; dl += l;
+                } else {
+                    // check UTF-8 compliance
+                    buf[ml] = (char) c;
+                    for (k = 1; k < l; k++) {
+                        if (((c = getc(src_file)) == EOF) ||
+                            (((char) c & (char) 0xc0) != (char) 0x80))
+                            exit(ERR_UNICODE_OR_UTF8);
+                        buf[ml + k] = (char) c;
+                    }
+                    ml += l; dl++;
+                }
             }
         }
-        buf[ml++] = '\0';
+
+        // detect an empty line file ending
+        if (reached_EOF && ml == 0)
+            break;
 
         // store line
-        line = create_line(line_nb, ml, dl);
+        line = create_line(line_nb, ml + 1, dl);
         if (first_line == NULL) {
             first_line = last_line = line;
         } else {
             link_lines(last_line, line);
             last_line = line;
         }
-        strcpy(line->chars, buf);
+        strncpy(line->chars, buf, ml);
+        line->chars[ml] = '\0';
         if (line_nb == first_line_on_screen_nb)
             first_line_on_screen = line;
         line_nb++;

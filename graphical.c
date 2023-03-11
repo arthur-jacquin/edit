@@ -86,6 +86,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 
                 // WORD
                 } else if (is_word_char(c)) {
+                    // XXX not UTF8 compliant
                     for (j = 0; is_word_char(nc = l->chars[k+j]) || isdigit(nc); j++)
                         ;
                     if (IS_TYPE(keywords, j)) {
@@ -173,9 +174,9 @@ print_line(const struct line *l, struct selection *s, int screen_line)
         tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
 #ifdef VISUAL_COLUMN
     tb_set_cell(VISUAL_COLUMN + LINE_NUMBERS_WIDTH, screen_line,
-        (VISUAL_COLUMN < l->dl) ? (buf[VISUAL_COLUMN].ch) : COLOR_DEFAULT,
-        (VISUAL_COLUMN < l->dl) ? (buf[VISUAL_COLUMN].fg | underline) : ' ',
-        COLOR_BG_COLUMN);
+        (VISUAL_COLUMN < l->dl) ? (buf[VISUAL_COLUMN].ch) : ' ',
+        (VISUAL_COLUMN < l->dl) ? (buf[VISUAL_COLUMN].fg | underline) :
+            COLOR_DEFAULT, COLOR_BG_COLUMN);
 #endif // VISUAL_COLUMN
 
     // forget buffer

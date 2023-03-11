@@ -51,6 +51,8 @@ regex engine is not perfect: please send erroneous behaviours
 
 ### Not perfect stuff
 
+move colorscheme to other file ?
+
 
 ### Publication
 

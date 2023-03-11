@@ -25,8 +25,7 @@
 
 // COMPILE-TIME PARAMETERS *****************************************************
 
-// might be undefined
-#define TERMINAL_SUPPORTS_256_COLORS
+// might be defined or not
 #define MOUSE_SUPPORT
 #define REMEMBER_CURSOR_COLUMN
 #define UNDERLINE_CURSOR_LINE
@@ -56,47 +55,44 @@
 
 // COLORS **********************************************************************
 
-// 8-colors terminal
-#ifndef TERMINAL_SUPPORTS_256_COLORS
-#define OUTPUT_MODE                 TB_OUTPUT_NORMAL
-#define COLOR_DEFAULT               TB_DEFAULT
-#define COLOR_RULER                 COLOR_DEFAULT
-#define COLOR_DIALOG                COLOR_DEFAULT
-#define COLOR_LINE_NUMBERS          COLOR_DEFAULT
-#define COLOR_KEYWORD               TB_BLUE
-#define COLOR_FLOW_CONTROL          TB_GREEN
-#define COLOR_BUILT_IN              TB_RED
-#define COLOR_NUMBER                TB_YELLOW
-#define COLOR_STRING                TB_MAGENTA
-#define COLOR_COMMENT               TB_CYAN
-#define COLOR_BG_DEFAULT            TB_DEFAULT
-#define COLOR_BG_SELECTIONS         0
-#define COLOR_BG_MATCHING           0
-#define COLOR_BG_COLUMN             0
-#endif
+#define TERM_256_COLORS_SUPPORT
 
-// 256-colors terminal
-// TODO: refer to https://jacquin.xyz/colors
-// 99    Violet
-// 32    Bleu
-// 172   Orange
-// 213   Rose
-#ifdef TERMINAL_SUPPORTS_256_COLORS
+// 256 colors mode: available colors are listed at https://jacquin.xyz/colors
+#ifdef TERM_256_COLORS_SUPPORT
 #define OUTPUT_MODE                 TB_OUTPUT_256
-#define COLOR_DEFAULT               TB_DEFAULT
+#define COLOR_DEFAULT               15
+#define COLOR_RULER                 COLOR_DEFAULT //
+#define COLOR_DIALOG                COLOR_DEFAULT //
+#define COLOR_LINE_NUMBERS          238 //
+#define COLOR_KEYWORD               99 //
+#define COLOR_FLOW_CONTROL          32 //
+#define COLOR_BUILT_IN              32 //
+#define COLOR_NUMBER                99 //
+#define COLOR_STRING                99 //
+#define COLOR_COMMENT               172 //
+#define COLOR_BG_DEFAULT            0
+#define COLOR_BG_SELECTIONS         234 //
+#define COLOR_BG_MATCHING           45 //
+#define COLOR_BG_COLUMN             233 //
+
+// 8 colors mode: available colors are TB_BLACK, TB_RED, TB_GREEN, TB_YELLOW,
+// TB_BLUE, TB_MAGENTA, TB_CYAN, and TB_WHITE
+#else
+#define OUTPUT_MODE                 TB_OUTPUT_NORMAL
+#define COLOR_DEFAULT               TB_WHITE
 #define COLOR_RULER                 COLOR_DEFAULT
 #define COLOR_DIALOG                COLOR_DEFAULT
-#define COLOR_LINE_NUMBERS          238
-#define COLOR_KEYWORD               99
-#define COLOR_FLOW_CONTROL          32
-#define COLOR_BUILT_IN              32
-#define COLOR_NUMBER                99
-#define COLOR_STRING                99
-#define COLOR_COMMENT               172
-#define COLOR_BG_DEFAULT            TB_DEFAULT
-#define COLOR_BG_SELECTIONS         234
-#define COLOR_BG_MATCHING           45
-#define COLOR_BG_COLUMN             233
+#define COLOR_LINE_NUMBERS          COLOR_DEFAULT 
+#define COLOR_KEYWORD               TB_BLUE
+#define COLOR_FLOW_CONTROL          TB_CYAN
+#define COLOR_BUILT_IN              COLOR_DEFAULT
+#define COLOR_NUMBER                TB_GREEN
+#define COLOR_STRING                COLOR_NUMBER
+#define COLOR_COMMENT               TB_YELLOW
+#define COLOR_BG_DEFAULT            TB_BLACK
+#define COLOR_BG_SELECTIONS         TB_MAGENTA
+#define COLOR_BG_MATCHING           COLOR_BG_DEFAULT
+#define COLOR_BG_COLUMN             COLOR_BG_DEFAULT
 #endif
 
 
@@ -171,7 +167,7 @@
 // LANGUAGES *******************************************************************
 
 // Languages supported:
-// 0.1.0: C, MARKDOWN, PYTHON
+// C, MARKDOWN, PYTHON
 
 // If a language you want isn't supported yet, you can add it yourself in
 // languages.h. Refer to syntax_highlight.md for more information.

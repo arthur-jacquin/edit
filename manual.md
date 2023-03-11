@@ -143,7 +143,7 @@ Here are the basic commands, with their default keybinds:
                 R   reload
                 i   get in insert mode
                 s   change a setting
-                e   execute 'make' in the shell and get back to edit
+                e   execute a shell command and get back to edit
 
 If you change a setting, you will be prompted a modification. This modification
 must be formatted like "{name}={value}" where {name} is in the table below and
@@ -222,6 +222,18 @@ are two saved selections on a given line, running `>` will only indent that line
 once.
 
 See the search and replace engine section for more details on replacing.
+
+### Autocompletion
+
+Autocompletion is a special action on selections, as it can be done in both
+normal and insert mode. The corresponding keybind therefore needs a modifier:
+press CTRL + A to autocomplete at the end of each selection.
+
+If the end of a selection does not follow the start of a word, the completion is
+aborted. Else the word will be completed by the first word in the file that
+starts identically and is strictly longer.
+
+Autocompletion can be disabled at compile time.
 
 ### Managing lines
 

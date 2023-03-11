@@ -163,7 +163,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 #endif // HIGHLIGHT_MATCHING_BRACKET
 
     // actual printing
-    if (LINE_NUMBERS_WIDTH > 1)
+    if (LINE_NUMBERS_WIDTH > 0)
         tb_printf(0, screen_line, COLOR_LINE_NUMBERS, COLOR_BG_DEFAULT,
             "%*d ", LINE_NUMBERS_WIDTH - 1, (l->line_nb)%LINE_NUMBERS_MODULUS);
     for (i = 0; i < l->dl; i++)

@@ -23,10 +23,11 @@ main(int argc, char *argv[])
     settings.case_sensitive = CASE_SENSITIVE;
     settings.field_separator = FIELD_SEPARATOR;
     settings.tab_width = TAB_WIDTH;
-    init_interface(range_int, "");
-    init_interface(settings_int, "");
-    init_interface(search_pattern, "");
-    init_interface(replace_pattern, "");
+    init_interface(range_int, "")
+    init_interface(settings_int, "")
+    init_interface(command_int, "")
+    init_interface(search_pattern, "")
+    init_interface(replace_pattern, "")
 
     // editor variables
     y = x = 0; attribute_x = 1;
@@ -139,10 +140,12 @@ main(int argc, char *argv[])
                             echo(INVALID_ASSIGNMENT_MESSAGE);
                     break;
                 case KB_RUN_SHELL_COMMAND:
-                    tb_shutdown();
-                    system(SHELL_COMMAND);
-                    getchar();
-                    init_termbox();
+                    if (dialog(COMMAND_PROMPT, &command_int, 0)) {
+                        tb_shutdown();
+                        system(command_int.current);
+                        getchar();
+                        init_termbox();
+                    }
                     break;
                 case KB_INSERT_START_LINE:
                 case KB_INSERT_END_LINE:

@@ -18,6 +18,7 @@
 #define INVALID_ASSIGNMENT_MESSAGE  "Invalid assignment."
 #define RANGE_PROMPT                "Lines range: "
 #define INVALID_RANGE_MESSAGE       "Invalid range."
+#define COMMAND_PROMPT              "Run: "
 #define SEARCH_PATTERN_PROMPT       "Search pattern: "
 #define REPLACE_PATTERN_PROMPT      "Replace pattern: "
 #define NO_WORD_CURSOR_MESSAGE      "There is no word under the cursor."
@@ -39,7 +40,6 @@
 #define SCROLL_OFFSET               3
 
 // must de defined
-#define SHELL_COMMAND               "make"
 #define BACKUP_FILE_NAME            "edit_backup_file"
 #define MIN_WIDTH                   80
 #define RULER_WIDTH                 8

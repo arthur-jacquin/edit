@@ -91,6 +91,7 @@ struct interface {                  // interfaces for dialog mode
 struct interface file_name_int;     // name of the file
 struct interface range_int;         // custom range of lines
 struct interface settings_int;      // changing setting
+struct interface command_int;       // running a shell command
 
 // search and replace engine
 struct substring {                  // marks a substring in an original string

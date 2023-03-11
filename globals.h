@@ -198,6 +198,7 @@ void indent(struct line *l, struct selection *s);
 void comment(struct line *l, struct selection *s);
 void suppress(struct line *l, struct selection *s);
 void replace(struct line *l, struct selection *s);
+void autocomplete(struct line *l, struct selection *s);
 
 // search_and_replace.c
 int is_word_boundary(const char *chars, int k);

@@ -12,11 +12,3 @@ The following could be nice:
 * Having language-specific commands
 
 However I'm still looking for a suckless way to integrate these features.
-
-
-## Tab completion
-
-* search engine on `select_line_range` selections ?
-* with `find_next_word` ?
-* `last_was_completion = 0` by default, else length of partial word to be
-  completed for looping over ?

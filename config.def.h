@@ -31,6 +31,7 @@
 #define UNDERLINE_CURSOR_LINE
 #define HIGHLIGHT_MATCHING_BRACKET
 #define VISUAL_COLUMN               79
+#define ENABLE_AUTOCOMPLETE
 
 // must be defined (but might be set to 0)
 #define LINE_NUMBERS_WIDTH          4
@@ -162,6 +163,9 @@
 #define KB_ACT_REPLACE              'r'
 #define KB_ACT_LOWERCASE            'u'
 #define KB_ACT_UPPERCASE            'U'
+
+// autocomplete (in both normal and insert modes)
+#define KB_ACT_AUTOCOMPLETE         TB_KEY_CTRL_A
 
 
 // LANGUAGES *******************************************************************

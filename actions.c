@@ -256,3 +256,71 @@ replace(struct line *l, struct selection *s)
     // forget about replaced
     free(replaced);
 }
+
+#ifdef ENABLE_AUTOCOMPLETE
+void
+autocomplete(struct line *l, struct selection *s)
+{
+    // if just before selection is word, tries to complete it with first match
+    // in file, ignores words <= its length (including itself)
+
+    struct line *sl;
+    int ready;
+    int k1, k2, i1, i2;
+    int k, dx, ml, dl;
+    char *buf;
+
+    // delimit start of word before selection
+    k2 = k1 = get_str_index(l->chars, i2 = i1 = s->x + s->n);
+    if (i1 == 0)
+        return;
+    decrement(l->chars, &i1, &k1, i1 - 1);
+    while (k1 >= 0 && is_word_char(l->chars[k1]))
+        decrement(l->chars, &i1, &k1, i1 - 1);
+    i1 = i1 + 1;
+    k1 = (k1 < 0) ? 0 : (k1 + utf8_char_length(l->chars[k1]));
+    if (i1 == i2)
+        return;
+
+    // search for the same start of word in the file
+    sl = first_line;
+    dx = k = 0;
+    ready = 1;
+    while (1) {
+        // find next start of word
+        while (1) {
+            if (ready == is_word_char(sl->chars[k]))
+                ready++;
+            if (ready == 2)
+                break;
+            if (dx == sl->dl) {
+                sl = sl->next;
+                dx = k = 0;
+                if (sl == NULL)
+                    return;
+            } else {
+                k += utf8_char_length(sl->chars[k]);
+                dx++;
+            }
+        }
+        ready = 0;
+        // check if match
+        if (((k + k2 - k1) < sl->ml) &&
+            (!strncmp(&(l->chars[k1]), &(sl->chars[k]), k2 - k1)) &&
+            (is_word_char(sl->chars[k + k2 - k1]))) {
+            ml = dl = 0;
+            k += k2 - k1;
+            while (is_word_char(sl->chars[k + ml])) {
+                ml += utf8_char_length(sl->chars[k + ml]);
+                dl++;
+            }
+            buf = (char *) _malloc(ml);
+            strncpy(buf, &(sl->chars[k]), ml);
+            replace_chars(l, s, i2, 0, dl, ml);
+            strncpy(&(l->chars[k2]), buf, ml);
+            free(buf);
+            return;
+        }
+    }
+}
+#endif // ENABLE_AUTOCOMPLETE

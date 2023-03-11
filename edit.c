@@ -317,6 +317,11 @@ main(int argc, char *argv[])
                 if (m == 0)
                     m = 1;
                 switch (ev.key) {
+#ifdef ENABLE_AUTOCOMPLETE
+                case KB_ACT_AUTOCOMPLETE:
+                    act(autocomplete, 0);
+                    break;
+#endif // ENABLE_AUTOCOMPLETE
                 case TB_KEY_ARROW_RIGHT:
                     x += m; attribute_x = 1;
                     break;

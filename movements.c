@@ -74,7 +74,7 @@ find_start_of_word(int n)
     // find the <n>-th next beginning of word (end of word if n < 0)
 
     struct line *l;
-    int sens, dx, current_type;
+    int sens, dx;
     char c, nc;
 
     l = get_line(y);

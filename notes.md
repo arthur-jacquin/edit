@@ -51,7 +51,8 @@ regex engine is not perfect: please send erroneous behaviours
 
 ### Not perfect stuff
 
-move colorscheme to other file ?
+move colorscheme to other file ? Real colors support ?
+gruvbox, dracula, one light/dark, solarized, nord, monokai
 
 
 ### Publication

@@ -91,7 +91,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
             case TB_KEY_MOUSE_LEFT:
                 dx = ev.x - dpl;
                 dx = MAX(dx, 0);
-                dx = MIN(dx > n);
+                dx = MIN(dx, n);
                 break;
             }
             break;

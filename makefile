@@ -1,17 +1,24 @@
-binary: *.c *.h
-	tcc -static -o binary edit.c
+.DEFAULT: build
+
+build: *.c *.h
+	tcc -static -o edit edit.c
+
+install: build
+	cp edit /usr/bin
 
 config.h: config.def.h
 	cp config.def.h config.h
 
-test: binary
-	./binary ~/input.c
-
-tutor: binary
+tutor: build
 	cp tutor.def.md tutor.md
-	./binary tutor.md
+	./edit tutor.md
+
+# lol
+
+test: build
+	./edit ~/input.c
 
 count:
 	cloc *.h *.c
-	file ./binary
-	du -h ./binary
+	file ./edit
+	du -h ./edit

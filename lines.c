@@ -225,10 +225,6 @@ insert_line(int line_nb, int ml, int dl)
             first_line_on_screen : first_line, line_nb, 0, 1);
         shift_sel_line_nb(saved, line_nb, 0, 1);
 
-        // move cursor
-        if (first_line_nb + y >= line_nb)
-            y++;
-
         // insert the new line
         replaced_line = get_line(line_nb - first_line_nb);
         link_lines(replaced_line->prev, new);

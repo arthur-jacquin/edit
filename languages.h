@@ -14,7 +14,8 @@ struct lang {               // used for syntax highlighting and autocommenting
     // must be ended with non-significant rule with empty ("") mark field
     struct rule (*rules)[];
     int highlight_elements; // wether non-rules elements should be highlighted
-    // pointers to string containing space-separated, space-ended list of words
+    // pointers to string containing space-separated, space-ended list of ASCII
+    // words
     char **names;           // extensions recognised with this language
     char **keywords;
     char **flow_control;
@@ -63,7 +64,7 @@ char *py_names = "py ";
 char *py_kw = ""
     "False None True and in is not or as assert del global ";
 char *py_fc = ""
-	"while for if else elif try except finally with break continue pass return "
+    "while for if else elif try except finally with break continue pass return "
     "yield lambda class def import from raise async await ";
 char *py_bi = ""
     "abs all any ascii bin bool breakpoint bytearray bytes callable chr "

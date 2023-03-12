@@ -152,7 +152,8 @@ find_next_selection(int delta)
             return pos_of(0, 0); // none before
         // get last position that verify p <= cursor
         last_strictly_before = ((closest == -1) ? nb : closest) - 1;
-        if (!is_inf(get_pos_of_sel(saved, last_strictly_before), pos_of_cursor()))
+        if (!is_inf(get_pos_of_sel(saved, last_strictly_before),
+            pos_of_cursor()))
             last_strictly_before--;
         if (last_strictly_before < 0)
             return pos_of(0, 0); // none strictly before

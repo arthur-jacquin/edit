@@ -83,11 +83,15 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                 // NON ASCII CHARACTER
                 if (utf8_char_length(c) > 1) {
                     k += utf8_char_length(c);
+                    while (is_word_char(l->chars[k])) {
+                        k += utf8_char_length(l->chars[k]);
+                        nb_to_color++;
+                    }
 
                 // WORD
                 } else if (is_word_char(c)) {
-                    // XXX not UTF8 compliant
-                    for (j = 0; is_word_char(nc = l->chars[k+j]) || isdigit(nc); j++)
+                    for (j = 0; is_word_char(nc = l->chars[k+j]) ||
+                        isdigit(nc); j++)
                         ;
                     if (IS_TYPE(keywords, j)) {
                         color = COLOR_KEYWORD;
@@ -100,8 +104,8 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                     k += j;
 
                 // NUMBER
-                } else if (isdigit(c) || (k+1 < l->ml && (c == '-' || c == '.') &&
-                    (isdigit(nc = l->chars[k+1]) || nc == '.'))) {
+                } else if (isdigit(c) || (k+1 < l->ml && (c == '-' || c == '.')
+                    && (isdigit(nc = l->chars[k+1]) || nc == '.'))) {
                     for (j = 1; isdigit(nc = l->chars[k+j]) || nc == '.'; j++)
                         ;
                     color = COLOR_NUMBER;

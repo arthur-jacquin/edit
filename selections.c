@@ -470,9 +470,9 @@ reorder_sel(int l, int new_l)
     int first_start, first_end, second_end;
 
     // compute delimiters of ranges to invert
-    first_start = (l > new_l) ? new_l : l;
+    first_start = MIN(l, new_l);
     first_end = (l > new_l) ? (l - 1) : l;
-    second_end = (l > new_l) ? l : new_l;
+    second_end = MAX(l, new_l);
 
     // skip selections before ranges, identifies last_before
     s = last = saved;

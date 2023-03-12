@@ -90,8 +90,8 @@ dialog(const char *prompt, struct interface *interf, int refresh)
             switch (ev.key) {
             case TB_KEY_MOUSE_LEFT:
                 dx = ev.x - dpl;
-                dx = (dx < 0) ? 0 : dx;
-                dx = (dx > n) ? n : dx;
+                dx = MAX(dx, 0);
+                dx = MIN(dx > n);
                 break;
             }
             break;
@@ -152,11 +152,9 @@ parse_range(const char *range)
     char *ptr;
 
     // split range in two strings: range and ptr
-    ptr = strchr(range, ',');
-    if (ptr == NULL)
+    if ((ptr = strchr(range, ',')) == NULL)
         return 0;
-    *ptr = '\0';
-    ptr++;
+    *ptr++ = '\0';
 
     // parse range
     if (strcmp(range, "") == 0) {
@@ -164,7 +162,7 @@ parse_range(const char *range)
     } else if (strcmp(range, ".") == 0) {
         l1 = first_line_nb + y;
     } else if (sscanf(range, "%d", &l1) == 1) {
-        l1 = (l1 < 1) ? 1 : l1;
+        l1 = MAX(l1, 1);
     } else {
         return 0;
     }
@@ -175,7 +173,7 @@ parse_range(const char *range)
     } else if (strcmp(ptr, ".") == 0) {
         l2 = first_line_nb + y;
     } else if (sscanf(ptr, "%d", &l2) == 1) {
-        l2 = (l2 > nb_lines) ? nb_lines : l2;
+        l2 = MIN(l2, nb_lines);
     } else {
         return 0;
     }

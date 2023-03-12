@@ -21,7 +21,7 @@ Progressively integrate each part. At each step:
     is this feature covered in the manual, the philosophy or the documentation ?
     is echoing interface is well exploited ?
     use standard functions with n: strncpy, strncat, strn?cmp
-    sould this be a get_str_index stuff ?
+    should this be a get_str_index stuff ?
     should that be moved elsewhere, or replaced by a macro, or e = +- 1 ?
     should this feature be optionnal as a compile-time setting ?
 

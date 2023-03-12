@@ -25,9 +25,14 @@ load_file(int first_line_on_screen_nb)
     reset_selections();
     first_line = first_line_on_screen = NULL;
 
-    // open connection to src_file
-    if ((src_file = fopen(file_name_int.current, "r")) == NULL)
-        file_connection_error();
+    // open connection to src_file, create an empty buffer if can't be accessed
+    if ((src_file = fopen(file_name_int.current, "r")) == NULL) {
+        first_line = first_line_on_screen = create_line(1, 1, 0);
+        nb_lines = 1;
+        has_been_changes = 1;
+        load_lang(file_name_int.current);
+        return;
+    }
     reached_EOF = 0;
     line_nb = 1;
 
@@ -81,7 +86,7 @@ load_file(int first_line_on_screen_nb)
         }
 
         // detect an empty line file ending
-        if (reached_EOF && ml == 0)
+        if (reached_EOF && ml == 0 && line_nb > 1)
             break;
 
         // store line
@@ -93,7 +98,6 @@ load_file(int first_line_on_screen_nb)
             last_line = line;
         }
         strncpy(line->chars, buf, ml);
-        line->chars[ml] = '\0';
         if (line_nb == first_line_on_screen_nb)
             first_line_on_screen = line;
         line_nb++;
@@ -144,3 +148,4 @@ write_file(const char *file_name)
     if (fclose(dest_file) == EOF)
         file_connection_error();
 }
+

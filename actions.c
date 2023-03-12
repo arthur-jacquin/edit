@@ -86,8 +86,8 @@ indent(struct line *l, struct selection *s)
 
     int i, j, k, start;
 
-    // ignores empty lines
-    if (l->ml == 1)
+    // ignores empty lines in normal mode
+    if (!in_insert_mode && l->dl == 0)
         return;
 
     if (asked_indent > 0) {
@@ -110,7 +110,8 @@ indent(struct line *l, struct selection *s)
         if (in_insert_mode) {
             asked_indent = -1;
             while ((s->x + asked_indent > 0) &&
-                (l->chars[get_str_index(l->chars, s->x + asked_indent - 1)] == ' ') &&
+                (l->chars[get_str_index(l->chars,
+                    s->x + asked_indent - 1)] == ' ') &&
                 (s->x + asked_indent)%(settings.tab_width))
                 asked_indent--;
             start = s->x + asked_indent;
@@ -124,7 +125,7 @@ indent(struct line *l, struct selection *s)
             start = 0;
         }
 
-        // suppress characters
+        // suppress indent
         replace_chars(l, s, start, asked_indent, 0, 0);
     }
 }
@@ -135,7 +136,7 @@ comment(struct line *l, struct selection *s)
     // [un]comment the line according to language (assume syntax is defined)
 
     int k, kp, syntax_length;
-    char *comment_syntax = *((settings.syntax)->comment);
+    char *comment_syntax = *(settings.syntax->comment);
 
     // detect first character of the line, ignores empty lines
     for (k = 0; l->chars[k] == ' '; k++)
@@ -198,13 +199,13 @@ replace(struct line *l, struct selection *s)
 {
     // replace the selection according to search and replace patterns
 
-    char *rp, *replaced, *new_replaced, *src; // replace pattern, replaced string
-    int k, k_chars; // index in rp, chars (bytes)
-    int lrp; // length of rp
-    int j, lj; // index in replaced (characters, bytes)
-    int lr; // size of replaced buffer
-    int n, mst, mn; // substring to append to replaced
-    struct substring *class; // pointing to either fields or subpatterns
+    char *rp, *replaced, *new_replaced, *src;
+    int k, k_chars;             // index in rp, chars (bytes)
+    int lrp;                    // length of rp
+    int j, lj;                  // index in replaced (characters, bytes)
+    int lr;                     // size of replaced buffer
+    int n, mst, mn;             // substring to append to replaced
+    struct substring *class;    // pointing to either fields or subpatterns
 
     // search for fields and subpatterns
     mark_fields(l->chars, s->x, s->n);

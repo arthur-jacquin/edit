@@ -44,10 +44,10 @@ main(int argc, char *argv[])
 
     if (argc < 2 || !(strcmp(argv[1], "--help") && strcmp(argv[1], "-h"))) {
         printf("%s\n", HELP_MESSAGE);
-        return 0;
+        exit(0);
     } else if (!(strcmp(argv[1], "--version") && strcmp(argv[1], "-v"))) {
         printf("%s\n", VERSION);
-        return 0;
+        exit(0);
     } else {
         init_interface(file_name_int, argv[1])
         load_file(1);
@@ -62,7 +62,7 @@ main(int argc, char *argv[])
             if (has_been_changes)
                 write_file(BACKUP_FILE_NAME);
             tb_shutdown();
-            return ERR_TERM_NOT_BIG_ENOUGH;
+            exit(ERR_TERM_NOT_BIG_ENOUGH);
         }
 
         // go to correct position, compute new displayed selections
@@ -82,14 +82,16 @@ main(int argc, char *argv[])
         case TB_EVENT_KEY:
             if (ev.ch && in_insert_mode) {
                 act(insert, 0);
-            } else if (ev.ch && !in_insert_mode) {
-                if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
-                    m = 10*m + ev.ch - '0';
-                    echof(MULTIPLIER_MESSAGE_PATTERN, m);
-                    break;
-                } else {
-                if (m == 0)
-                    m = 1;
+                break;
+            } else if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
+                m = 10*m + ev.ch - '0';
+                echof(MULTIPLIER_MESSAGE_PATTERN, m);
+                break;
+            }
+            if (m == 0)
+                m = 1;
+            echo("");
+            if (ev.ch) {
                 switch (ev.ch) {
                 case KB_HELP:
                     echo(HELP_MESSAGE);
@@ -100,7 +102,7 @@ main(int argc, char *argv[])
                         echo(UNSAVED_CHANGES_MESSAGE);
                     } else {
                         tb_shutdown();
-                        return 0;
+                        exit(0);
                     }
                     break;
                 case KB_WRITE:
@@ -161,6 +163,7 @@ main(int argc, char *argv[])
                     in_insert_mode = 1;
                     echo(INSERT_MODE_MESSAGE);
                     y += (ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0;
+                    x = 0; attribute_x = 1;
                     insert_line(first_line_nb + y, 1, 0);
                     break;
                 case KB_CLIP_YANK_LINE:
@@ -215,7 +218,7 @@ main(int argc, char *argv[])
                 case KB_MOVE_NEXT_WORD:
                 case KB_MOVE_PREV_WORD:
                     unwrap_pos(find_start_of_word(
-                        (ev.ch == KB_MOVE_NEXT_WORD) ? m: -m));
+                        (ev.ch == KB_MOVE_NEXT_WORD) ? m : -m));
                     break;
                 case KB_MOVE_NEXT_BLOCK:
                     y = find_end_of_block(first_line_nb + y, m)
@@ -276,12 +279,9 @@ main(int argc, char *argv[])
                         echo(NO_WORD_CURSOR_MESSAGE);
                     break;
                 case KB_SEL_ANCHOR:
-                    if (anchored) {
-                        anchored = 0;
-                    } else {
+                    if (!anchored)
                         anchor = pos_of_cursor();
-                        anchored = 1;
-                    }
+                    anchored = (anchored + 1) & 1;
                     break;
                 case KB_SEL_COLUMN:
                     if (anchored && anchor.l != pos_of_cursor().l)
@@ -315,11 +315,7 @@ main(int argc, char *argv[])
                     act(upper, 0);
                     break;
                 }
-                m = 0;
-                }
             } else if (ev.key) {
-                if (m == 0)
-                    m = 1;
                 switch (ev.key) {
 #ifdef ENABLE_AUTOCOMPLETE
                 case KB_ACT_AUTOCOMPLETE:
@@ -370,8 +366,8 @@ main(int argc, char *argv[])
                     act(indent, 1);
                     break;
                 }
-                m = 0;
             }
+            m = 0;
             break;
 
 #ifdef MOUSE_SUPPORT
@@ -405,4 +401,3 @@ main(int argc, char *argv[])
         }
     }
 }
-

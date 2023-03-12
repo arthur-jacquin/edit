@@ -148,4 +148,3 @@ write_file(const char *file_name)
     if (fclose(dest_file) == EOF)
         file_connection_error();
 }
-

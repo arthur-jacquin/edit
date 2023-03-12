@@ -49,7 +49,7 @@ main(int argc, char *argv[])
         printf("%s\n", VERSION);
         return 0;
     } else {
-        init_interface(file_name_int, argv[1]);
+        init_interface(file_name_int, argv[1])
         load_file(1);
     }
 
@@ -65,14 +65,14 @@ main(int argc, char *argv[])
             return ERR_TERM_NOT_BIG_ENOUGH;
         }
 
-        // compute new displayed selections
+        // go to correct position, compute new displayed selections
+        move_to_cursor();
         forget_sel_list(running);
         running = running_sel();
         forget_sel_list(displayed);
         displayed = merge_sel(running, saved);
 
-        // go to correct position, refresh screen and wait for input
-        move_to_cursor();
+        // refresh screen and wait for input
         print_all();
         tb_present();
         tb_poll_event(&ev);

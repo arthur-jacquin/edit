@@ -152,17 +152,22 @@ break_line(struct line *l, struct selection *s, int start)
 {
     // break line l at start
 
+    struct line *new;
     char *new_chars;
     int k;
 
-    // move selections, anchor
+    // move selections, anchor, line numbers
     shift_sel_line_nb(s, l->line_nb + 1, 0, 1);
     move_sel_end_of_line(s, l->line_nb, start, 0);
+    shift_line_nb(l, l->line_nb + 1, 0, 1);
 
     // create line below
     k = get_str_index(l->chars, start);
-    insert_line(l->line_nb + 1, l->ml - k, l->dl - start);
-    strncpy(l->next->chars, &(l->chars[k]), l->ml - k);
+    new = create_line(l->line_nb + 1, l->ml - k, l->dl - start);
+    link_lines(new, l->next);
+    link_lines(l, new);
+    strncpy(new->chars, &(l->chars[k]), l->ml - k);
+    nb_lines++;
 
     // shorten current line
     new_chars = (char *) _malloc(k + 1);
@@ -172,8 +177,6 @@ break_line(struct line *l, struct selection *s, int start)
     l->chars = new_chars;
     l->dl = start;
     l->ml = k + 1;
-
-    // TODO cursor
 }
 
 void
@@ -183,8 +186,8 @@ concatenate_line(struct line *l, struct selection *s)
 
     char *new_chars;
 
-    // move selections, anchor
-    move_sel_end_of_line(s, l->line_nb, l->dl, 1);
+    // move selections, anchor, cursor
+    move_sel_end_of_line(s, l->line_nb + 1, l->dl, 1);
     shift_sel_line_nb(s, l->line_nb + 1, 0, -1);
 
     // create new chars, refresh metadata
@@ -200,8 +203,6 @@ concatenate_line(struct line *l, struct selection *s)
     free(l->next);
     shift_line_nb(l, l->line_nb + 2, 0, -1);
     nb_lines--;
-
-    // TODO cursor
 }
 
 void

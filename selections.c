@@ -401,7 +401,7 @@ move_sel_end_of_line(struct selection *a, int l, int i, int concatenate)
 
     int e = (concatenate) ? 1 : -1;
 
-    while (a != NULL && (a->l < l || (!concatenate && a->x < i)))
+    while (a != NULL && (a->l < l || (a->l == l && !concatenate && a->x < i)))
         a = a->next;
     while (a != NULL && a->l == l) {
         a->l -= 1*e;
@@ -413,6 +413,14 @@ move_sel_end_of_line(struct selection *a, int l, int i, int concatenate)
     if (anchored && anchor.l == l && (concatenate || anchor.x >= i)) {
         anchor.l -= 1*e;
         anchor.x += i*e;
+    }
+
+    // move cursor
+    if (first_line_nb + y == l) {
+        y -= 1*e;
+        x += i*e; attribute_x = 1;
+    } else if (first_line_nb + y > l) {
+        y -= 1*e;
     }
 }
 

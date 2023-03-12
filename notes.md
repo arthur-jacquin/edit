@@ -29,8 +29,7 @@ Progressively integrate each part. At each step:
     file access error not detected/badly handled ?
     attributing x without flagging attribute_x
     is_word_char is only ASCII
-    break_line
-    concatenate_line
+    bad cursor/anchor/selections movements
     manipulating hex values: cast needed ?
 
 5. Potentially append to the following lists:

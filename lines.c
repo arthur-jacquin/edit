@@ -184,24 +184,26 @@ concatenate_line(struct line *l, struct selection *s)
 {
     // move l->next (existence assumed) content at the end of l
 
+    struct line *next;
     char *new_chars;
 
     // move selections, anchor, cursor
     move_sel_end_of_line(s, l->line_nb + 1, l->dl, 1);
     shift_sel_line_nb(s, l->line_nb + 1, 0, -1);
+    shift_line_nb(l, l->line_nb + 1, 0, -1);
 
     // create new chars, refresh metadata
-    new_chars = (char *) _malloc(l->ml + l->next->ml - 1);
+    next = l->next;
+    new_chars = (char *) _malloc(l->ml + next->ml - 1);
     strncpy(new_chars, l->chars, l->ml - 1);
-    strncpy(&(new_chars[l->ml - 1]), l->next->chars, l->next->ml);
+    strncpy(&(new_chars[l->ml - 1]), next->chars, next->ml);
     free(l->chars);
-    free(l->next->chars);
     l->chars = new_chars;
-    l->ml += l->next->ml - 1;
-    l->dl += l->next->dl;
-    link_lines(l, l->next->next);
-    free(l->next);
-    shift_line_nb(l, l->line_nb + 2, 0, -1);
+    l->ml += next->ml - 1;
+    l->dl += next->dl;
+    link_lines(l, next->next);
+    free(next->chars);
+    free(next);
     nb_lines--;
 }
 

@@ -4,9 +4,6 @@ engine:
     review the process, test everything (classes, last element of group)
     rewrite syntax (| can't follow REP...)
 
-when echo ?
-when attribute_x ?
-
 add autoindent in break_line and insert_line
 delete automatically chooses to untab
 

@@ -78,6 +78,8 @@ main(int argc, char *argv[])
         tb_poll_event(&ev);
 
         // process input
+        if (!in_insert_mode && m == 0)
+            echo("");
         switch (ev.type) {
         case TB_EVENT_KEY:
             if (ev.ch && in_insert_mode) {
@@ -90,8 +92,6 @@ main(int argc, char *argv[])
             }
             if (m == 0)
                 m = 1;
-            if (!in_insert_mode)
-                echo("");
             if (ev.ch) {
                 switch (ev.ch) {
                 case KB_HELP:

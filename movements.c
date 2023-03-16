@@ -90,6 +90,14 @@ find_start_of_word(int n)
             if (is_word_char(l->chars[get_str_index(l->chars, dx)]))
                 break;
     }
+    if (sens == -1) {
+        while (move(&l, &dx, sens)) {
+            if (!is_word_char(l->chars[get_str_index(l->chars, dx)])) {
+                move(&l, &dx, -sens);
+                break;
+            }
+        }
+    }
 
     return pos_of(l->line_nb, dx);
 }

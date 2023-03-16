@@ -5,18 +5,15 @@ correct syntax:
     
     classes ?? last element of group ???
 
-interface with system clipboard
 when echo ?
 when attribute_x ?
 
-add "autoindent"
-delete automatically choose to untab
-100x delete ?
+add autoindent in break_line and insert_line
+delete automatically chooses to untab
 
-Mettre à jour  cheatsheet
-better T ?
+refresh cheatsheet
 
-make sure no conflict between command and action
+make sure no conflict between command and action in philosophy.md, tutor.def.md
 
 notes.md >> /dev/null
 
@@ -52,7 +49,6 @@ Progressively integrate each part. At each step:
 
 5. Potentially append to the following lists:
     "special behaviour: users should be warned of it and given an explanation"
-    "hot stuff to promote"
     "not perfect stuff"
 
 Build a dependency graph of functions. Correlate that with list of modified
@@ -64,8 +60,6 @@ globals.
 tabs are converted in spaces on loading the document
 regex engine is not perfect: please send erroneous behaviours
 
-### Hot stuff
-
 ### Not perfect stuff
 
 
@@ -74,11 +68,9 @@ regex engine is not perfect: please send erroneous behaviours
 * new colorscheme
 * strong defaults
 * add languages
-* .md files
-    * make tutorial
-* tarball
+* suppress notes.md
 * [asciinema](https://asciinema.org)
 * website
-    * .md files
+    * index.html
     * tarball
     * color palette

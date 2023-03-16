@@ -54,7 +54,6 @@ uint32_t
 unicode(const char *chars, int k, int len)
 {
     // compute the Unicode codepoint associated with UTF-8 encoded char in chars
-    // TODO detect invalid
 
     uint32_t res;
     int j;

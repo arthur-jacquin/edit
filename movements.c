@@ -125,7 +125,7 @@ find_matching_bracket(void)
 
     nb = 1;
     while (nb && move(&l, &dx, sens)) {
-        nc = l->chars[get_str_index(l->chars, dx)]; // XXX: not great
+        nc = l->chars[get_str_index(l->chars, dx)];
         if (nc == goal)
             nb--;
         if (nc == c)

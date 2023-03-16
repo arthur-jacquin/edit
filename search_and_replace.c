@@ -101,12 +101,12 @@ mark_subpatterns(const char *chars, int dl, int ss, int x, int n)
                 j++; l++;
             } else if (l+a+1 < lsp && sp[l+a] == '-' && sp[l+a+1] != ']') { // range
                 found_in_class |= (compare_chars(sp, l, chars, k) >= 0 &&
-                     compare_chars(sp, l+a+1, chars, k) <= 0); // XXX |= working ?
+                     compare_chars(sp, l+a+1, chars, k) <= 0);
                 j++; l += a;                        // lower bound
                 j++; l++;                           // "-" separator
                 j++; l += utf8_char_length(sp[l]);  // upper bound
             } else { // raw comparison
-                found_in_class |= (compare_chars(sp, l, chars, k) == 0); // XXX |= working ?
+                found_in_class |= (compare_chars(sp, l, chars, k) == 0);
                 j++; l += a;
             }
 

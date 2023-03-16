@@ -1,21 +1,14 @@
-# Cheatsheet
+## Default keybinds
 
-## Commands
-
-    MANAGING EDITOR
-
-            <ESC>   return to normal mode
+    BASICS
                 ?   display the help message
               q/Q   quit/force quit
+              w/W   write/write as
+                R   reload
                 s   change a setting
                 e   execute a shell command and get back to edit
 
-    MANAGING FILE
-
-              w/W   write/write as
-                R   reload
-
-    GETTING IN INSERT MODE
+    SWITCHING TO INSERT MODE
 
                 i   get in insert mode
               I/A   at start/end of line
@@ -30,38 +23,38 @@
       arrows, j/k   {m} next/previous line
               t/T   {m} next/previous word
               }/{   {m} next/previous block
-              n/N   {m} next/previous match
+              n/N   {m} next/previous selection
 
     MANAGING SELECTIONS
 
-            <ESC>   forget saved selections, unanchor
+            <ESC>   forget saved selections, unanchor, reset multiplier
+                v   anchor/unanchor
+                a   add running selections to saved selections; unanchor
+                z   duplicate the running selection on the {m} following lines
                 c   display number of saved selections
                 .   select cursor line
             %/b/:   select all lines of file/{m} following blocks/custom range
              f, /   search for pattern
                 *   search for the word that is currently under the cursor
-                v   anchor/unanchor
-                a   save running selections; unanchor
-                z   duplicate the current selection on the {m} following lines
 
     ACTING ON SELECTIONS
 
-    [insert mode]   insert a character before selections
+          x/<DEL>   suppress selection content if any, else char. before/after 
+              u/U   switch to lowercase/uppercase
     >/<, TAB/^TAB   {m} increase/decrease line indent
                 K   comment/uncomment line
-          x/<DEL>   suppress selection if non-null, else before/after selection
                 r   replace with pattern elements and fields
-              u/U   switch to lowercase/uppercase
+           CTRL+A   autocomplete at the end of each selection
 
     MANAGING LINES
 
-              y/Y   yank {m} lines/blocks
-              d/D   delete {m} lines/blocks
-              p/P   paste after/before {m} times
+              y/Y   yank {m} lines/blocks, starting at cursor
+              d/D   delete {m} lines/blocks, starting at cursor
+              p/P   paste after/before cursor line {m} times
      SHIFT+arrows   move cursor line {m} lines up/down
 
 
-## Settings management
+## Settings
 
     SETTING                 NAME    TYPE    DEFAULT VALUE
     syntax highlight        sh      bool    TRUE
@@ -121,7 +114,8 @@
 
 ## Replace syntax
 
-    e1: LITERAL
+    e1: LITERAL                         # any character except \ and $
+      | '\\' | '\$'                     # escaped \ and $
       | '\0' | '$0'                     # whole initial selection
       | '\' DIGIT                       # DIGIT-th subpattern (DIGIT >= 1)
       | '$' DIGIT                       # DIGIT-th field (DIGIT >= 1)

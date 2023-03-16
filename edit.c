@@ -90,7 +90,8 @@ main(int argc, char *argv[])
             }
             if (m == 0)
                 m = 1;
-            echo("");
+            if (!in_insert_mode)
+                echo("");
             if (ev.ch) {
                 switch (ev.ch) {
                 case KB_HELP:

@@ -1,6 +1,24 @@
 ## TODO
 
-correct syntax: | can't follow REP
+correct syntax:
+    | can't follow REP
+    
+    classes ?? last element of group ???
+
+interface with system clipboard
+when echo ?
+when attribute_x ?
+
+add "autoindent"
+delete automatically choose to untab
+100x delete ?
+
+Mettre à jour  cheatsheet
+better T ?
+
+make sure no conflict between command and action
+
+notes.md >> /dev/null
 
 
 ### Final rewrite

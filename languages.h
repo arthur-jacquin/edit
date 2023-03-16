@@ -1,7 +1,5 @@
 // STRUCTS *********************************************************************
 
-// please read syntax_highlighting.md to understand languages support
-
 struct rule {
     char mark[5];
     int start_of_line;      // wether a rule requires the start of the line
@@ -25,6 +23,11 @@ struct lang {               // used for syntax highlighting and autocommenting
 
 
 // LANGUAGES DEFINITION ********************************************************
+
+// TODO add languages
+// https://github.com/ilai-deutel/kibi/tree/master/syntax.d
+// https://github.com/vim/vim/tree/master/runtime/syntax
+// https://github.com/zyedidia/micro/tree/master/runtime/syntax
 
 #ifdef C
 char *c_names = "c h ";

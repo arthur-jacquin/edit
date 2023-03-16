@@ -63,7 +63,7 @@ The stability (and the technical qualities) of the C language explains its
 longevity and its wide avaibility. Combined with a small codebase with no
 dependencies (except standard library), choosing C ensures great portability.
 
-### Produces a standalone executable
+### Produces a standalone, statically linked executable
 
 It eliminates some potential runtime bugs, increase its portability, and avoid
 the need for a dynamic linker.
@@ -111,9 +111,6 @@ to master all of them at first read, but you know what exists and where to find
 the information. The learning curve is therefore pretty gentle, unless you want
 to dig into it faster than needed.
 
-Today edit is considered mostly feature stable. The features that might be added
-in the  future are discussed in `future.md`.
-
 
 ## User experience design choices
 
@@ -138,7 +135,7 @@ This approach easily enables multi-cursor, visual block and column editing.
 Selecting happens before action like in kakoune, and not the other way around
 like in vim. It provides more interactivity, as you can see what you will act on
 before action, enabling you to correct the selections without having to undo the
-action.
+action (something that is not possible in edit).
 
 ### No edition language
 
@@ -168,6 +165,20 @@ you: reading the following will help in deciding if edit is capable enough for
 your workflow. If not, one of the editor listed at the top of this file might
 better suits you ;)
 
+### Does not support every terminals
+
+Even if `edit` has no dependencies, it won't run everywhere, as the default
+terminal drawing library (termbox[^2]) does not support all terminals. For
+example, it won't run on Windows, unless you use WSL or a similar solution.
+
+[^2]: [termbox2](https://github.com/termbox/termbox2)
+
+All the interaction between `edit` and its environment happens through
+`termbox.h`. Therefore if you want to embed the editor in your own (GPLv3)
+software, make it work on Windows, or build a Graphical User Interface, all you
+have to do is to replace `termbox.h` with a file adapted to your targetted
+environment and providing the same API.
+
 ### No elaborated data structures for storing text
 
 Some editors provides elaborated data structures for storing text: conflict-free
@@ -181,7 +192,7 @@ this is not what edit strives for.
 
 There exists plenty encodings, but UTF-8 makes the most sense. Obviously, plain
 ASCII is also supported as it's a subset of UTF-8. For other encodings, you
-might have to translate it first.
+might have to translate the file first.
 
 ### No undo/redo
 
@@ -218,5 +229,5 @@ it adds some complexity, I left it aside. But I might pick it up some day.
 
 ### Others limitations
 
-* does no work with tabs
+* transform tabs to spaces
 * does not visually wrap lines

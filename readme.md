@@ -1,87 +1,51 @@
 # edit
 
-A suckless, simple, featured, modal text editor.
+A suckless, simple, featured text editor.
 
 [TODO](asciinema screencast)
 
 
 ## Description
 
-edit combines a simple and powerful editing model with a suckless approach:
+edit aims to provide a simple and powerful editing model, in a suckless-style
+codebase. In less than 2500 lines of C (counted with cloc) with no dependencies,
+it features:
 
-* written in less than 2500 lines of C, with no dependencies
-* produces a standalone executable
-* textual, compile-time configuration, with sane defaults in config.def.h
-* keyboard-centric, terminal-based editor
-* only edits text: does not try to be an IDE or a multiplexer/window manager
-* feature-stable: not meant to grow indefinitely
-
-
-## Features
-
+* a textual, compile-time configuration, with sane defaults in `config.def.h`
+* kakoune-inspired selection-centric, selection-then-action editing
 * vi-inspired default keybinds
 * mouse support
 * home-grown search and replace engine (regexp, subpatterns and fields support)
-* home-grown syntax highlight system
+* home-grown syntax highlighting system
+* line numbers, visual column, scrolling offset
 * multicursor editing
 * advanced lines management including line clipboard
 
-
-## Opiniated choices
-
-* selection-centric, selection then action philosophy
-* frequent save/reload instead of undo/redo
-* does not visually wrap lines
-* does not highlight multiline elements (strings, comments)
-* does not work with tabs
-* only works with UTF-8 encoded text
+To learn more about the design choices and limitations, read `philosophy.md`.
 
 
-## Documentation
+## Usage
 
-Read `philosophy.md` if you're wondering if you should use the editor. You will
-find:
-* why I wrote it
-* what it is and is not
-* design choices and explanations
-* a list of editors that might better suits you
+    edit file
 
-Read `manual.md` if you want to know how to use the editor. You will find:
-* build instructions
-* an explanation of the editing model
-* a complete walktrough of its features and mechanisms
+To compile edit, run `make`, or `make install` with priviledges to put the
+executable in `/usr/bin`. The default compiler is tcc, in static-linking mode.
+You can modify that in `makefile`.
 
-Read `cheatsheet.md` if you want a quick overview of:
-* the default keybinds
-* the name of the runtime options
-* the search and replace syntax
+To understand the editing model and the features provided by edit, run
+`make tutor`. After this exhaustive walkthrough, a `cheatsheet.md` is provided
+for quick reference.
 
-Others `*.md` files are technical notes covering specific points:
-* `regexp.md`
-* `structures.md`
-* `syntax_highlighting.md`
-
-
-## Links
-
-* [source code repository]()
-* [source code tarball]()
-* [website]()
-
-
-## Thanks
-
-* my brother for beta-testing and comments
-* [termbox2](https://github.com/termbox/termbox2) terminal drawing library
+To configure edit, modify `config.h` to your tastes and recompile. If `config.h`
+does not exist, start by copying `config.def.h` to `config.h`.
 
 
 ## License
 
-edit is licensed under the GPLv3. See `license`.
+edit is licensed under the GPLv3. See `license` for more information.
 
 
 ## Feedback/contact information
 
 Your feedback is greatly appreciated! If you have any comment on the editor,
-wether it's on the user side or the code, please send me an email at
-arthur@jaquin.xyz.
+wether it's on the user side or the code, send an email at arthur@jaquin.xyz.

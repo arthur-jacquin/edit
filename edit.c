@@ -44,10 +44,10 @@ main(int argc, char *argv[])
 
     if (argc < 2 || !(strcmp(argv[1], "--help") && strcmp(argv[1], "-h"))) {
         printf("%s\n", HELP_MESSAGE);
-        exit(0);
+        return 0;
     } else if (!(strcmp(argv[1], "--version") && strcmp(argv[1], "-v"))) {
         printf("%s\n", VERSION);
-        exit(0);
+        return 0;
     } else {
         init_interface(file_name_int, argv[1])
         load_file(1);

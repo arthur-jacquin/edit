@@ -2,7 +2,7 @@
 
 A suckless, simple, featured text editor.
 
-[TODO](asciinema screencast)
+[![asciicast](https://asciinema.org/a/58fn5SjV2gPgmfF8V2RznfWw6.svg)](https://asciinema.org/a/58fn5SjV2gPgmfF8V2RznfWw6)
 
 
 ## Description

@@ -164,7 +164,7 @@
 #define KB_ACT_LOWERCASE            'u'
 #define KB_ACT_UPPERCASE            'U'
 
-// autocomplete (in both normal and insert modes)
+// autocomplete key (in both normal and insert modes)
 #define KB_ACT_AUTOCOMPLETE         TB_KEY_CTRL_A
 
 
@@ -174,7 +174,7 @@
 // C, MARKDOWN, PYTHON
 
 // If a language you want isn't supported yet, you can add it yourself in
-// languages.h. Refer to syntax_highlight.md for more information.
+// languages.h.
 
 #define C
 #define MARKDOWN

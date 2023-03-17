@@ -34,8 +34,7 @@ char *c_names = "c h ";
 char *c_kw = ""
     "int long short char void signed unsigned float double typedef struct "
     "union enum static register auto volatile extern const FILE DIR NULL "
-    "int8_t int16_t int32_t int64_t uint8_t uint16_t uint32_t uint64_t "
-    "define include ";
+    "int8_t int16_t int32_t int64_t uint8_t uint16_t uint32_t uint64_t ";
 char *c_fc = ""
     "while for do if else switch case default goto break return continue ";
 char *c_bi = ""
@@ -82,6 +81,23 @@ struct rule py_rules[] = {
     {"",    0,  0,                  0},
 };
 #endif // PYTHON
+
+#ifdef SQL
+char *sql_names = "sql ";
+char *sql_kw = ""
+    "ADD ALL ALTER ANALYZE AND AS ASC ASENSITIVE BEFORE BETWEEN BIGINT BINARY "
+    "BLOB BOTH BY CALL CASCADE CASE CHANGE CHAR CHARACTER CHECK COLLATE COLUMN "
+    "CONDITION CONNECTION CONSTRAINT CONTINUE CONVERT CREATE CROSS CUBE "
+    "CUME_DIST CURRENT_DATE CURRENT_TIME CURRENT_TIMESTAMP CURRENT_USER CURSOR "
+    "DATABASE DATABASES DAY_HOUR DAY_MICROSECOND DAY_MINUTE DAY_SECOND DEC "
+    "DECIMAL DECLARE DEFAULT DELAYED DELETE DENSE_RANK DESC DESCRIBE "
+    "DETERMINISTIC DISTINCT DOUBLE DROP DYNAMIC EACH ELSE ELSEIF EMPTY END "
+    "ENUM EXIT EXPLAIN FALSE FETCH FIRST_VALUE FLOAT FLOAT4 FLOAT8 FOR FORCE "
+    "FOREIGN FROM FULLTEXT FUNCTION GRANT GROUP HAVING HOUR_MICROSECOND "
+    "HOUR_MINUTE HOUR_SECOND IF IGNORE IN INDEX INFILE INNER INOUT INSENSITIVE "
+    "INSERT INT INT1 INT2";
+char *sql_comment = "-- ";
+#endif // SQL
 
 
 // LANGUAGES ARRAY *************************************************************

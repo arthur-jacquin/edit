@@ -37,9 +37,7 @@ small C codebase using only compile-time configuration. edit tries to do that.
 
 Before publishing it, I used it for several months to polish it to my needs. It
 should now be quite feature-stable. If you wonder if the editing model will work
-for you, you can read about the design choices below. If it sounds good to you,
-do not hesitate to try it! In that case, I would greatly appreciate a feedback,
-wether it's on the user side or the code.
+for you, you can read about the design choices below.
 
 
 ## Simplicity as the utmost goal
@@ -101,9 +99,9 @@ It is not a word processor: it has no styling or spell checking.
 ### Feature-stable
 
 edit is not meant to grow indefinitely. It has a finite number of carefully
-chosen features. These can be all discovered by reading the manual (`manual.md`,
-10 minute read) or the configuration file, where a key is associated to each
-command.
+chosen features. These can be all discovered by doing the 10 minute tutorial
+(`make tutor`) or reading the configuration file, where a key is associated to
+each command.
 
 It avoids the feeling of being overwhelmed by the number of features, which can
 happen when starting to use vim. If you're new to advanced text editing, no need
@@ -151,7 +149,7 @@ The search and replace engine is home-grown. While it avoids the need for
 dependencies, it is not to be seen as a weaker, spare replacement. The search is
 incremental and supports regular expressions, and the replace supports the reuse
 of subpatterns and fields from the to-be-replaced string: the power of sed and
-awk combined! Please refer to `manual.md` for a more precise description.
+awk combined! Please refer to the tutorial for a more precise description.
 
 
 ## Code-related design choices
@@ -165,15 +163,15 @@ you: reading the following will help in deciding if edit is capable enough for
 your workflow. If not, one of the editor listed at the top of this file might
 better suits you ;)
 
-### Does not support every terminals
+### No support for every terminal
 
-Even if `edit` has no dependencies, it won't run everywhere, as the default
-terminal drawing library (termbox[^2]) does not support all terminals. For
-example, it won't run on Windows, unless you use WSL or a similar solution.
+Even if edit has no dependencies, it won't run everywhere, as the terminal
+drawing library (termbox[^2]) does not support all terminals. For example, it
+won't run on Windows, unless you use WSL or a similar solution.
 
 [^2]: [termbox2](https://github.com/termbox/termbox2)
 
-All the interaction between `edit` and its environment happens through
+All the interaction between edit and its environment happens through
 `termbox.h`. Therefore if you want to embed the editor in your own (GPLv3)
 software, make it work on Windows, or build a Graphical User Interface, all you
 have to do is to replace `termbox.h` with a file adapted to your targetted
@@ -211,8 +209,6 @@ comments.
 
 [^3]: [structural regexp](https://doc.cat-v.org/bell_labs/structural_regexps/se.pdf)
 
-Please refer to `syntax_highlight.md` for a more precise description of the
-system.
 
 ### No plugins support
 
@@ -222,10 +218,9 @@ patch it, fork it, but an interface for plugins is not something edit will have.
 
 ### Not a client-server architecture
 
-While the structure of the code is quite compatible with a client-server
-architecture, I've decide to not do that. Many editors does, and in some cases
-it might be useful, but I don't really see the *need* in most uses cases, and as
-it adds some complexity, I left it aside. But I might pick it up some day.
+Many editors does that, and in some cases it might be useful, but I don't really
+see the *need* in most use cases, and as it adds some complexity, I left it
+aside.
 
 ### Others limitations
 

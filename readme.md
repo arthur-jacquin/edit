@@ -18,7 +18,7 @@ it features:
 * home-grown search and replace engine (regexp, subpatterns and fields support)
 * home-grown syntax highlighting system
 * line numbers, visual column, scrolling offset
-* multicursor editing
+* multicursor, visual block and column editing
 * advanced lines management including line clipboard
 
 To learn more about the design choices and limitations, read `philosophy.md`.

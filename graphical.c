@@ -7,6 +7,7 @@ init_termbox(void)
 
     tb_init();
     tb_set_output_mode(OUTPUT_MODE);
+    tb_set_clear_attrs(COLOR_DEFAULT, COLOR_BG_DEFAULT);
 #ifdef MOUSE_SUPPORT
     tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
 #else
@@ -50,13 +51,14 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     underline = 0;
 #endif // UNDERLINE_CURSOR_LINE
 
-    // decompress UTF-8
-    for (i = k = 0; i < l->dl; i++, k += len)
+    // decompress UTF-8, initialise foreground and background
+    for (i = k = 0; i < l->dl; i++, k += len) {
         buf[i].ch = unicode(l->chars, k, len = utf8_char_length(l->chars[k]));
+        buf[i].fg = COLOR_DEFAULT;
+        buf[i].bg = COLOR_BG_DEFAULT;
+    }
 
     // foreground
-    for (i = 0; i < l->dl; i++)
-        buf[i].fg = COLOR_DEFAULT;
     if (settings.syntax_highlight && settings.syntax != NULL) {
         // ignores blank characters at the beginning of the line
         for (i = k = 0; l->chars[k] == ' '; i++, k++)
@@ -147,8 +149,6 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     }
 
     // background
-    for (i = 0; i < l->dl; i++)
-        buf[i].bg = COLOR_BG_DEFAULT;
     if (settings.highlight_selections) {
         while (s != NULL && s->l < l->line_nb)
             s = s->next;
@@ -215,8 +215,11 @@ print_ruler(void)
 
     int i;
 
+    // erase
     for (i = screen_width - RULER_WIDTH; i < screen_width; i++)
         tb_set_cell(i, screen_height - 1, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
+
+    // print
     tb_printf(screen_width - RULER_WIDTH, screen_height - 1,
         COLOR_RULER, COLOR_BG_DEFAULT,
         "%d:%d", first_line_nb + y, x);
@@ -247,7 +250,6 @@ print_all(void)
         s = print_line(l, s, sc_line);
         l = l->next;
     }
-
     tb_set_cursor(x + LINE_NUMBERS_WIDTH, y);
     print_dialog();
     print_ruler();

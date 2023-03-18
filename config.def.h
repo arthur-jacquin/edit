@@ -74,7 +74,7 @@
 #define COLOR_BG_DEFAULT            0
 #define COLOR_BG_SELECTIONS         234 //
 #define COLOR_BG_MATCHING           45 //
-#define COLOR_BG_COLUMN             233 //
+#define COLOR_BG_COLUMN             234 //
 
 // 8 colors mode: available colors are TB_BLACK, TB_RED, TB_GREEN, TB_YELLOW,
 // TB_BLUE, TB_MAGENTA, TB_CYAN, and TB_WHITE

@@ -31,7 +31,7 @@ load_file(int first_line_on_screen_nb)
         first_line = first_line_on_screen = create_line(1, 1, 0);
         nb_lines = 1;
         has_been_changes = 1;
-        load_lang(file_name_int.current);
+        parse_lang(file_name_int.current);
         return;
     }
     reached_EOF = 0;
@@ -115,7 +115,7 @@ load_file(int first_line_on_screen_nb)
     // refresh parameters
     nb_lines = line_nb - 1;
     has_been_changes = 0;
-    load_lang(file_name_int.current);
+    parse_lang(file_name_int.current);
 }
 
 void

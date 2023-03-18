@@ -132,7 +132,7 @@ main(int argc, char *argv[])
                         dialog(SAVE_AS_PROMPT, &file_name_int, 0)) {
                         write_file(file_name_int.current);
                         if (ev.ch == KB_WRITE_AS)
-                            load_lang(file_name_int.current);
+                            parse_lang(file_name_int.current);
                         has_been_changes = 0;
                         echo(FILE_SAVED_MESSAGE);
                     }
@@ -149,7 +149,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_CHANGE_SETTING:
                     if (dialog(CHANGE_SETTING_PROMPT, &settings_int, 0))
-                        if (!set_parameter(settings_int.current))
+                        if (!parse_assign(settings_int.current))
                             echo(INVALID_ASSIGNMENT_MESSAGE);
                     break;
                 case KB_RUN_SHELL_COMMAND:

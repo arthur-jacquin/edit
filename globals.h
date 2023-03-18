@@ -139,9 +139,9 @@ int mark_fields(const char *chars, int x, int n);
 
 // interaction.c
 int dialog(const char *prompt, struct interface *interf, int refresh);
-int set_parameter(const char *assign);
+int parse_assign(const char *assign);
 int parse_range(const char *range);
-void load_lang(const char *extension);
+void parse_lang(const char *extension);
 
 // graphical.c
 void init_termbox(void);

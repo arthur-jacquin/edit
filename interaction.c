@@ -106,7 +106,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
 }
 
 int
-set_parameter(const char *assign)
+parse_assign(const char *assign)
 {
     // process a settings modification
 
@@ -128,7 +128,7 @@ set_parameter(const char *assign)
         settings.tab_width = (b >= 0) ? b : TAB_WIDTH;
     } else if (sscanf(assign, "l=%s", s) == 1) {
         old_lang = settings.syntax;
-        load_lang(s);
+        parse_lang(s);
         if (settings.syntax == NULL) {
             settings.syntax = old_lang;
             return 0;
@@ -186,7 +186,7 @@ parse_range(const char *range)
 }
 
 void
-load_lang(const char *extension)
+parse_lang(const char *extension)
 {
     // try to apply a syntax from the identified extension
 

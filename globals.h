@@ -60,7 +60,7 @@ struct line {                       // double linked list of lines
 #define is_last_line(L)             ((L)->next == NULL)
 struct line *first_line;            // pointer to first line in the file
 struct line *first_line_on_screen;  // pointer to first line on screen
-#define first_line_nb               first_line_on_screen->line_nb
+#define first_line_nb               (first_line_on_screen->line_nb)
 struct {
     struct line *start;
     int nb_lines;
@@ -87,7 +87,7 @@ char message[INTERFACE_MEM_LENGTH]; // what is printed in the INTERFACE area
 struct interface {                  // interfaces for dialog mode
     char current[INTERFACE_MEM_LENGTH], previous[INTERFACE_MEM_LENGTH];
 };
-#define init_interface(I, STR)  strcpy(I.current, STR); strcpy(I.previous, STR);
+#define INIT_INTERFACE(I, STR)  strcpy(I.current, STR); strcpy(I.previous, STR);
 struct interface file_name_int;     // name of the file
 struct interface range_int;         // custom range of lines
 struct interface settings_int;      // changing setting

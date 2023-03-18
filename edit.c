@@ -10,6 +10,7 @@
 #include "graphical.c"
 
 #define WAY(DIRECT_CONDITION)       ((DIRECT_CONDITION) ? m : -m)
+#define MOVE_SEL_LIST(A, B)         forget_sel_list(B); B = A; A = NULL;
 
 int
 main(int argc, char *argv[])
@@ -25,11 +26,11 @@ main(int argc, char *argv[])
     settings.case_sensitive = CASE_SENSITIVE;
     settings.field_separator = FIELD_SEPARATOR;
     settings.tab_width = TAB_WIDTH;
-    init_interface(range_int, "")
-    init_interface(settings_int, "")
-    init_interface(command_int, "")
-    init_interface(search_pattern, "")
-    init_interface(replace_pattern, "")
+    INIT_INTERFACE(range_int, "")
+    INIT_INTERFACE(settings_int, "")
+    INIT_INTERFACE(command_int, "")
+    INIT_INTERFACE(search_pattern, "")
+    INIT_INTERFACE(replace_pattern, "")
 
     // editor variables
     y = x = 0; attribute_x = 1;
@@ -51,7 +52,7 @@ main(int argc, char *argv[])
         printf("%s\n", VERSION);
         return 0;
     } else {
-        init_interface(file_name_int, argv[1])
+        INIT_INTERFACE(file_name_int, argv[1])
         load_file(1);
     }
 
@@ -238,21 +239,16 @@ main(int argc, char *argv[])
                             NO_SEL_DOWN_MESSAGE : NO_SEL_UP_MESSAGE);
                     break;
                 case KB_MOVE_JUMP_TO_NEXT:
-                    forget_sel_list(running);
-                    running = saved;
+                    MOVE_SEL_LIST(saved, running)
                     saved = range_lines_sel(first_line_nb + y, nb_lines, NULL);
                     if (dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
-                        forget_sel_list(saved);
-                        saved = displayed;
-                        displayed = NULL;
+                        MOVE_SEL_LIST(displayed, saved);
                         if ((p = find_next_selection(m)).l)
                             unwrap_pos(p);
                         else
                             echo(NO_SEL_DOWN_MESSAGE);
                     }
-                    forget_sel_list(saved);
-                    saved = running;
-                    running = NULL;
+                    MOVE_SEL_LIST(running, saved)
                     break;
                 case KB_SEL_DISPLAY_COUNT:
                     echof(SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
@@ -284,9 +280,7 @@ main(int argc, char *argv[])
                         anchored = 0;
                     if (ev.ch == KB_SEL_APPEND ||
                         dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
-                        forget_sel_list(saved);
-                        saved = displayed;
-                        displayed = NULL;
+                        MOVE_SEL_LIST(displayed, saved)
                     }
                     break;
                 case KB_SEL_CURSOR_WORD:
@@ -307,7 +301,7 @@ main(int argc, char *argv[])
                 case KB_ACT_INCREASE_INDENT:
                 case KB_ACT_DECREASE_INDENT:
                     asked_indent = settings.tab_width *
-                        WAY(ev.ch == KB_ACT_DECREASE_INDENT);
+                        WAY(ev.ch == KB_ACT_INCREASE_INDENT);
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
@@ -369,8 +363,7 @@ main(int argc, char *argv[])
                     break;
                 case TB_KEY_TAB:
                 case TB_KEY_BACK_TAB:
-                    asked_indent = settings.tab_width *
-                        WAY(ev.key == TB_KEY_BACK_TAB);
+                    asked_indent = settings.tab_width*WAY(ev.key == TB_KEY_TAB);
                     act(indent, 1);
                     break;
                 }

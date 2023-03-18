@@ -5,16 +5,17 @@ engine:
     rewrite syntax in cheatsheet.md (| can't follow REP...)
 move to a single file ?
 manipulating hex values: when are casts needed ?
+rename interaction.c functions in parse_*
 
 
 ### Final review
 
-Read, understand, check its correctness, chase unstated assumptions (ASCII only...)
-
-Be critical
+Read, be critical
+    do the right thing ?
     good order of variables ?
     is the goal/use of the function/variable explained enough ?
     is the process clear and non-obvious ? else commented accordingly ?
+    is there some unstated assumptions (ASCII only...) ?
     is the code is written well-enough ? <= 80 chars ?
     use standard functions with n: strncpy, strncat, strn?cmp
     should this be a get_str_index stuff ?
@@ -25,7 +26,6 @@ Be critical
 Extensive testing. Known source of failure:
     check cursor/anchor/selections movements
 
-edit.c
 lines.c
 movements.c
 marks.c
@@ -34,7 +34,9 @@ selections.c
 
 ### Publication
 
+* review *.c files
 * finalise readme.md, tutor.def.md, philosophy.md
+* extensive testing trough `make tutor`
 * finalise config.def.h, including colorscheme
 * add languages and finalise languages.md
 * final check for each file

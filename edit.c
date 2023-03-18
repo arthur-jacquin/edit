@@ -79,7 +79,7 @@ main(int argc, char *argv[])
             if (has_been_changes)
                 write_file(BACKUP_FILE_NAME);
             tb_shutdown();
-            exit(ERR_TERM_NOT_BIG_ENOUGH);
+            return ERR_TERM_NOT_BIG_ENOUGH;
         }
 
         // go to correct position, compute new displayed selections
@@ -121,22 +121,18 @@ main(int argc, char *argv[])
                         echo(UNSAVED_CHANGES_MESSAGE);
                     } else {
                         tb_shutdown();
-                        exit(0);
+                        return 0;
                     }
                     break;
                 case KB_WRITE:
-                    if (has_been_changes) {
-                        write_file(file_name_int.current);
-                        has_been_changes = 0;
-                        echo(FILE_SAVED_MESSAGE);
-                    } else {
-                        echo(NOTHING_TO_WRITE_MESSAGE);
-                    }
-                    break;
                 case KB_WRITE_AS:
-                    if (dialog(SAVE_AS_PROMPT, &file_name_int, 0)) {
+                    if (ev.ch == KB_WRITE && !has_been_changes) {
+                        echo(NOTHING_TO_WRITE_MESSAGE);
+                    } else if (ev.ch == KB_WRITE ||
+                        dialog(SAVE_AS_PROMPT, &file_name_int, 0)) {
                         write_file(file_name_int.current);
-                        load_lang(file_name_int.current);
+                        if (ev.ch == KB_WRITE_AS)
+                            load_lang(file_name_int.current);
                         has_been_changes = 0;
                         echo(FILE_SAVED_MESSAGE);
                     }
@@ -150,10 +146,6 @@ main(int argc, char *argv[])
                     } else {
                         echo(NOTHING_TO_REVERT_MESSAGE);
                     }
-                    break;
-                case KB_INSERT_MODE:
-                    in_insert_mode = 1;
-                    echo(INSERT_MODE_MESSAGE);
                     break;
                 case KB_CHANGE_SETTING:
                     if (dialog(CHANGE_SETTING_PROMPT, &settings_int, 0))
@@ -170,39 +162,20 @@ main(int argc, char *argv[])
                     break;
                 case KB_INSERT_START_LINE:
                 case KB_INSERT_END_LINE:
-                    reset_selections();
-                    x = (ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0;
-                    attribute_x = 1;
-                    in_insert_mode = 1;
-                    echo(INSERT_MODE_MESSAGE);
-                    break;
                 case KB_INSERT_LINE_BELOW:
                 case KB_INSERT_LINE_ABOVE:
                     reset_selections();
+                    if (ev.ch == KB_INSERT_LINE_BELOW ||
+                        ev.ch == KB_INSERT_LINE_ABOVE) {
+                        y += (ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0;
+                        insert_line(first_line_nb + y, 1, 0);
+                    }
+                    x = (ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0;
+                    attribute_x = 1;
+                    // fall-through
+                case KB_INSERT_MODE:
                     in_insert_mode = 1;
                     echo(INSERT_MODE_MESSAGE);
-                    y += (ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0;
-                    x = 0; attribute_x = 1;
-                    insert_line(first_line_nb + y, 1, 0);
-                    break;
-                case KB_CLIP_YANK_LINE:
-                    copy_to_clip(first_line_nb + y, m);
-                    break;
-                case KB_CLIP_YANK_BLOCK:
-                    l1 = find_block_delim(first_line_nb + y, -1);
-                    copy_to_clip(l1, find_block_delim(l1, m) - l1 + 1);
-                    break;
-                case KB_CLIP_DELETE_LINE:
-                    move_to_clip(first_line_nb + y, m);
-                    break;
-                case KB_CLIP_DELETE_BLOCK:
-                    l1 = find_block_delim(first_line_nb + y, -1);
-                    move_to_clip(l1, find_block_delim(l1, m) - l1 + 1);
-                    break;
-                case KB_CLIP_PASTE_AFTER:
-                case KB_CLIP_PASTE_BEFORE:
-                    while (m--)
-                        insert_clip(get_line(y), ev.ch == KB_CLIP_PASTE_AFTER);
                     break;
                 case KB_MOVE_MATCHING:
                     unwrap_pos(find_matching_bracket());
@@ -261,6 +234,17 @@ main(int argc, char *argv[])
                     }
                     MOVE_SEL_LIST(running, saved)
                     break;
+                case KB_SEL_ANCHOR:
+                    if (!anchored)
+                        anchor = pos_of_cursor();
+                    anchored = 1 - anchored;
+                    break;
+                case KB_SEL_COLUMN:
+                    if (anchored && anchor.l != first_line_nb + y)
+                        echo(COLUMN_SEL_ERROR_MESSAGE);
+                    else
+                        unwrap_pos(column_sel(m));
+                    break;
                 case KB_SEL_DISPLAY_COUNT:
                     echof(SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
                     break;
@@ -298,16 +282,15 @@ main(int argc, char *argv[])
                     if (!search_word_under_cursor())
                         echo(NO_WORD_CURSOR_MESSAGE);
                     break;
-                case KB_SEL_ANCHOR:
-                    if (!anchored)
-                        anchor = pos_of_cursor();
-                    anchored = (anchored + 1) & 1;
+                case KB_ACT_SUPPRESS:
+                    asked_remove = m;
+                    act(suppress, 0);
                     break;
-                case KB_SEL_COLUMN:
-                    if (anchored && anchor.l != pos_of_cursor().l)
-                        echo(COLUMN_SEL_ERROR_MESSAGE);
-                    else
-                        unwrap_pos(column_sel(m));
+                case KB_ACT_LOWERCASE:
+                    act(lower, 0);
+                    break;
+                case KB_ACT_UPPERCASE:
+                    act(upper, 0);
                     break;
                 case KB_ACT_INCREASE_INDENT:
                 case KB_ACT_DECREASE_INDENT:
@@ -320,28 +303,42 @@ main(int argc, char *argv[])
                         settings.syntax->highlight_elements)
                         act(comment, 1);
                     break;
-                case KB_ACT_SUPPRESS:
-                    asked_remove = m;
-                    act(suppress, 0);
-                    break;
                 case KB_ACT_REPLACE:
                     if (dialog(REPLACE_PATTERN_PROMPT, &replace_pattern, 0))
                         act(replace, 0);
                     break;
-                case KB_ACT_LOWERCASE:
-                    act(lower, 0);
+                case KB_CLIP_YANK_LINE:
+                case KB_CLIP_YANK_BLOCK:
+                case KB_CLIP_DELETE_LINE:
+                case KB_CLIP_DELETE_BLOCK:
+                    if (ev.ch == KB_CLIP_YANK_LINE ||
+                        ev.ch == KB_CLIP_DELETE_LINE) {
+                        l1 = first_line_nb + y;
+                    } else {
+                        l1 = find_block_delim(first_line_nb + y, -1);
+                        m = find_block_delim(l1, m) - l1 + 1;
+                    }
+                    if (ev.ch == KB_CLIP_YANK_LINE ||
+                        ev.ch == KB_CLIP_YANK_BLOCK) {
+                        copy_to_clip(l1, m);
+                    } else {
+                        move_to_clip(l1, m);
+                    }
                     break;
-                case KB_ACT_UPPERCASE:
-                    act(upper, 0);
+                case KB_CLIP_PASTE_AFTER:
+                case KB_CLIP_PASTE_BEFORE:
+                    while (m--)
+                        insert_clip(get_line(y), ev.ch == KB_CLIP_PASTE_AFTER);
                     break;
                 }
             } else if (ev.key) {
                 switch (ev.key) {
-#ifdef ENABLE_AUTOCOMPLETE
-                case KB_ACT_AUTOCOMPLETE:
-                    act(autocomplete, 0);
+                case TB_KEY_ENTER:
+                    if (in_insert_mode)
+                        act(split, 0);
+                    else
+                        y += m;
                     break;
-#endif // ENABLE_AUTOCOMPLETE
                 case TB_KEY_ARROW_RIGHT:
                 case TB_KEY_ARROW_LEFT:
                     x += way(ev.key == TB_KEY_ARROW_RIGHT); attribute_x = 1;
@@ -360,12 +357,6 @@ main(int argc, char *argv[])
                         reset_selections();
                     echo("");
                     break;
-                case TB_KEY_ENTER:
-                    if (in_insert_mode)
-                        act(split, 0);
-                    else
-                        y += m;
-                    break;
                 case TB_KEY_BACKSPACE:
                 case TB_KEY_BACKSPACE2:
                 case TB_KEY_DELETE:
@@ -377,6 +368,11 @@ main(int argc, char *argv[])
                     asked_indent = settings.tab_width*way(ev.key == TB_KEY_TAB);
                     act(indent, 1);
                     break;
+#ifdef ENABLE_AUTOCOMPLETE
+                case KB_ACT_AUTOCOMPLETE:
+                    act(autocomplete, 0);
+                    break;
+#endif // ENABLE_AUTOCOMPLETE
                 }
             }
             m = 0;

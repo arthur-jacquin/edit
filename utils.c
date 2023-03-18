@@ -1,6 +1,3 @@
-#define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
-#define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
-
 static char utf8_start[4] = {0, 0xc0, 0xe0, 0xf0};
 static char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
 

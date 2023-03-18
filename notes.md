@@ -3,10 +3,11 @@
 engine:
     review the process, test everything (classes, last element of group)
     rewrite syntax in cheatsheet.md (| can't follow REP...)
-add jump to to *.md
+move to a single file ?
 
 
 ### Final review
+
 
 Read, understand, check its correctness, chase unstated assumptions (ASCII only...)
 
@@ -28,24 +29,20 @@ Extensive testing. Known source of failure:
     manipulating hex values: cast needed ?
 
 actions.c
-config.def.h
 edit.c
 file.c
-globals.h
-print_line in graphical.c
+graphical.c: print_line
 interaction.c
-languages.h
 lines.c
 movements.c
 search_and_replace.c
 selections.c
-termbox.h
 utils.c
 
 ### Publication
 
 * finalise readme.md, tutor.def.md, philosophy.md
-* strong config.def.h, including colorscheme
+* finalise config.def.h, including colorscheme
 * add languages
 * final check for each file
 * script, do and upload the screencast

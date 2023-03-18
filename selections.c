@@ -125,9 +125,9 @@ get_pos_of_sel(struct selection *a, int index)
 }
 
 struct pos
-column_sel(int m)
+column_sel(int n)
 {
-    // append running selection and duplicates on followning m-1 lines to saved
+    // append running selection and duplicates on followning n-1 lines to saved
     // return position for cursor
     // will not work if running selection is multiline
 
@@ -140,8 +140,8 @@ column_sel(int m)
     cursor = pos_of_cursor();
     if (anchored && anchor.l != cursor.l)
         return cursor;
-    if (cursor.l + m - 1 > nb_lines)
-        m = nb_lines - cursor.l + 1;
+    if (cursor.l + n - 1 > nb_lines)
+        n = nb_lines - cursor.l + 1;
     if (anchored) {
         delta = cursor.x - anchor.x;
         wx = (delta > 0) ? anchor.x : cursor.x;
@@ -153,8 +153,8 @@ column_sel(int m)
 
     // extract selections
     last = NULL;
-    l = get_line(y + m - 1);
-    for (i = 0; i < m; i++) {
+    l = get_line(y + n - 1);
+    for (i = 0; i < n; i++) {
         if (l->dl >= wx)
             last = create_sel(l->line_nb, wx,
                 (wn <= l->dl - wx) ? (wn) : (l->dl - wx), last);
@@ -168,15 +168,15 @@ column_sel(int m)
 
     // refresh anchor
     if (anchored) {
-        if (cursor.l + m > nb_lines)
+        if (cursor.l + n > nb_lines)
             anchored = 0;
-        else if (anchor.x > get_line(y + m)->dl)
+        else if (anchor.x > get_line(y + n)->dl)
             anchored = 0;
         else
-            anchor.l = cursor.l + m;
+            anchor.l = cursor.l + n;
     }
 
-    return pos_of(cursor.l + m, x);
+    return pos_of(cursor.l + n, x);
 }
 
 struct selection *

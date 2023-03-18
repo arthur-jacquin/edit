@@ -1,4 +1,29 @@
-#define IS_TYPE(TYPE, L)        is_in(*(syntax->TYPE), l->chars, k, (L))
+#define MIN_HEIGHT                  2
+#if LINE_NUMBERS_WIDTH < 1
+    #define LINE_NUMBERS_MODULUS    1
+#elif LINE_NUMBERS_WIDTH == 2
+    #define LINE_NUMBERS_MODULUS    10
+#elif LINE_NUMBERS_WIDTH == 3
+    #define LINE_NUMBERS_MODULUS    100
+#elif LINE_NUMBERS_WIDTH == 4
+    #define LINE_NUMBERS_MODULUS    1000
+#else
+    #define LINE_NUMBERS_MODULUS    10000
+#endif
+
+#define IS_TYPE(TYPE, L)            is_in(*(syntax->TYPE), l->chars, k, (L))
+
+static struct printable {           // information to print a character
+    uint32_t ch;                    // Unicode codepoint
+    uint16_t fg, bg;                // foreground and background attributes
+};
+
+int scroll_offset;                  // minimum number of lines around cursor
+int screen_height, screen_width;    // terminal dimensions
+char message[INTERFACE_MEM_LENGTH]; // what is printed in the INTERFACE area
+
+static int is_bracket;
+static struct pos matching_bracket;
 
 void
 init_termbox(void)
@@ -221,8 +246,7 @@ print_ruler(void)
 
     // print
     tb_printf(screen_width - RULER_WIDTH, screen_height - 1,
-        COLOR_RULER, COLOR_BG_DEFAULT,
-        "%d:%d", first_line_nb + y, x);
+        COLOR_RULER, COLOR_BG_DEFAULT, "%d:%d", first_line_nb + y, x);
 }
 
 void

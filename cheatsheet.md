@@ -24,6 +24,7 @@
               t/T   {m} next/previous word
               }/{   {m} next/previous block
               n/N   {m} next/previous selection
+                J   jump to {m} next match for prompted pattern
 
     MANAGING SELECTIONS
 

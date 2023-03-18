@@ -7,6 +7,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
 
     int dpl, dx, n, i, j, k, len, has_been_resized;
     uint32_t c;
+    struct tb_event ev;                 // struct to retrieve events
 
     for (k = i = 0; prompt[k]; i++)
         k += utf8_char_length(prompt[k]);
@@ -48,7 +49,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                 switch (ev.key) {
                 case TB_KEY_ESC:
                     strcpy(interf->current, interf->previous);
-                    echo("");
+                    strcpy(message, "");
                     return 0;
                 case TB_KEY_ENTER:
                     strcpy(interf->previous, interf->current);
@@ -114,7 +115,7 @@ set_parameter(const char *assign)
     // process a settings modification
 
     int b;
-    char c, s[LANG_WIDTH];
+    char c, s[INTERFACE_MEM_LENGTH];
     struct lang *old_lang;
 
     if (strchr(assign, '=') == NULL) {

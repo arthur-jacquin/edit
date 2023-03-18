@@ -1,3 +1,8 @@
+static struct {
+    struct line *start;
+    int nb_lines;
+} clipboard;
+
 struct line *
 get_line(int delta_from_first_line_on_screen)
 {
@@ -286,6 +291,16 @@ move_line(int delta)
 }
 
 void
+empty_clip(int was_defined)
+{
+    // empty the clipboard
+
+    if (was_defined)
+        forget_lines(clipboard.start);
+    clipboard.start = NULL;
+}
+
+void
 copy_to_clip(int starting_line_nb, int nb)
 {
     // copy nb lines to clipboard, starting at line number starting_line_nb
@@ -293,13 +308,10 @@ copy_to_clip(int starting_line_nb, int nb)
     int i;
     struct line *l, *cb_l, *old_cb_l;
 
-    // empty clipboard
-    forget_lines(clipboard.start);
-    clipboard.start = NULL;
-
     // adjust number of lines
     if (starting_line_nb + nb - 1 > nb_lines)
         nb = nb_lines + 1 - starting_line_nb;
+    empty_clip(1);
     clipboard.nb_lines = nb;
 
     l = get_line(starting_line_nb - first_line_nb);
@@ -322,10 +334,6 @@ move_to_clip(int starting_line_nb, int nb)
     // copy nb lines to clipboard, starting at line number starting_line_nb
 
     struct line *starting, *ending;
-
-    // empty clipboard
-    forget_lines(clipboard.start);
-    clipboard.start = NULL;
 
     // adjust number of lines
     if (starting_line_nb + nb - 1 > nb_lines)
@@ -353,6 +361,7 @@ move_to_clip(int starting_line_nb, int nb)
     link_lines(NULL, starting);
     link_lines(ending, NULL);
     shift_line_nb(starting, 0, 0, -starting->line_nb);
+    empty_clip(1);
     clipboard.start = starting;
     clipboard.nb_lines = nb;
     has_been_changes = 1;

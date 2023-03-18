@@ -1,24 +1,10 @@
-// INCLUDES ********************************************************************
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
-#define TB_IMPL
-#include "termbox.h"
 #include "config.h"
-#include "languages.h"
-
-
-// CONSTANTS *******************************************************************
-
-#define VERSION                     "alpha"
-#define HELP_MESSAGE                "Help available at https://jacquin.xyz/edit"
-#define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
-#define INTERFACE_MEM_LENGTH        (4*INTERFACE_WIDTH + 1)
-#define MIN_HEIGHT                  2
-#define LANG_WIDTH                  5
-#define DEFAULT_BUF_SIZE            (1 << 7)
 
 
 // ERROR CODES *****************************************************************
@@ -29,27 +15,16 @@
 #define ERR_TERM_NOT_BIG_ENOUGH     4
 
 
-// STRUCTS, MACROS, VARIABLES **************************************************
+// CONSTANTS *******************************************************************
 
-// editor variables
-struct {
-    int syntax_highlight;
-    int highlight_selections;
-    int case_sensitive;
-    char field_separator;
-    int tab_width;
-    struct lang *syntax;            // pointer to selected syntax, NULL if none
-} settings;
-int nb_lines;                       // number of lines in file
-int m;                              // multiplier
-int anchored, in_insert_mode;
-int has_been_changes;
-int has_been_invalid_resizing;
-int is_bracket;
-int asked_indent, asked_remove;
+#define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
+#define INTERFACE_MEM_LENGTH        (4*INTERFACE_WIDTH + 1)
+#define DEFAULT_BUF_SIZE            (1 << 7)
 
-// lines
-struct line {                       // double linked list of lines
+
+// STRUCTS *********************************************************************
+
+struct line {                       // doubly linked list of lines
     struct line *prev;              // pointer to previous line, NULL if none
     struct line *next;              // pointer to next line, NULL if none
     int line_nb;                    // line number, between 1 and nb_lines
@@ -58,74 +33,31 @@ struct line {                       // double linked list of lines
 };
 #define is_first_line(L)            ((L)->prev == NULL)
 #define is_last_line(L)             ((L)->next == NULL)
-struct line *first_line;            // pointer to first line in the file
-struct line *first_line_on_screen;  // pointer to first line on screen
-#define first_line_nb               (first_line_on_screen->line_nb)
-struct {
-    struct line *start;
-    int nb_lines;
-} clipboard;
 
-// positions
 struct pos {                        // position in file
     int l, x;                       // line number, column
 };
-struct pos anchor, matching_bracket;
 
-// selections
-struct selection {                  // sorted list of selections
+struct selection {                  // sorted list of non-overlapping selections
     int l, x, n;                    // line number, column, number of characters
     struct selection *next;         // pointer to next selection, NULL if none
 };
-struct selection *saved, *running, *displayed;
 
-// interaction
-struct tb_event ev;                 // struct to retrieve events
-char message[INTERFACE_MEM_LENGTH]; // what is printed in the INTERFACE area
-#define echo(MESSAGE)               strcpy(message, MESSAGE)
-#define echof(PATTERN, INTEGER)     sprintf(message, PATTERN, INTEGER)
 struct interface {                  // interfaces for dialog mode
     char current[INTERFACE_MEM_LENGTH], previous[INTERFACE_MEM_LENGTH];
 };
-#define INIT_INTERFACE(I, STR)  strcpy(I.current, STR); strcpy(I.previous, STR);
-struct interface file_name_int;     // name of the file
-struct interface range_int;         // custom range of lines
-struct interface settings_int;      // changing setting
-struct interface command_int;       // running a shell command
 
-// search and replace engine
 struct substring {                  // marks a substring in an original string
     int st, mst;                    // starting position (characters, bytes)
     int n, mn;                      // length (characters, bytes)
 };
-struct substring fields[10], subpatterns[10];
-struct interface search_pattern, replace_pattern;
-
-// graphical
-int y, x;                           // cursor position in file area
-int attribute_x;                    // prefer new x value to saved one
-int scroll_offset;                  // minimum number of lines around cursor
-int screen_height, screen_width;    // terminal dimensions
-struct printable {                  // information to print a character
-    uint32_t ch;                    // Unicode codepoint
-    uint16_t fg, bg;                // foreground and background attributes
-};
-#if LINE_NUMBERS_WIDTH < 1
-    #define LINE_NUMBERS_MODULUS    1
-#elif LINE_NUMBERS_WIDTH == 2
-    #define LINE_NUMBERS_MODULUS    10
-#elif LINE_NUMBERS_WIDTH == 3
-    #define LINE_NUMBERS_MODULUS    100
-#elif LINE_NUMBERS_WIDTH == 4
-    #define LINE_NUMBERS_MODULUS    1000
-#else
-    #define LINE_NUMBERS_MODULUS    10000
-#endif // LINE_NUMBERS_WIDTH
 
 
 // FUNCTIONS *******************************************************************
 
 // utils.c
+#define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
+#define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
 int is_word_char(char c);
 int utf8_char_length(char c);
 int unicode_char_length(uint32_t c);
@@ -184,6 +116,7 @@ void break_line(struct line *l, struct selection *s, int start);
 void concatenate_line(struct line *l, struct selection *s);
 void insert_line(int line_nb, int ml, int dl);
 void move_line(int delta);
+void empty_clip(int was_defined);
 void copy_to_clip(int starting_line_nb, int nb);
 void move_to_clip(int starting_line_nb, int nb);
 void insert_clip(struct line *starting_line, int below);
@@ -219,3 +152,45 @@ struct selection *print_line(const struct line *l, struct selection *s,
 void print_dialog(void);
 void print_ruler(void);
 void print_all(void);
+
+
+// VARIABLES *******************************************************************
+
+// file informations
+struct interface file_name_int;     // name of the file
+struct line *first_line;            // pointer to first line in the file
+struct line *first_line_on_screen;  // pointer to first line on screen
+#define first_line_nb               (first_line_on_screen->line_nb)
+int nb_lines;                       // number of lines in file
+
+// positions
+int y, x;                           // cursor position in file area
+struct pos anchor;                  // anchor position (if anchored)
+
+// selections lists
+struct selection *saved, *running, *displayed;
+
+// settings
+struct {
+    int case_sensitive;
+    char field_separator;
+    int highlight_selections;
+    struct lang *syntax;            // pointer to selected syntax, NULL if none
+    int syntax_highlight;
+    int tab_width;
+} settings;
+
+// flags
+int anchored;
+int attribute_x;                    // prefer new x value to saved one
+int has_been_changes;
+int has_been_invalid_resizing;
+int in_insert_mode;
+
+// additional parameters for processing functions
+int asked_indent, asked_remove;
+uint32_t to_insert;
+
+// search and replace engine
+struct interface search_pattern, replace_pattern;
+struct substring fields[10], subpatterns[10];

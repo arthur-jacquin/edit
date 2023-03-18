@@ -262,6 +262,9 @@ FALSE and any other value meaning TRUE.
               t/T   {m} next/previous word
               }/{   {m} next/previous block
               n/N   {m} next/previous selection
+                J   jump to {m} next match for prompted pattern
+
+Use `J` to navigate quickly through the file without changing selections.
 
 
 ## 3.6: managing selections

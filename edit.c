@@ -1,46 +1,37 @@
 #include "globals.h"
-#include "utils.c"
-#include "file.c"
-#include "movements.c"
-#include "selections.c"
-#include "lines.c"
-#include "actions.c"
-#include "search_and_replace.c"
-#include "interaction.c"
-#include "graphical.c"
+#include "languages.h"
+#define TB_IMPL
+#include "termbox.h"
 
-#define WAY(DIRECT_CONDITION)       ((DIRECT_CONDITION) ? m : -m)
+#include "actions.c"
+#include "file.c"
+#include "graphical.c"
+#include "interaction.c"
+#include "lines.c"
+#include "movements.c"
+#include "search_and_replace.c"
+#include "selections.c"
+#include "utils.c"
+
+#define VERSION                     "alpha"
+#define HELP_MESSAGE                "Help available at https://jacquin.xyz/edit"
+#define INIT_INTERFACE(I, S)        strcpy(I.current, S); strcpy(I.previous, S);
 #define MOVE_SEL_LIST(A, B)         forget_sel_list(B); B = A; A = NULL;
+#define echo(MESSAGE)               strcpy(message, MESSAGE)
+#define echof(PATTERN, INTEGER)     sprintf(message, PATTERN, INTEGER)
+#define way(DIRECT_CONDITION)       ((DIRECT_CONDITION) ? m : -m)
 
 int
 main(int argc, char *argv[])
 {
+    struct tb_event ev;             // struct to retrieve events
+    struct interface range_int;     // interface for custom range of lines
+    struct interface settings_int;  // interface for changing a setting
+    struct interface command_int;   // interface for running a shell command
+    int m;                          // multiplier
+
     int l1, l2, old_line_nb;
     struct pos p;
-
-    // INIT VARIABLES **********************************************************
-
-    // settings and interfaces
-    settings.syntax_highlight = SYNTAX_HIGHLIGHT;
-    settings.highlight_selections = HIGHLIGHT_SELECTIONS;
-    settings.case_sensitive = CASE_SENSITIVE;
-    settings.field_separator = FIELD_SEPARATOR;
-    settings.tab_width = TAB_WIDTH;
-    INIT_INTERFACE(range_int, "")
-    INIT_INTERFACE(settings_int, "")
-    INIT_INTERFACE(command_int, "")
-    INIT_INTERFACE(search_pattern, "")
-    INIT_INTERFACE(replace_pattern, "")
-
-    // editor variables
-    y = x = 0; attribute_x = 1;
-    m = in_insert_mode = anchored = is_bracket = has_been_invalid_resizing = 0;
-    saved = running = displayed = NULL;
-    clipboard.start = NULL;
-
-    // initialise termbox
-    init_termbox();
-    echo(WELCOME_MESSAGE);
 
 
     // PARSING ARGUMENTS *******************************************************
@@ -55,6 +46,29 @@ main(int argc, char *argv[])
         INIT_INTERFACE(file_name_int, argv[1])
         load_file(1);
     }
+
+
+    // INIT VARIABLES **********************************************************
+
+    y = x = 0; attribute_x = 1;
+    saved = running = displayed = NULL;
+    m = anchored = has_been_invalid_resizing = in_insert_mode = 0;
+    empty_clip(0);
+
+    settings.case_sensitive = CASE_SENSITIVE;
+    settings.field_separator = FIELD_SEPARATOR;
+    settings.highlight_selections = HIGHLIGHT_SELECTIONS;
+    settings.syntax_highlight = SYNTAX_HIGHLIGHT;
+    settings.tab_width = TAB_WIDTH;
+
+    INIT_INTERFACE(search_pattern, "")
+    INIT_INTERFACE(replace_pattern, "")
+    INIT_INTERFACE(range_int, "")
+    INIT_INTERFACE(settings_int, "")
+    INIT_INTERFACE(command_int, "")
+
+    init_termbox();
+    echo(WELCOME_MESSAGE);
 
 
     // MAIN LOOP ***************************************************************
@@ -86,6 +100,7 @@ main(int argc, char *argv[])
         switch (ev.type) {
         case TB_EVENT_KEY:
             if (ev.ch && in_insert_mode) {
+                to_insert = ev.ch;
                 act(insert, 0);
                 break;
             } else if ((m && ev.ch == '0') || ('1' <= ev.ch && ev.ch <= '9')) {
@@ -209,26 +224,25 @@ main(int argc, char *argv[])
                     break;
                 case KB_MOVE_NEXT_CHAR:
                 case KB_MOVE_PREV_CHAR:
-                    x += WAY(ev.ch == KB_MOVE_NEXT_CHAR); attribute_x = 1;
+                    x += way(ev.ch == KB_MOVE_NEXT_CHAR); attribute_x = 1;
                     break;
                 case KB_MOVE_NEXT_LINE:
                 case KB_MOVE_PREV_LINE:
-                    y += WAY(ev.ch == KB_MOVE_NEXT_LINE);
+                    y += way(ev.ch == KB_MOVE_NEXT_LINE);
                     break;
                 case KB_MOVE_NEXT_WORD:
                 case KB_MOVE_PREV_WORD:
                     unwrap_pos(find_start_of_word(
-                        WAY(ev.ch == KB_MOVE_NEXT_WORD)));
+                        way(ev.ch == KB_MOVE_NEXT_WORD)));
                     break;
-                // TODO macro + unification
                 case KB_MOVE_NEXT_BLOCK:
                 case KB_MOVE_PREV_BLOCK:
                     y = find_block_delim(first_line_nb + y,
-                        WAY(ev.ch == KB_MOVE_NEXT_BLOCK)) - first_line_nb;
+                        way(ev.ch == KB_MOVE_NEXT_BLOCK)) - first_line_nb;
                     break;
                 case KB_MOVE_NEXT_SEL:
                 case KB_MOVE_PREV_SEL:
-                    p = find_next_selection(WAY(ev.ch == KB_MOVE_NEXT_SEL));
+                    p = find_next_selection(way(ev.ch == KB_MOVE_NEXT_SEL));
                     if (p.l)
                         unwrap_pos(p);
                     else
@@ -298,7 +312,7 @@ main(int argc, char *argv[])
                 case KB_ACT_INCREASE_INDENT:
                 case KB_ACT_DECREASE_INDENT:
                     asked_indent = settings.tab_width *
-                        WAY(ev.ch == KB_ACT_INCREASE_INDENT);
+                        way(ev.ch == KB_ACT_INCREASE_INDENT);
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
@@ -330,14 +344,14 @@ main(int argc, char *argv[])
 #endif // ENABLE_AUTOCOMPLETE
                 case TB_KEY_ARROW_RIGHT:
                 case TB_KEY_ARROW_LEFT:
-                    x += WAY(ev.key == TB_KEY_ARROW_RIGHT); attribute_x = 1;
+                    x += way(ev.key == TB_KEY_ARROW_RIGHT); attribute_x = 1;
                     break;
                 case TB_KEY_ARROW_DOWN:
                 case TB_KEY_ARROW_UP:
                     if (ev.mod == TB_MOD_SHIFT)
-                        move_line(WAY(ev.key == TB_KEY_ARROW_DOWN));
+                        move_line(way(ev.key == TB_KEY_ARROW_DOWN));
                     else
-                        y += WAY(ev.key == TB_KEY_ARROW_DOWN);
+                        y += way(ev.key == TB_KEY_ARROW_DOWN);
                     break;
                 case TB_KEY_ESC:
                     if (in_insert_mode)
@@ -355,12 +369,12 @@ main(int argc, char *argv[])
                 case TB_KEY_BACKSPACE:
                 case TB_KEY_BACKSPACE2:
                 case TB_KEY_DELETE:
-                    asked_remove = WAY(ev.key == TB_KEY_DELETE);
+                    asked_remove = way(ev.key == TB_KEY_DELETE);
                     act(suppress, 0);
                     break;
                 case TB_KEY_TAB:
                 case TB_KEY_BACK_TAB:
-                    asked_indent = settings.tab_width*WAY(ev.key == TB_KEY_TAB);
+                    asked_indent = settings.tab_width*way(ev.key == TB_KEY_TAB);
                     act(indent, 1);
                     break;
                 }

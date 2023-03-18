@@ -34,15 +34,15 @@
 #define VISUAL_COLUMN               79
 #define ENABLE_AUTOCOMPLETE
 
-// must be defined (but might be set to 0)
+// must de defined (but can be set to 0 to disable)
 #define LINE_NUMBERS_WIDTH          4
-#define SCROLL_LINE_NUMBER          3
 #define SCROLL_OFFSET               3
+#define SCROLL_LINE_NUMBER          3
 
 // must de defined
-#define BACKUP_FILE_NAME            "edit_backup_file"
 #define MIN_WIDTH                   80
 #define RULER_WIDTH                 8
+#define BACKUP_FILE_NAME            "edit_backup_file"
 
 
 // DEFAULT VALUES FOR RUNTIME-MODIFIABLE PARAMETERS ****************************
@@ -171,11 +171,9 @@
 
 // LANGUAGES *******************************************************************
 
-// Languages supported:
+// Please define at least one language. If a language you want isn't supported
+// yet, you can add it yourself in languages.h. Currently supported languages:
 // C, MARKDOWN, PYTHON
-
-// If a language you want isn't supported yet, you can add it yourself in
-// languages.h.
 
 #define C
 #define MARKDOWN

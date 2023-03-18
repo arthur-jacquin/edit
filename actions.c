@@ -61,13 +61,13 @@ upper(struct line *l, struct selection *s)
 void
 insert(struct line *l, struct selection *s)
 {
-    // insert ev.ch at the beginning of selections
+    // insert to_insert at the beginning of selections
 
     int k, len;
 
-    len = unicode_char_length(ev.ch);
+    len = unicode_char_length(to_insert);
     k = replace_chars(l, s, s->x, 0, 1, len);
-    insert_utf8(l->chars, k, len, ev.ch);
+    insert_utf8(l->chars, k, len, to_insert);
 }
 
 void

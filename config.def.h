@@ -141,6 +141,7 @@
 #define KB_MOVE_PREV_BLOCK          '{'
 #define KB_MOVE_NEXT_SEL            'n'
 #define KB_MOVE_PREV_SEL            'N'
+#define KB_MOVE_JUMP_TO_NEXT        'J'
 
 // selections
 #define KB_SEL_DISPLAY_COUNT        'c'

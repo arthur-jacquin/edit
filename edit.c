@@ -9,6 +9,8 @@
 #include "interaction.c"
 #include "graphical.c"
 
+#define WAY(DIRECT_CONDITION)       ((DIRECT_CONDITION) ? m : -m)
+
 int
 main(int argc, char *argv[])
 {
@@ -205,22 +207,19 @@ main(int argc, char *argv[])
                     y = m - first_line_nb;
                     break;
                 case KB_MOVE_NEXT_CHAR:
-                    x += m; attribute_x = 1;
-                    break;
                 case KB_MOVE_PREV_CHAR:
-                    x -= m; attribute_x = 1;
+                    x += WAY(ev.ch == KB_MOVE_NEXT_CHAR); attribute_x = 1;
                     break;
                 case KB_MOVE_NEXT_LINE:
-                    y += m;
-                    break;
                 case KB_MOVE_PREV_LINE:
-                    y -= m;
+                    y += WAY(ev.ch == KB_MOVE_NEXT_LINE);
                     break;
                 case KB_MOVE_NEXT_WORD:
                 case KB_MOVE_PREV_WORD:
                     unwrap_pos(find_start_of_word(
-                        (ev.ch == KB_MOVE_NEXT_WORD) ? m : -m));
+                        WAY(ev.ch == KB_MOVE_NEXT_WORD)));
                     break;
+                // TODO macro + unification
                 case KB_MOVE_NEXT_BLOCK:
                     y = find_end_of_block(first_line_nb + y, m)
                         - first_line_nb;
@@ -230,16 +229,30 @@ main(int argc, char *argv[])
                         - first_line_nb;
                     break;
                 case KB_MOVE_NEXT_SEL:
-                    if ((p = find_next_selection(m)).l)
-                        unwrap_pos(p);
-                    else
-                        echo(NO_SEL_DOWN_MESSAGE);
-                    break;
                 case KB_MOVE_PREV_SEL:
-                    if ((p = find_next_selection(-m)).l)
+                    p = find_next_selection(WAY(ev.ch == KB_MOVE_NEXT_SEL));
+                    if (p.l)
                         unwrap_pos(p);
                     else
-                        echo(NO_SEL_UP_MESSAGE);
+                        echo((ev.ch == KB_MOVE_NEXT_SEL) ?
+                            NO_SEL_DOWN_MESSAGE : NO_SEL_UP_MESSAGE);
+                    break;
+                case KB_MOVE_JUMP_TO_NEXT:
+                    forget_sel_list(running);
+                    running = saved;
+                    saved = range_lines_sel(first_line_nb + y, nb_lines, NULL);
+                    if (dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
+                        forget_sel_list(saved);
+                        saved = displayed;
+                        displayed = NULL;
+                        if ((p = find_next_selection(m)).l)
+                            unwrap_pos(p);
+                        else
+                            echo(NO_SEL_DOWN_MESSAGE);
+                    }
+                    forget_sel_list(saved);
+                    saved = running;
+                    running = NULL;
                     break;
                 case KB_SEL_DISPLAY_COUNT:
                     echof(SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
@@ -267,12 +280,13 @@ main(int argc, char *argv[])
                 case KB_SEL_FIND:
                 case KB_SEL_SEARCH:
                 case KB_SEL_APPEND:
+                    if (ev.ch == KB_SEL_APPEND)
+                        anchored = 0;
                     if (ev.ch == KB_SEL_APPEND ||
                         dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
                         forget_sel_list(saved);
                         saved = displayed;
                         displayed = NULL;
-                        anchored = 0;
                     }
                     break;
                 case KB_SEL_CURSOR_WORD:
@@ -292,8 +306,8 @@ main(int argc, char *argv[])
                     break;
                 case KB_ACT_INCREASE_INDENT:
                 case KB_ACT_DECREASE_INDENT:
-                    asked_indent = m * settings.tab_width *
-                        ((ev.ch == KB_ACT_DECREASE_INDENT) ? -1 : 1);
+                    asked_indent = settings.tab_width *
+                        WAY(ev.ch == KB_ACT_DECREASE_INDENT);
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
@@ -324,22 +338,15 @@ main(int argc, char *argv[])
                     break;
 #endif // ENABLE_AUTOCOMPLETE
                 case TB_KEY_ARROW_RIGHT:
-                    x += m; attribute_x = 1;
-                    break;
                 case TB_KEY_ARROW_LEFT:
-                    x -= m; attribute_x = 1;
+                    x += WAY(ev.key == TB_KEY_ARROW_RIGHT); attribute_x = 1;
                     break;
                 case TB_KEY_ARROW_DOWN:
-                    if (ev.mod == TB_MOD_SHIFT)
-                        move_line(m);
-                    else
-                        y += m;
-                    break;
                 case TB_KEY_ARROW_UP:
                     if (ev.mod == TB_MOD_SHIFT)
-                        move_line(-m);
+                        move_line(WAY(ev.key == TB_KEY_ARROW_DOWN));
                     else
-                        y -= m;
+                        y += WAY(ev.key == TB_KEY_ARROW_DOWN);
                     break;
                 case TB_KEY_ESC:
                     if (in_insert_mode)
@@ -357,13 +364,13 @@ main(int argc, char *argv[])
                 case TB_KEY_BACKSPACE:
                 case TB_KEY_BACKSPACE2:
                 case TB_KEY_DELETE:
-                    asked_remove = (ev.key == TB_KEY_DELETE) ? m : -m;
+                    asked_remove = WAY(ev.key == TB_KEY_DELETE);
                     act(suppress, 0);
                     break;
                 case TB_KEY_TAB:
                 case TB_KEY_BACK_TAB:
-                    asked_indent = m * settings.tab_width *
-                        ((ev.key == TB_KEY_BACK_TAB) ? -1 : 1);
+                    asked_indent = settings.tab_width *
+                        WAY(ev.key == TB_KEY_BACK_TAB);
                     act(indent, 1);
                     break;
                 }

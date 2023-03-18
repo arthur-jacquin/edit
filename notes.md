@@ -3,6 +3,9 @@
 engine:
     review the process, test everything (classes, last element of group)
     rewrite syntax in cheatsheet.md (| can't follow REP...)
+dialog: change int refresh to struct selection *search_in ?
+unify find_{start,end}_of_block ?
+macro for moving selection lists ?
 
 
 ### Final review

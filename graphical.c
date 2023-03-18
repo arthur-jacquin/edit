@@ -63,7 +63,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     // return selection queue after this line
 
     // variables
-    int k, i, j, len, color, nb_to_color, underline;
+    int k, dk, i, j, len, color, nb_to_color, underline;
     char c, nc;
     struct printable *buf = _malloc((l->dl) * sizeof(struct printable));
     struct lang *syntax = settings.syntax;
@@ -117,8 +117,8 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 
                 // WORD
                 } else if (is_word_char(c)) {
-                    for (j = 0; is_word_char(nc = l->chars[k+j]) ||
-                        isdigit(nc); j++)
+                    for (j = dk = 0; is_word_char(nc = l->chars[k + dk]) ||
+                        isdigit(nc); j++, dk += utf8_char_length(nc))
                         ;
                     if (IS_TYPE(keywords, j)) {
                         color = COLOR_KEYWORD;
@@ -128,7 +128,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                         color = COLOR_BUILT_IN;
                     }
                     nb_to_color = j;
-                    k += j;
+                    k += dk;
 
                 // NUMBER
                 } else if (isdigit(c) || (k+1 < l->ml && (c == '-' || c == '.')

@@ -6,7 +6,7 @@ is_word_char(char c)
 {
     // check if c is a word character
 
-    return isalpha(c) || (c == '_');
+    return isalpha(c) || (c == '_') || (c == (char) 0xc3);
 }
 
 int

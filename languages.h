@@ -41,7 +41,7 @@ char *c_bi = ""
     "sizeof malloc strcmp strcpy "; // TODO: cf stdlib.h, string.h...
 char *c_comment = "// ";
 struct rule c_rules[] = {
-    {"#",   1,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    {"#",   0,  COLOR_KEYWORD,      COLOR_KEYWORD},
     {"",    0,  0,                  0},
 };
 #endif // C

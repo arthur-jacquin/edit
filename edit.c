@@ -243,7 +243,7 @@ main(int argc, char *argv[])
                     if (anchored && anchor.l != first_line_nb + y)
                         echo(COLUMN_SEL_ERROR_MESSAGE);
                     else
-                        unwrap_pos(column_sel(m));
+                        y += column_sel(m);
                     break;
                 case KB_SEL_DISPLAY_COUNT:
                     echof(SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));

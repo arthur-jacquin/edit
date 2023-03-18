@@ -54,7 +54,7 @@ reset_selections(void)
 int
 is_inf(struct pos p1, struct pos p2)
 {
-    // 1 if p1 < p2, else 0
+    // return 1 if p1 < p2, else 0
 
     return (p1.l < p2.l) || ((p1.l == p2.l) && (p1.x < p2.x));
 }
@@ -110,7 +110,7 @@ index_closest_after_cursor(struct selection *a)
 struct pos
 get_pos_of_sel(struct selection *a, int index)
 {
-    // extract the position of corresponding selection, null if does not exist
+    // extract the position of corresponding selection, NULL if does not exist
 
     int count;
 
@@ -124,22 +124,22 @@ get_pos_of_sel(struct selection *a, int index)
     return pos_of(a->l, a->x);
 }
 
-struct pos
+int
 column_sel(int n)
 {
     // append running selection and duplicates on followning n-1 lines to saved
-    // return position for cursor
+    // return number of selections created
     // will not work if running selection is multiline
 
-    int i, delta, wx, wn;
-    struct pos cursor;
     struct line *l;
     struct selection *last, *tmp;
+    struct pos cursor;
+    int i, delta, wx, wn;
 
-    // calibrate
+    // calibrate number of selections and portion of the lines [wx; wx + wn[
     cursor = pos_of_cursor();
     if (anchored && anchor.l != cursor.l)
-        return cursor;
+        return 0;
     if (cursor.l + n - 1 > nb_lines)
         n = nb_lines - cursor.l + 1;
     if (anchored) {
@@ -156,8 +156,7 @@ column_sel(int n)
     l = get_line(y + n - 1);
     for (i = 0; i < n; i++) {
         if (l->dl >= wx)
-            last = create_sel(l->line_nb, wx,
-                (wn <= l->dl - wx) ? (wn) : (l->dl - wx), last);
+            last = create_sel(l->line_nb, wx, MIN(wn, l->dl - wx), last);
         l = l->prev;
     }
 
@@ -168,15 +167,13 @@ column_sel(int n)
 
     // refresh anchor
     if (anchored) {
-        if (cursor.l + n > nb_lines)
-            anchored = 0;
-        else if (anchor.x > get_line(y + n)->dl)
+        if (cursor.l + n > nb_lines || anchor.x > get_line(y + n)->dl)
             anchored = 0;
         else
             anchor.l = cursor.l + n;
     }
 
-    return pos_of(cursor.l + n, x);
+    return n;
 }
 
 struct selection *
@@ -225,24 +222,16 @@ range_lines_sel(int start, int end, struct selection *next)
     // create a list of selections containing wholes lines of number between
     // start and end (assume 1 <= start <= end <= nb_lines)
 
-    int i;
     struct line *l;
-    struct selection *res, *last, *new;
+    int i;
 
-    l = get_line(start - first_line_nb);
-    res = last = NULL;
-    for (i = start; i <= end; i++) {
-        new = create_sel(i, 0, l->dl, next);
-        if (last == NULL) {
-            res = last = new;
-        } else {
-            last->next = new;
-            last = new;
-        }
-        l = l->next;
+    l = get_line(end - first_line_nb);
+    for (i = end; i >= start; i--) {
+        next = create_sel(i, 0, l->dl, next);
+        l = l->prev;
     }
 
-    return res;
+    return next;
 }
 
 struct selection *
@@ -250,39 +239,26 @@ running_sel(void)
 {
     // create selections corresponding to characters between anchor and cursor
 
+    struct selection *medium_sel, *end_sel;
     struct pos cursor, begin, end;
-    struct selection *res, *begin_sel, *medium_sel, *end_sel;
-    int line_delta;
 
     cursor = pos_of_cursor();
-    res = NULL;
     if (anchored) {
-        line_delta = cursor.l - anchor.l;
-        if (line_delta) {
-            if (line_delta > 0) {
-                begin = anchor;
-                end = cursor;
-            } else {
-                begin = cursor;
-                end = anchor;
-            }
+        if (cursor.l != anchor.l) {
+            begin = (cursor.l > anchor.l) ? anchor : cursor;
+            end = (cursor.l > anchor.l) ? cursor : anchor;
             end_sel = create_sel(end.l, 0, end.x, NULL);
             medium_sel = (begin.l + 1 > end.l - 1) ? end_sel :
                 range_lines_sel(begin.l + 1, end.l - 1, end_sel);
-            res = create_sel(begin.l, begin.x, get_line(begin.l -
+            return create_sel(begin.l, begin.x, get_line(begin.l -
                 first_line_nb)->dl - begin.x, medium_sel);
         } else {
-            res = create_sel(cursor.l, anchor.x, cursor.x - anchor.x, NULL);
-            if (res->n < 0) {
-                res->x = cursor.x;
-                res->n *= -1;
-            }
+            return create_sel(cursor.l, MIN(cursor.x, anchor.x),
+                ABS(cursor.x - anchor.x), NULL);
         }
     } else {
-        res = create_sel(cursor.l, cursor.x, 0, NULL);
+        return create_sel(cursor.l, cursor.x, 0, NULL);
     }
-
-    return res;
 }
 
 struct selection *
@@ -332,11 +308,11 @@ int
 search_word_under_cursor(void)
 {
     // search for the word under cursor padded with \b
-    // return non null on success
+    // return 1 on success
 
     struct line *l;
-    int i, k;           // indexes (characters, bytes) in l->chars
-    int k1, k2;         // delimiting the word in memory
+    int i, k;                       // indexes (characters, bytes) in l->chars
+    int k1, k2;                     // delimiting the word in memory
 
     l = get_line(y);
     k = get_str_index(l->chars, i = x);
@@ -399,8 +375,9 @@ move_sel_end_of_line(struct selection *a, int l, int i, int concatenate)
     // characters long, else move selections of line l that is i characters long
     // to next line
 
-    int e = (concatenate) ? 1 : -1;
+    int e;
 
+    e = (concatenate) ? 1 : -1;
     while (a != NULL && (a->l < l || (a->l == l && !concatenate && a->x < i)))
         a = a->next;
     while (a != NULL && a->l == l) {
@@ -474,7 +451,7 @@ reorder_sel(int l, int new_l)
     first_end = (l > new_l) ? (l - 1) : l;
     second_end = MAX(l, new_l);
 
-    // skip selections before ranges, identifies last_before
+    // skip selections before ranges, identify last_before
     s = last = saved;
     if (s == NULL)
         return;
@@ -490,7 +467,7 @@ reorder_sel(int l, int new_l)
         last_before = NULL;
     }
 
-    // shift selections of the first range, identifies first and last_first
+    // shift selections of the first range, identify first and last_first
     if (s->l <= first_end) {
         first = s;
         while (s != NULL && s->l <= first_end) {
@@ -505,7 +482,7 @@ reorder_sel(int l, int new_l)
         first = last_first = NULL;
     }
 
-    // shift selections of the second range, identifiers second and last_second
+    // shift selections of the second range, identify second and last_second
     if (s->l <= second_end) {
         second = s;
         while (s != NULL && s->l <= second_end) {

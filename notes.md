@@ -1,40 +1,32 @@
 ## TODO
 
-engine:
-    review the process, test everything (classes, last element of group)
-    rewrite syntax in cheatsheet.md (| can't follow REP...)
-move to a single file ?
 manipulating hex values: when are casts needed ?
 
 
-### Final review
+### Review engine
 
-Read, be critical
-    do the right thing ?
-    good order of variables ?
-    is the goal/use of the function/variable explained enough ?
-    is the process clear and non-obvious ? else commented accordingly ?
-    is there some unstated assumptions (ASCII only...) ?
-    is the code is written well-enough ? <= 80 chars ?
-    use standard functions with n: strncpy, strncat, strn?cmp
-    should this be a get_str_index stuff ?
-    should that be moved elsewhere, or replaced by a macro, or e = +- 1 ?
-    should this feature be optionnal as a compile-time setting ?
-    is this feature/strange behaviour covered in the tutorial and philosophy ?
+* rewrite syntax in cheatsheet.md (| can't follow REP...)
+* review the process, ensure compliance with syntax
+* explain the process and the use of variables
 
-marks.c
-selections.c
+* good order of variables ?
+* is each step commented accordingly ?
+* is the code written well-enough ? <= 80 chars ?
+* should that be replaced by a macro ?
+* is this strange behaviour covered in the tutorial and philosophy ?
+
+* test everything (classes, last element of group)
 
 
 ### Publication
 
-* review *.c files
+* review engine
 * finalise readme.md, tutor.def.md, philosophy.md
 * extensive testing trough `make tutor`
 * finalise config.def.h, including colorscheme
 * add languages and finalise languages.md
 * final check for each file
-* script, do and upload the screencast
+* script, do and upload the screencast, modify *.md accordingly
 * better colors.html
 * suppress notes.md, clean makefile
 * tarball and upload it all

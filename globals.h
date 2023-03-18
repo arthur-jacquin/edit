@@ -128,7 +128,7 @@ struct pos pos_of_sel(struct selection *s);
 struct pos pos_of_cursor(void);
 int index_closest_after_cursor(struct selection *a);
 struct pos get_pos_of_sel(struct selection *a, int index);
-struct pos column_sel(int m);
+int column_sel(int m);
 struct selection *merge_sel(struct selection *a, struct selection *b);
 struct selection *range_lines_sel(int start, int end, struct selection *next);
 struct selection *running_sel(void);
@@ -140,6 +140,7 @@ void remove_sel_line_range(int min, int max);
 void reorder_sel(int l, int new_l);
 
 // utils.c
+#define ABS(A)                      ((A < 0) ? -(A) : A)
 #define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
 #define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
 int is_word_char(char c);

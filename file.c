@@ -17,7 +17,7 @@ load_file(int first_line_on_screen_nb)
 
     FILE *src_file = NULL;
     struct line *line, *last_line;
-    int reached_EOF, buf_size = DEFAULT_BUF_SIZE, line_nb;
+    int reached_EOF, buf_size, line_nb;
     char *buf, *new_buf;
     int c, ml, dl, l, k;
 
@@ -38,7 +38,7 @@ load_file(int first_line_on_screen_nb)
     line_nb = 1;
 
     // prepare buffer
-    buf = (char *) _malloc(buf_size);
+    buf = (char *) _malloc(buf_size = DEFAULT_BUF_SIZE);
 
     // read content into memory
     while (!reached_EOF) {

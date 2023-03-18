@@ -27,16 +27,13 @@ lower(struct line *l, struct selection *s)
 {
     // set characters to lowercase
 
-    int i, k, len;
+    int i, k;
     char c;
 
     for (k = get_str_index(l->chars, i = s->x); i < s->x + s->n; i++) {
-        len = utf8_char_length(c = l->chars[k]);
-        if (len == 1 && 'A' <= c && c <= 'Z')
-            l->chars[k] |= (1 << 5);
-        if (len == 2 && c == 0xc3)
-            l->chars[k+1] |= (1 << 5);
-        k += len;
+        if (('A' <= c && c <= 'Z') || c == (char) 0xc3)
+            l->chars[k + (c == (char) 0xc3) ? 1 : 0] |= (1 << 5);
+        k += utf8_char_length(c = l->chars[k]);
     }
 }
 
@@ -45,16 +42,13 @@ upper(struct line *l, struct selection *s)
 {
     // set characters to uppercase
 
-    int i, k, len;
+    int i, k;
     char c;
 
     for (k = get_str_index(l->chars, i = s->x); i < s->x + s->n; i++) {
-        len = utf8_char_length(c = l->chars[k]);
-        if (len == 1 && 'a' <= c && c <= 'z')
-            l->chars[k] &= ~(1 << 5);
-        if (len == 2 && c == 0xc3)
-            l->chars[k+1] &= ~(1 << 5);
-        k += len;
+        if (('a' <= c && c <= 'z') || c == (char) 0xc3)
+            l->chars[k + (c == (char) 0xc3) ? 1 : 0] &= ~(1 << 5);
+        k += utf8_char_length(c = l->chars[k]);
     }
 }
 
@@ -84,7 +78,7 @@ indent(struct line *l, struct selection *s)
     // indent, until finding a settings.tab_width multiple in insert_mode,
     // else of up to asked_indent
 
-    int i, j, k, start;
+    int k, start;
 
     // ignores empty lines in normal mode
     if (!in_insert_mode && l->dl == 0)
@@ -103,21 +97,18 @@ indent(struct line *l, struct selection *s)
 
         // insert indent
         k = replace_chars(l, s, start, 0, asked_indent, asked_indent);
-        for (j = 0; j < asked_indent; j++)
-            l->chars[k + j] = ' ';
+        memset(&(l->chars[k]), ' ', asked_indent);
     } else {
         // calibrate
         if (in_insert_mode) {
-            asked_indent = -1;
-            while ((s->x + asked_indent > 0) &&
+            asked_indent = 0;
+            while ((s->x - asked_indent > 0) &&
                 (l->chars[get_str_index(l->chars,
-                    s->x + asked_indent - 1)] == ' ') &&
-                (s->x + asked_indent)%(settings.tab_width))
-                asked_indent--;
-            start = s->x + asked_indent;
-            if (start < 0)
+                    s->x - asked_indent - 1)] == ' ') &&
+                (!asked_indent || (s->x - asked_indent)%(settings.tab_width)))
+                asked_indent++;
+            if ((start = s->x - asked_indent) < 0)
                 return;
-            asked_indent = -asked_indent;
         } else {
             for (k = 0; k < (-asked_indent) && l->chars[k] == ' '; k++)
                 ;
@@ -133,10 +124,10 @@ indent(struct line *l, struct selection *s)
 void
 comment(struct line *l, struct selection *s)
 {
-    // [un]comment the line according to language (assume syntax is defined)
+    // (un)comment the line according to language (assume syntax is defined)
 
-    int k, kp, syntax_length;
     char *comment_syntax = *(settings.syntax->comment);
+    int k, kp, syntax_length;
 
     // detect first character of the line, ignores empty lines
     for (k = 0; l->chars[k] == ' '; k++)
@@ -164,23 +155,19 @@ suppress(struct line *l, struct selection *s)
     if (s->n) {
         start = s->x;
         nb_deleted = s->n;
-        s->x += nb_deleted; // to compensate last shift
+        s->x += nb_deleted; // compensate last shift
         s->n = 0;
     } else {
         if (asked_remove > 0) {
             start = s->x;
-            nb_deleted = asked_remove;
-            if (nb_deleted > l->dl - start)
-                nb_deleted = l->dl - start;
+            nb_deleted = MIN(asked_remove, l->dl - start);
             if (nb_deleted == 0) {
                 if (!is_last_line(l))
                     concatenate_line(l, s);
                 return;
             }
         } else {
-            start = s->x + asked_remove;
-            if (start < 0)
-                start = 0;
+            start = MAX(s->x + asked_remove, 0);
             nb_deleted = s->x - start;
             if (nb_deleted == 0) {
                 if (!is_first_line(l))
@@ -200,12 +187,12 @@ replace(struct line *l, struct selection *s)
     // replace the selection according to search and replace patterns
 
     char *rp, *replaced, *new_replaced, *src;
-    int k, k_chars;             // index in rp, chars (bytes)
-    int lrp;                    // length of rp
-    int j, lj;                  // index in replaced (characters, bytes)
-    int lr;                     // size of replaced buffer
-    int n, mst, mn;             // substring to append to replaced
-    struct substring *class;    // pointing to either fields or subpatterns
+    int k, k_chars;                 // index in rp, chars (bytes)
+    int lrp;                        // length of rp
+    int j, lj;                      // index in replaced (characters, bytes)
+    int lr;                         // size of replaced buffer
+    int mst, n, mn;                 // substring to append to replaced
+    struct substring *class;        // pointer to either fields or subpatterns
 
     // search for fields and subpatterns
     mark_fields(l->chars, s->x, s->n);
@@ -220,21 +207,21 @@ replace(struct line *l, struct selection *s)
             (isdigit(rp[k+1]))) { // field or subpattern
             class = (rp[k] == '$') ? fields : subpatterns;
             src = l->chars;
-            n = class[rp[k+1] - '0'].n;
             mst = class[rp[k+1] - '0'].mst;
+            n = class[rp[k+1] - '0'].n;
             mn = class[rp[k+1] - '0'].mn;
             k += 2;
         } else {
             if (k < lrp - 1 && rp[k] == '\\') // escaped character
                 k++;
             src = rp;
-            n = 1;
             mst = k;
+            n = 1;
             mn = utf8_char_length(rp[k]);
             k += mn;
         }
 
-        // manage replaced length
+        // potentially resize replaced buffer
         if (lj + mn >= lr) {
             while (lj + mn >= lr)
                 lr <<= 1;
@@ -262,24 +249,27 @@ replace(struct line *l, struct selection *s)
 void
 autocomplete(struct line *l, struct selection *s)
 {
-    // if just before selection is word, tries to complete it with first match
-    // in file, ignores words <= its length (including itself)
+    // if selection end is after a word character, try to complete it with
+    // first match in file
+    // ignore words of equal length (including itself)
 
     struct line *sl;
+    int dx, k;                      // indexes (characters, bytes) in *sl
+    int i1, k1, i2, k2;             // indexes (characters, bytes) of delimiters
+    int dl, ml;                     // length (characters, bytes) of completion
     int ready;
-    int k1, k2, i1, i2;
-    int k, dx, ml, dl;
     char *buf;
 
-    // delimit start of word before selection
+    // delimit word before selection
     k2 = k1 = get_str_index(l->chars, i2 = i1 = s->x + s->n);
     if (i1 == 0)
         return;
     decrement(l->chars, &i1, &k1, i1 - 1);
-    while (k1 >= 0 && is_word_char(l->chars[k1]))
+    while (i1 > 0 && is_word_char(l->chars[k1]))
         decrement(l->chars, &i1, &k1, i1 - 1);
-    i1 = i1 + 1;
-    k1 = (k1 < 0) ? 0 : (k1 + utf8_char_length(l->chars[k1]));
+    if (!is_word_char(l->chars[k1])) {
+        i1++; k1 += utf8_char_length(l->chars[k1]);
+    }
     if (i1 == i2)
         return;
 

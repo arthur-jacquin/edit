@@ -25,7 +25,6 @@ Be critical
 Extensive testing. Known source of failure:
     check cursor/anchor/selections movements
 
-actions.c
 edit.c
 lines.c
 movements.c

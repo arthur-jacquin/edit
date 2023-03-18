@@ -8,8 +8,8 @@
 #include "graphical.c"
 #include "interaction.c"
 #include "lines.c"
+#include "marks.c"
 #include "movements.c"
-#include "search_and_replace.c"
 #include "selections.c"
 #include "utils.c"
 

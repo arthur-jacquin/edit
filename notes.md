@@ -4,6 +4,7 @@ engine:
     review the process, test everything (classes, last element of group)
     rewrite syntax in cheatsheet.md (| can't follow REP...)
 move to a single file ?
+manipulating hex values: when are casts needed ?
 
 
 ### Final review
@@ -11,6 +12,7 @@ move to a single file ?
 Read, understand, check its correctness, chase unstated assumptions (ASCII only...)
 
 Be critical
+    good order of variables ?
     is the goal/use of the function/variable explained enough ?
     is the process clear and non-obvious ? else commented accordingly ?
     is the code is written well-enough ? <= 80 chars ?
@@ -22,7 +24,6 @@ Be critical
 
 Extensive testing. Known source of failure:
     check cursor/anchor/selections movements
-    manipulating hex values: cast needed ?
 
 actions.c
 edit.c
@@ -31,9 +32,8 @@ graphical.c: print_line
 interaction.c
 lines.c
 movements.c
-search_and_replace.c
+marks.c
 selections.c
-utils.c
 
 
 ### Publication

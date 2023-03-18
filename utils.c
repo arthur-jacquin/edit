@@ -4,7 +4,7 @@ static char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
 int
 is_word_char(char c)
 {
-    // check if c is a word character
+    // check if c is the start of a word character
 
     return isalpha(c) || (c == '_') || (c == (char) 0xc3);
 }
@@ -12,7 +12,7 @@ is_word_char(char c)
 int
 utf8_char_length(char c)
 {
-    // compute the length in bytes of character starting by byte c
+    // compute the length in bytes of UTF8 character starting by byte c
 
     if ((char) (c & (char) 0x80) == utf8_start[0]) {
         return 1;
@@ -31,7 +31,7 @@ utf8_char_length(char c)
 int
 unicode_char_length(uint32_t c)
 {
-    // compute the length in bytes of unicode codepoint c
+    // compute the length in bytes of Unicode codepoint c
 
     if (c < 0x80) {
         return 1;
@@ -67,12 +67,12 @@ unicode(const char *chars, int k, int len)
 void
 insert_utf8(char *chars, int k, int len, uint32_t c)
 {
-    // insert Unicode codepoint c in chars as UTF-8
+    // insert Unicode codepoint c as UTF-8 in chars at index k
 
     int j;
 
     for (j = len - 1; j > 0; j--) {
-        chars[k + j] = (c & (char) 0x3f) | 0x80;
+        chars[k + j] = (c & 0x3f) | 0x80;
         c >>= 6;
     }
     chars[k] = c | utf8_start[len - 1];
@@ -85,7 +85,7 @@ get_str_index(const char *chars, int x)
 
     int i, k;
 
-    for (k = 0, i = 0; i < x; i++)
+    for (i = k = 0; i < x; i++)
         k += utf8_char_length(chars[k]);
 
     return k;

@@ -133,8 +133,7 @@ void suppress(struct line *l, struct selection *s);
 void replace(struct line *l, struct selection *s);
 void autocomplete(struct line *l, struct selection *s);
 
-// search_and_replace.c
-int is_word_boundary(const char *chars, int k);
+// marks.c
 int mark_subpatterns(const char *chars, int dl, int ss, int x, int n);
 int mark_fields(const char *chars, int x, int n);
 

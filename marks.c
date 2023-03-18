@@ -25,7 +25,7 @@ compare_chars(const char *s1, int i1, const char *s2, int i2)
     }
 }
 
-int
+static int
 is_word_boundary(const char *chars, int k)
 {
     // detect if k is the memory index of a word boundary in chars

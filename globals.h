@@ -55,22 +55,57 @@ struct substring {                  // marks a substring in an original string
 
 // FUNCTIONS *******************************************************************
 
-// utils.c
-#define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
-#define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
-int is_word_char(char c);
-int utf8_char_length(char c);
-int unicode_char_length(uint32_t c);
-uint32_t unicode(const char *chars, int k, int len);
-void insert_utf8(char *chars, int k, int len, uint32_t c);
-int get_str_index(const char *chars, int x);
-void decrement(const char *chars, int *i, int *k, int goal);
-int is_in(const char *list, const char *chars, int x, int length);
-void *_malloc(int size);
+// actions.c
+void act(void (*process)(struct line *, struct selection *), int line_op);
+void lower(struct line *l, struct selection *s);
+void upper(struct line *l, struct selection *s);
+void insert(struct line *l, struct selection *s);
+void split(struct line *l, struct selection *s);
+void indent(struct line *l, struct selection *s);
+void comment(struct line *l, struct selection *s);
+void suppress(struct line *l, struct selection *s);
+void replace(struct line *l, struct selection *s);
+void autocomplete(struct line *l, struct selection *s);
 
 // file.c
 void load_file(int first_line_on_screen_nb);
 void write_file(const char *file_name);
+
+// graphical.c
+void init_termbox(void);
+int resize(int width, int height);
+struct selection *print_line(const struct line *l, struct selection *s,
+    int screen_line);
+void print_dialog(void);
+void print_ruler(void);
+void print_all(void);
+
+// interaction.c
+int dialog(const char *prompt, struct interface *interf, int refresh);
+int parse_assign(const char *assign);
+int parse_range(const char *range);
+void parse_lang(const char *extension);
+
+// lines.c
+struct line *get_line(int delta_from_first_line_on_screen);
+struct line *create_line(int line_nb, int ml, int dl);
+void link_lines(struct line *l1, struct line *l2);
+void shift_line_nb(struct line *start, int min, int max, int delta);
+void forget_lines(struct line *start);
+int replace_chars(struct line *l, struct selection *a, int start, int n,
+    int new_n, int nb_bytes);
+void break_line(struct line *l, struct selection *s, int start);
+void concatenate_line(struct line *l, struct selection *s);
+void insert_line(int line_nb, int ml, int dl);
+void move_line(int delta);
+void empty_clip(int was_defined);
+void copy_to_clip(int starting_line_nb, int nb);
+void move_to_clip(int starting_line_nb, int nb);
+void insert_clip(struct line *starting_line, int below);
+
+// marks.c
+int mark_subpatterns(const char *chars, int dl, int ss, int x, int n);
+int mark_fields(const char *chars, int x, int n);
 
 // movements.c
 int move(struct line **l, int *dx, int sens);
@@ -104,53 +139,18 @@ void move_sel_end_of_line(struct selection *a, int l, int x, int concatenate);
 void remove_sel_line_range(int min, int max);
 void reorder_sel(int l, int new_l);
 
-// lines.c
-struct line *get_line(int delta_from_first_line_on_screen);
-struct line *create_line(int line_nb, int ml, int dl);
-void link_lines(struct line *l1, struct line *l2);
-void shift_line_nb(struct line *start, int min, int max, int delta);
-void forget_lines(struct line *start);
-int replace_chars(struct line *l, struct selection *a, int start, int n,
-    int new_n, int nb_bytes);
-void break_line(struct line *l, struct selection *s, int start);
-void concatenate_line(struct line *l, struct selection *s);
-void insert_line(int line_nb, int ml, int dl);
-void move_line(int delta);
-void empty_clip(int was_defined);
-void copy_to_clip(int starting_line_nb, int nb);
-void move_to_clip(int starting_line_nb, int nb);
-void insert_clip(struct line *starting_line, int below);
-
-// actions.c
-void act(void (*process)(struct line *, struct selection *), int line_op);
-void lower(struct line *l, struct selection *s);
-void upper(struct line *l, struct selection *s);
-void insert(struct line *l, struct selection *s);
-void split(struct line *l, struct selection *s);
-void indent(struct line *l, struct selection *s);
-void comment(struct line *l, struct selection *s);
-void suppress(struct line *l, struct selection *s);
-void replace(struct line *l, struct selection *s);
-void autocomplete(struct line *l, struct selection *s);
-
-// marks.c
-int mark_subpatterns(const char *chars, int dl, int ss, int x, int n);
-int mark_fields(const char *chars, int x, int n);
-
-// interaction.c
-int dialog(const char *prompt, struct interface *interf, int refresh);
-int parse_assign(const char *assign);
-int parse_range(const char *range);
-void parse_lang(const char *extension);
-
-// graphical.c
-void init_termbox(void);
-int resize(int width, int height);
-struct selection *print_line(const struct line *l, struct selection *s,
-    int screen_line);
-void print_dialog(void);
-void print_ruler(void);
-void print_all(void);
+// utils.c
+#define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
+#define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
+int is_word_char(char c);
+int utf8_char_length(char c);
+int unicode_char_length(uint32_t c);
+uint32_t unicode(const char *chars, int k, int len);
+void insert_utf8(char *chars, int k, int len, uint32_t c);
+int get_str_index(const char *chars, int x);
+void decrement(const char *chars, int *i, int *k, int goal);
+int is_in(const char *list, const char *chars, int x, int length);
+void *_malloc(int size);
 
 
 // VARIABLES *******************************************************************

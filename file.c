@@ -1,7 +1,9 @@
+#define TRY(A, ERROR)               if ((A) == ERROR) file_connection_error();
+
 static void
 file_connection_error(void)
 {
-    // exit after failure
+    // exit after failure to access the file
 
     tb_shutdown();
     fprintf(stderr, "%s\n", FILE_CONNECTION_MESSAGE);
@@ -11,14 +13,13 @@ file_connection_error(void)
 void
 load_file(int first_line_on_screen_nb)
 {
-    // reads the file and store it in first_line list
+    // read the file and store it in first_line list
 
     FILE *src_file = NULL;
-    int buf_size = DEFAULT_BUF_SIZE;
-    char *buf, *new_buf;
     struct line *line, *last_line;
-    int line_nb;
-    int c, reached_EOF, ml, dl, l, k;
+    int reached_EOF, buf_size = DEFAULT_BUF_SIZE, line_nb;
+    char *buf, *new_buf;
+    int c, ml, dl, l, k;
 
     // reset variables
     forget_lines(first_line);
@@ -42,7 +43,7 @@ load_file(int first_line_on_screen_nb)
     // read content into memory
     while (!reached_EOF) {
         ml = dl = 0;
-        while (1) {
+        while (1) { // store characters of a line in buf
             if ((c = getc(src_file)) == EOF) {
                 reached_EOF = 1;
                 break;
@@ -68,8 +69,7 @@ load_file(int first_line_on_screen_nb)
                 }
                 // store bytes
                 if (c == '\t') {
-                    for (k = 0; k < l; k++)
-                        buf[ml + k] = ' ';
+                    memset(&(buf[ml]), ' ', l);
                     ml += l; dl += l;
                 } else {
                     // check UTF-8 compliance
@@ -103,14 +103,14 @@ load_file(int first_line_on_screen_nb)
         line_nb++;
     }
 
+    // end doubly linked list of lines
     if (first_line_on_screen == NULL)
         first_line_on_screen = last_line;
     last_line->next = NULL;
     free(buf);
 
     // close connection to src_file
-    if (fclose(src_file) == EOF)
-        file_connection_error();
+    TRY(fclose(src_file), EOF)
 
     // refresh parameters
     nb_lines = line_nb - 1;
@@ -121,30 +121,26 @@ load_file(int first_line_on_screen_nb)
 void
 write_file(const char *file_name)
 {
-    // reads the first_line list and store the content in file_name file
+    // read the first_line list and store the content in file_name file
 
     FILE *dest_file = NULL;
     struct line *l;
     char *chars;
-    int c;
+    char c;
 
     // open connection to dest_file
-    if ((dest_file = fopen(file_name, "w")) == NULL)
-        file_connection_error();
+    TRY(dest_file = fopen(file_name, "w"), NULL)
 
     // copy content of first_line list to dest_file
     l = first_line;
     while (l != NULL) {
         chars = l->chars;
         while (c = *chars++)
-            if (putc(c, dest_file) == EOF)
-                file_connection_error();
-        if (putc('\n', dest_file) == EOF)
-            file_connection_error();
+            TRY(putc(c, dest_file), EOF)
+        TRY(putc('\n', dest_file), EOF)
         l = l->next;
     }
 
     // close connection to dest_file
-    if (fclose(dest_file) == EOF)
-        file_connection_error();
+    TRY(fclose(dest_file), EOF)
 }

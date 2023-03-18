@@ -34,20 +34,6 @@ main(int argc, char *argv[])
     struct pos p;
 
 
-    // PARSING ARGUMENTS *******************************************************
-
-    if (argc < 2 || !(strcmp(argv[1], "--help") && strcmp(argv[1], "-h"))) {
-        printf("%s\n", HELP_MESSAGE);
-        return 0;
-    } else if (!(strcmp(argv[1], "--version") && strcmp(argv[1], "-v"))) {
-        printf("%s\n", VERSION);
-        return 0;
-    } else {
-        INIT_INTERFACE(file_name_int, argv[1])
-        load_file(1);
-    }
-
-
     // INIT VARIABLES **********************************************************
 
     y = x = 0; attribute_x = 1;
@@ -69,6 +55,20 @@ main(int argc, char *argv[])
 
     init_termbox();
     echo(WELCOME_MESSAGE);
+
+
+    // PARSING ARGUMENTS *******************************************************
+
+    if (argc < 2 || !(strcmp(argv[1], "--help") && strcmp(argv[1], "-h"))) {
+        printf("%s\n", HELP_MESSAGE);
+        return 0;
+    } else if (!(strcmp(argv[1], "--version") && strcmp(argv[1], "-v"))) {
+        printf("%s\n", VERSION);
+        return 0;
+    } else {
+        INIT_INTERFACE(file_name_int, argv[1])
+        load_file(1);
+    }
 
 
     // MAIN LOOP ***************************************************************

@@ -5,16 +5,17 @@ dialog(const char *prompt, struct interface *interf, int refresh)
     // return 0 if user cancelled, 1 if user confirmed
     // if refresh is set, display search results on each keystroke
 
-    int dpl, dx, n, i, j, k, len, has_been_resized;
-    uint32_t c;
-    struct tb_event ev;                 // struct to retrieve events
+    struct tb_event ev;             // struct to retrieve events
+    int dpl;                        // prompt displayed length
+    int dx;                         // cursor position in input
+    int i, k, n;                    // input indexes and length (characters)
+    int len, j;
 
     for (k = i = 0; prompt[k]; i++)
         k += utf8_char_length(prompt[k]);
     dpl = i;
     strcpy(interf->current, "");
     dx = n = 0;
-    has_been_resized = 0;
 
     while (1) {
         if (refresh) {
@@ -25,12 +26,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
         }
         strcpy(message, prompt);
         strcat(message, interf->current);
-        if (has_been_resized) {
-            has_been_resized = 0;
-            print_all();
-        } else {
-            print_dialog();
-        }
+        print_dialog();
         tb_set_cursor(dx + dpl, screen_height - 1);
         tb_present();
         tb_poll_event(&ev);
@@ -39,10 +35,10 @@ dialog(const char *prompt, struct interface *interf, int refresh)
             if (ev.ch && n < INTERFACE_WIDTH - dpl - 1) {
                 // insert unicode codepoint ev.ch in interf->current
                 k = get_str_index(interf->current, i = dx);
-                len = unicode_char_length(c = ev.ch);
+                len = unicode_char_length(ev.ch);
                 for (j = strlen(interf->current); j >= k; j--) // copy NULL
                     interf->current[j + len] = interf->current[j];
-                insert_utf8(interf->current, k, len, c);
+                insert_utf8(interf->current, k, len, ev.ch);
                 dx++;
                 n++;
             } else {
@@ -99,11 +95,11 @@ dialog(const char *prompt, struct interface *interf, int refresh)
 #endif // MOUSE_SUPPORT
 
         case TB_EVENT_RESIZE:
-            has_been_resized = 1;
             if (resize(ev.w, ev.h)) {
                 has_been_invalid_resizing = 1;
                 return 0;
             }
+            print_all();
             break;
         }
     }

@@ -6,7 +6,7 @@ static struct {
 struct line *
 get_line(int delta_from_first_line_on_screen)
 {
-    // returns the pointer to line shifted of delta_from_first_line_on_screen
+    // return the pointer to line shifted of delta_from_first_line_on_screen
     // from first_line_on_screen
 
     struct line *res;
@@ -46,7 +46,7 @@ create_line(int line_nb, int ml, int dl)
 void
 link_lines(struct line *l1, struct line *l2)
 {
-    // ensures *l2 follows *l1 in the double linked list of lines
+    // ensure *l2 follows *l1 in the double linked list of lines
     // manage NULL pointers
 
     if (l1 != NULL)
@@ -244,16 +244,13 @@ move_line(int delta)
 {
     // move cursor line, return new line_nb
 
-    int cursor_line, new_line_nb;
     struct line *src, *dest;
+    int cursor_line, new_line_nb;
 
     // compute new line number
     cursor_line = first_line_nb + y;
-    new_line_nb = cursor_line + delta;
-    if (new_line_nb < 1)
-        new_line_nb = 1;
-    if (new_line_nb > nb_lines)
-        new_line_nb = nb_lines;
+    new_line_nb = MAX(cursor_line + delta, 1);
+    new_line_nb = MIN(new_line_nb, nb_lines);
     if (new_line_nb == cursor_line)
          return;
 
@@ -305,8 +302,8 @@ copy_to_clip(int starting_line_nb, int nb)
 {
     // copy nb lines to clipboard, starting at line number starting_line_nb
 
-    int i;
     struct line *l, *cb_l, *old_cb_l;
+    int i;
 
     // adjust number of lines
     if (starting_line_nb + nb - 1 > nb_lines)
@@ -339,9 +336,9 @@ move_to_clip(int starting_line_nb, int nb)
     if (starting_line_nb + nb - 1 > nb_lines)
         nb = nb_lines + 1 - starting_line_nb;
 
+    // delimit range to be moved to clip
     starting = get_line(starting_line_nb - first_line_nb);
-    ending = get_line(starting_line_nb + nb-1 - first_line_nb);
-
+    ending = get_line(starting_line_nb + nb - 1 - first_line_nb);
     if (is_last_line(ending)) {
         if (is_first_line(starting)) {
             // create empty line
@@ -357,6 +354,7 @@ move_to_clip(int starting_line_nb, int nb)
         nb_lines -= nb;
     }
 
+    // move lines to clip
     link_lines(starting->prev, ending->next);
     link_lines(NULL, starting);
     link_lines(ending, NULL);
@@ -379,8 +377,8 @@ insert_clip(struct line *starting_line, int below)
 {
     // insert clipboard lines above or below starting line
 
-    int i, first_inserted_line_nb;
     struct line *l, *before, *after;
+    int i, first_inserted_line_nb;
 
     // check if clipboard is not empty
     if (clipboard.start == NULL)

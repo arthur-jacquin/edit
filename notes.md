@@ -5,7 +5,6 @@ engine:
     rewrite syntax in cheatsheet.md (| can't follow REP...)
 move to a single file ?
 manipulating hex values: when are casts needed ?
-rename interaction.c functions in parse_*
 
 
 ### Final review
@@ -23,12 +22,8 @@ Read, be critical
     should this feature be optionnal as a compile-time setting ?
     is this feature/strange behaviour covered in the tutorial and philosophy ?
 
-Extensive testing. Known source of failure:
-    check cursor/anchor/selections movements
-
-lines.c
-movements.c
 marks.c
+movements.c
 selections.c
 
 

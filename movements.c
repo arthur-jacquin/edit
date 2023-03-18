@@ -1,6 +1,6 @@
 #define DECLARE_BRACKETS(A, B) \
-    case (A): goal = (B); sens = 1; break; \
-    case (B): goal = (A); sens = -1; break;
+    case (A): goal = (B); e = 1; break; \
+    case (B): goal = (A); e = -1; break;
 
 int
 move(struct line **l, int *dx, int sens)
@@ -74,26 +74,25 @@ find_start_of_word(int n)
     // find the <n>-th next beginning of word (end of word if n < 0)
 
     struct line *l;
-    int sens, dx;
-    char c, nc;
+    int dx, e;
 
     l = get_line(y);
     dx = x;
-    sens = (n > 0) ? 1 : -1;
-    n *= sens;
+    e = (n > 0) ? 1 : -1;
+    n *= e;
 
     while (n--) {
-        while (move(&l, &dx, sens))
+        while (move(&l, &dx, e))
             if (!is_word_char(l->chars[get_str_index(l->chars, dx)]))
                 break;
-        while (move(&l, &dx, sens))
+        while (move(&l, &dx, e))
             if (is_word_char(l->chars[get_str_index(l->chars, dx)]))
                 break;
     }
-    if (sens == -1) {
-        while (move(&l, &dx, sens)) {
+    if (e == -1) {
+        while (move(&l, &dx, e)) {
             if (!is_word_char(l->chars[get_str_index(l->chars, dx)])) {
-                move(&l, &dx, -sens);
+                move(&l, &dx, -e);
                 break;
             }
         }
@@ -108,8 +107,9 @@ find_matching_bracket(void)
     // find position of bracket matching the one below cursor
 
     struct line *l;
-    char c, goal, nc;
-    int dx, sens, nb;
+    int dx, e;
+    char c, goal, nc;               // initial bracket, associated one, new char
+    int nb;                         // nesting depth
 
     l = get_line(y);
     dx = x;
@@ -124,7 +124,7 @@ find_matching_bracket(void)
     }
 
     nb = 1;
-    while (nb && move(&l, &dx, sens)) {
+    while (nb && move(&l, &dx, e)) {
         nc = l->chars[get_str_index(l->chars, dx)];
         if (nc == goal)
             nb--;
@@ -152,9 +152,7 @@ find_next_selection(int delta)
     if (delta > 0) {
         if (closest == -1)
             return pos_of(0, 0); // none after
-        asked_number = closest + delta - 1;
-        if (asked_number > nb - 1)
-            asked_number = nb - 1;
+        asked_number = MIN(closest + delta - 1, nb - 1);
     } else {
         if (closest == 0)
             return pos_of(0, 0); // none before
@@ -207,15 +205,12 @@ move_to_cursor(void)
 {
     // move to the closest possible position
 
+    static int saved_x;             // if !attribute_x, this value defines x
     int nl, nx, delta;
-    static int saved_x;
 
     // adjust asked line number
-    nl = first_line_nb + y;
-    if (nl > nb_lines)
-        nl = nb_lines;
-    if (nl < 1)
-        nl = 1;
+    nl = MAX(first_line_nb + y, 1);
+    nl = MIN(nl, nb_lines);
 
     // compute new first_line_on_screen and y
     delta = nl - first_line_nb;

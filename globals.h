@@ -148,8 +148,7 @@ int find_first_non_blank(void);
 struct pos find_start_of_word(int n);
 struct pos find_matching_bracket(void);
 struct pos find_next_selection(int delta);
-int find_start_of_block(int starting_line_nb, int nb);
-int find_end_of_block(int starting_line_nb, int nb);
+int find_block_delim(int starting_line_nb, int nb);
 void move_to_cursor(void);
 
 // selections.c
@@ -207,7 +206,7 @@ int mark_subpatterns(const char *chars, int dl, int ss, int x, int n);
 int mark_fields(const char *chars, int x, int n);
 
 // interaction.c
-int dialog(const char *prompt, struct interface *interf, int search);
+int dialog(const char *prompt, struct interface *interf, int refresh);
 int set_parameter(const char *assign);
 int parse_range(const char *range);
 void load_lang(const char *extension);
@@ -215,7 +214,8 @@ void load_lang(const char *extension);
 // graphical.c
 void init_termbox(void);
 int resize(int width, int height);
-struct selection *print_line(const struct line *l, struct selection *s, int screen_line);
+struct selection *print_line(const struct line *l, struct selection *s,
+    int screen_line);
 void print_dialog(void);
 void print_ruler(void);
 void print_all(void);

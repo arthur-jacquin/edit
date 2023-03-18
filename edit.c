@@ -174,15 +174,15 @@ main(int argc, char *argv[])
                     copy_to_clip(first_line_nb + y, m);
                     break;
                 case KB_CLIP_YANK_BLOCK:
-                    l1 = find_start_of_block(first_line_nb + y, 1);
-                    copy_to_clip(l1, find_end_of_block(l1, m) - l1 + 1);
+                    l1 = find_block_delim(first_line_nb + y, -1);
+                    copy_to_clip(l1, find_block_delim(l1, m) - l1 + 1);
                     break;
                 case KB_CLIP_DELETE_LINE:
                     move_to_clip(first_line_nb + y, m);
                     break;
                 case KB_CLIP_DELETE_BLOCK:
-                    l1 = find_start_of_block(first_line_nb + y, 1);
-                    move_to_clip(l1, find_end_of_block(l1, m) - l1 + 1);
+                    l1 = find_block_delim(first_line_nb + y, -1);
+                    move_to_clip(l1, find_block_delim(l1, m) - l1 + 1);
                     break;
                 case KB_CLIP_PASTE_AFTER:
                 case KB_CLIP_PASTE_BEFORE:
@@ -222,12 +222,9 @@ main(int argc, char *argv[])
                     break;
                 // TODO macro + unification
                 case KB_MOVE_NEXT_BLOCK:
-                    y = find_end_of_block(first_line_nb + y, m)
-                        - first_line_nb;
-                    break;
                 case KB_MOVE_PREV_BLOCK:
-                    y = find_start_of_block(first_line_nb + y, m)
-                        - first_line_nb;
+                    y = find_block_delim(first_line_nb + y,
+                        WAY(ev.ch == KB_MOVE_NEXT_BLOCK)) - first_line_nb;
                     break;
                 case KB_MOVE_NEXT_SEL:
                 case KB_MOVE_PREV_SEL:
@@ -262,8 +259,8 @@ main(int argc, char *argv[])
                         l1 = 1;
                         l2 = nb_lines;
                     } else {
-                        l1 = find_start_of_block(first_line_nb + y, 1);
-                        l2 = find_end_of_block(l1, m);
+                        l1 = find_block_delim(first_line_nb + y, -1);
+                        l2 = find_block_delim(l1, m);
                     }
                     forget_sel_list(saved);
                     saved = range_lines_sel(l1, l2, NULL);

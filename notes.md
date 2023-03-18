@@ -3,7 +3,6 @@
 engine:
     review the process, test everything (classes, last element of group)
     rewrite syntax in cheatsheet.md (| can't follow REP...)
-unify find_{start,end}_of_block ?
 add jump to to *.md
 
 

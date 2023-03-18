@@ -174,41 +174,32 @@ find_next_selection(int delta)
 }
 
 int
-find_start_of_block(int starting_line_nb, int nb)
+find_block_delim(int starting_line_nb, int nb)
 {
-    // find line number of first line of the nb-th block above
+    // if nb < 0: find line number of first line of the nb-th block above
+    // if nb > 0: find line number of first empty line below nb blocks
 
     struct line *l;
 
     l = get_line(starting_line_nb - first_line_nb);
 
-    while (nb--) {
-        while (!is_first_line(l) && l->ml == 1)
-            l = l->prev;
-        while (!is_first_line(l) && l->ml > 1)
-            l = l->prev;
+    if (nb < 0) {
+        while (nb++) {
+            while (!is_first_line(l) && !(l->dl))
+                l = l->prev;
+            while (!is_first_line(l) && l->dl)
+                l = l->prev;
+        }
+    } else {
+        while (nb--) {
+            while (!is_last_line(l) && !(l->dl))
+                l = l->next;
+            while (!is_last_line(l) && l->dl)
+                l = l->next;
+        }
     }
 
-    return l->line_nb + ((is_first_line(l) && l->ml > 1) ? 0 : 1);
-}
-
-int
-find_end_of_block(int starting_line_nb, int nb)
-{
-    // find line number of first empty line below nb blocks
-
-    struct line *l;
-
-    l = get_line(starting_line_nb - first_line_nb);
-
-    while (nb--) {
-        while (!is_last_line(l) && l->ml == 1)
-            l = l->next;
-        while (!is_last_line(l) && l->ml > 1)
-            l = l->next;
-    }
-
-    return l->line_nb;
+    return l->line_nb + ((nb == 1 && !(is_first_line(l) && l->dl)) ? 1 : 0);
 }
 
 void

@@ -1,9 +1,9 @@
 int
-dialog(const char *prompt, struct interface *interf, int search)
+dialog(const char *prompt, struct interface *interf, int refresh)
 {
     // enable a user input on the dialog line
     // return 0 if user cancelled, 1 if user confirmed
-    // if search is set, display search results on each keystroke
+    // if refresh is set, display search results on each keystroke
 
     int dpl, dx, n, i, j, k, len, has_been_resized;
     uint32_t c;
@@ -16,7 +16,7 @@ dialog(const char *prompt, struct interface *interf, int search)
     has_been_resized = 0;
 
     while (1) {
-        if (search) {
+        if (refresh) {
             // compute newly displayed selections
             forget_sel_list(displayed);
             displayed = search(saved);

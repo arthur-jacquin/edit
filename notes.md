@@ -27,7 +27,6 @@ Extensive testing. Known source of failure:
 
 actions.c
 edit.c
-graphical.c: print_line
 interaction.c
 lines.c
 movements.c

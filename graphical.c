@@ -11,7 +11,7 @@
     #define LINE_NUMBERS_MODULUS    10000
 #endif
 
-#define IS_TYPE(TYPE, L)            is_in(*(syntax->TYPE), l->chars, k, (L))
+#define IS_TYPE(TYPE, L)            is_in(*(syntax->TYPE), l->chars, k, L)
 
 static struct printable {           // information to print a character
     uint32_t ch;                    // Unicode codepoint
@@ -63,12 +63,12 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     // return selection queue after this line
 
     // variables
-    int k, dk, i, j, len, color, nb_to_color, underline;
-    char c, nc;
     struct printable *buf = _malloc((l->dl) * sizeof(struct printable));
     struct lang *syntax = settings.syntax;
     struct rule *r;
-    int a;
+    int i, k;                       // index in l->chars (characters, bytes)
+    int j, dk, len, color, nb_to_color, underline;
+    char c, nc;
 
 #ifdef UNDERLINE_CURSOR_LINE
     underline = (screen_line == y) ? TB_UNDERLINE : 0;
@@ -84,8 +84,8 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     }
 
     // foreground
-    if (settings.syntax_highlight && settings.syntax != NULL) {
-        // ignores blank characters at the beginning of the line
+    if (settings.syntax_highlight && syntax != NULL) {
+        // ignore blank characters at the beginning of the line
         for (i = k = 0; l->chars[k] == ' '; i++, k++)
             ;
 
@@ -103,24 +103,15 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                 buf[i++].fg = r->color_end_of_line;
         } else if (syntax->highlight_elements) {
             while (i < l->dl) {
-                color = COLOR_DEFAULT;
-                nb_to_color = 1;
-                c = l->chars[k];
-
-                // NON ASCII CHARACTER
-                if (utf8_char_length(c) > 1) {
-                    k += utf8_char_length(c);
-                    while (is_word_char(l->chars[k])) {
-                        k += utf8_char_length(l->chars[k]);
-                        nb_to_color++;
-                    }
-
                 // WORD
-                } else if (is_word_char(c)) {
+                if (is_word_char(c = l->chars[k])) {
                     for (j = dk = 0; is_word_char(nc = l->chars[k + dk]) ||
                         isdigit(nc); j++, dk += utf8_char_length(nc))
                         ;
-                    if (IS_TYPE(keywords, j)) {
+                    color = COLOR_DEFAULT;
+                    if (j != dk) {
+                        // non-ASCII character, do not look for match
+                    } else if (IS_TYPE(keywords, j)) {
                         color = COLOR_KEYWORD;
                     } else if (IS_TYPE(flow_control, j)) {
                         color = COLOR_FLOW_CONTROL;
@@ -132,8 +123,8 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 
                 // NUMBER
                 } else if (isdigit(c) || (k+1 < l->ml && (c == '-' || c == '.')
-                    && (isdigit(nc = l->chars[k+1]) || nc == '.'))) {
-                    for (j = 1; isdigit(nc = l->chars[k+j]) || nc == '.'; j++)
+                    && (isdigit(l->chars[k+1]) || l->chars[k+1] == '.'))) {
+                    for (j = 1; isdigit(c = l->chars[k+j]) || c == '.'; j++)
                         ;
                     color = COLOR_NUMBER;
                     nb_to_color = j;
@@ -164,7 +155,9 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 
                 // SOMETHING ELSE
                 } else {
-                    k++;
+                    color = COLOR_DEFAULT;
+                    nb_to_color = 1;
+                    k += utf8_char_length(c);
                 }
 
                 for (j = 0; j < nb_to_color; j++)
@@ -220,12 +213,12 @@ print_dialog(void)
     // display the dialog line
 
     int len, i, j, k;
-    char nc;
+    char c;
 
     // decompress UTF-8 and print
-    for (i = k = 0; nc = message[k]; i++, k += len)
+    for (i = k = 0; c = message[k]; i++, k += len)
         tb_set_cell(i, screen_height - 1,
-            unicode(message, k, len = utf8_char_length(nc)),
+            unicode(message, k, len = utf8_char_length(c)),
             COLOR_DIALOG, COLOR_BG_DEFAULT);
 
     // erase end of line
@@ -246,7 +239,7 @@ print_ruler(void)
 
     // print
     tb_printf(screen_width - RULER_WIDTH, screen_height - 1,
-        COLOR_RULER, COLOR_BG_DEFAULT, "%d:%d", first_line_nb + y, x);
+        COLOR_RULER, COLOR_BG_DEFAULT, RULER_PATTERN, first_line_nb + y, x);
 }
 
 void

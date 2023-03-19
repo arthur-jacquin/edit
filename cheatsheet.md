@@ -68,56 +68,72 @@
 
 ## Search syntax
 
-    e2: ASSERTION
-      | CHARACTER
-      | CHARACTER REP                   # match a character with a repeater
-      | '\(' e1 '\)'                    # group for subpatterns reuse
-      | '\(' e1 '\)' REP                # match a group with a repeater
+    <character> ::= <regular_char>          # match a non escaped character
+                  | "\" <esc_char>          # match an escaped character
+                  | "."                     # match any character
+                  | "\d" | "\D"             # match any [non] digit
+                  | "\w" | "\W"             # match any [non] word character
+                  | "[" <set> "]"           # match any character in <set>
+                  | "[^" <set> "]"          # match any character not in <set>
 
-    e1: e2
-      | e1 e2                           # match the concatenation of 2 patterns
-      | e1 '|' e2                       # match one of the 2 patterns
+    <regular_char> ::= ...                  # any character not in <esc_char>
 
-    ASSERTION: '^'                      # match the beginning of the line
-             | '$'                      # match the end of the line
-             | '\A'                     # match the beginning of the selection
-             | '\Z'                     # match the end of the selection
-             | '\b'                     # match word boundaries
-             | '\B'                     # match non word boundaries
+    <esc_char> ::= "\" | "^" | "$" | "|" | "*" | "+" | "?" | "{" | "[" | "."
 
-    CHARACTER: LITERAL                  # match the LITERAL only
-             | '\' ESCAPED_LITERAL      # match to-be-escaped ESCAPED_LITERAL
-             | CHARCLASS                # match characters in CHARCLASS
-             | '.'                      # match any character
+    <set> ::= <items>                       # match characters in <items>
+            | "-" <items>                   # match "-" and <items> characters
+            | <items> "-"                   # match "-" and <items> characters
+            | "-" <items> "-"               # match "-" and <items> characters
 
-    CHARCLASS: '[' LIST ']'             # match characters in LIST
-             | '[^' LIST ']'            # match characters not in LIST
-             | '\d'                     # match digits
-             | '\D'                     # match non digits
-             | '\w'                     # match word characters
-             | '\w'                     # match non word characters
+    <items> ::= <non_minus>                 # match a character (not "-")
+              | <non_minus> "-" <non_minus> # range (inclusive)
+              | <items> <items>             # match characters in either <items>
 
-    LIST: LIST_MINUS                    # match literals in LIST_MINUS
-        | '-' LIST_MINUS                # match '-' and literals in LIST_MINUS
+    <non_minus> ::= ...                     # any character but "-"
 
-    LIST_MINUS: LITERAL                 # match the LITERAL only
-              | LITERAL1 '-' LITERAL2   # match literals between the 2
-              | l1 l2                   # match literals in l1 or l2
+    <repeater> ::= "*"                      # 0 or more (any number)
+                 | "+"                      # 1 or more (at least once)
+                 | "?"                      # 0 or 1 (at most once)
+                 | "{" <int> "}"            # exactly <int>
+                 | "{" <int> ",}"           # at least <int>
+                 | "{," <int> "}"           # at most <int>
+                 | "{" <int> "," <int> "}"  # range (inclusive)
 
-    REP: '*'                            # 0 or more (any number)
-       | '+'                            # 1 or more (at least once)
-       | '?'                            # 0 or 1 (at most once)
-       | '{' INTEGER '}'                # exactly INTEGER
-       | '{' INTEGER ',' '}'            # at least INTEGER
-       | '{' ',' INTEGER '}'            # at most INTEGER
-       | '{' INTEGER1 ',' INTEGER2 '}'  # between INTEGER1 and INTEGER2
+    <int> ::= <positive_digit> | <int> "0" | <int> <int>
+
+    <positive_digit> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+    <assertion> ::= "^"                     # match a start of line
+                  | "$"                     # match an end of line
+                  | "\A"                    # match a start of selection
+                  | "\Z"                    # match an end of selection
+                  | "\b"                    # match a words boundary
+                  | "\B"                    # match a non words boundary
+
+    <atom> ::= <assertion> | <character> | <character> <repeater>
+
+    <OR_atom> ::= <atom> | <OR_atom> "|" <atom>
+
+    <string> ::= <OR_atom> | <string> <string>
+
+    <block> ::= <atom> | "\(" <string> "\)" | "\(" <string> "\)" <repeater>
+
+    <OR_block> ::= <block> | <OR_block> "|" <block>
+
+    <non_empty_pattern> ::= <OR_block> | <non_empty_pattern> <OR_block>
+
+    <pattern> ::= "" | <non_empty_pattern>
 
 
 ## Replace syntax
 
-    e1: LITERAL                         # any character except \ and $
-      | '\\' | '\$'                     # escaped \ and $
-      | '\0' | '$0'                     # whole initial selection
-      | '\' DIGIT                       # DIGIT-th subpattern (DIGIT >= 1)
-      | '$' DIGIT                       # DIGIT-th field (DIGIT >= 1)
-      | e1 e2                           # concatenation
+    <pattern> ::= <regular_char>            # any character except "\" and "$"
+                | "\\" | "\$"               # escaped "\" and "$"
+                | "\0" | "$0"               # whole initial selection
+                | "\" <positive_digit>      # <positive_digit>-th subpattern
+                | "$" <positive_digit>      # <positive_digit>-th field
+                | <pattern> <pattern>       # concatenation
+
+    <regular_char> ::= ...                  # any character but "\" and "$"
+
+    <positive_digit> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"

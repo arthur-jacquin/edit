@@ -1,32 +1,22 @@
 ## TODO
 
-manipulating hex values: when are casts needed ?
-
-
 ### Review engine
 
-* rewrite syntax in cheatsheet.md (| can't follow REP...)
-* review the process, ensure compliance with syntax
-* explain the process and the use of variables
-
-* good order of variables ?
-* is each step commented accordingly ?
-* is the code written well-enough ? <= 80 chars ?
-* should that be replaced by a macro ?
-* is this strange behaviour covered in the tutorial and philosophy ?
-
-* test everything (classes, last element of group)
+* design and explain a process that complies to syntax
+* name, order and explain variables
+* rewrite and comment each step, ensure <= 80 chars
+* test everything
 
 
 ### Publication
 
-* review engine
+* rewrite engine
 * finalise readme.md, tutor.def.md, philosophy.md
-* extensive testing trough `make tutor`
+* extensive testing through `make tutor`, adjust casting for hex values
 * finalise config.def.h, including colorscheme
 * add languages and finalise languages.md
 * final check for each file
-* script, do and upload the screencast, modify *.md accordingly
+* script, do and upload the screencast, modify readme.md, edit.html accordingly
 * better colors.html
 * suppress notes.md, clean makefile
 * tarball and upload it all

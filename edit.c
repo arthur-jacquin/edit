@@ -112,8 +112,8 @@ void move_to_clip(int starting_line_nb, int nb);
 void insert_clip(struct line *starting_line, int below);
 
 // marks.c
-int mark_subpatterns(const char *chars, int dl, int ss, int x, int n);
-int mark_fields(const char *chars, int x, int n);
+int mark_subpatterns(const char *chars, int dl, int ss, int sx, int n);
+int mark_fields(const char *chars, int sx, int n);
 
 // movements.c
 int move(struct line **l, int *dx, int sens);
@@ -290,8 +290,6 @@ main(int argc, char *argv[])
         tb_poll_event(&ev);
 
         // process input
-        if (!in_insert_mode && m == 0)
-            echo("");
         switch (ev.type) {
         case TB_EVENT_KEY:
             if (ev.ch && in_insert_mode) {
@@ -303,6 +301,7 @@ main(int argc, char *argv[])
                 echof(MULTIPLIER_MESSAGE_PATTERN, m);
                 break;
             }
+            echo("");
             if (m == 0)
                 m = 1;
             if (ev.ch) {

@@ -114,15 +114,13 @@
 
     <OR_atom> ::= <atom> | <OR_atom> "|" <atom>
 
-    <string> ::= <OR_atom> | <string> <string>
+    <string> ::= "" | <string> <OR_atom>
 
     <block> ::= <atom> | "\(" <string> "\)" | "\(" <string> "\)" <repeater>
 
     <OR_block> ::= <block> | <OR_block> "|" <block>
 
-    <non_empty_pattern> ::= <OR_block> | <non_empty_pattern> <OR_block>
-
-    <pattern> ::= "" | <non_empty_pattern>
+    <pattern> ::= "" | <pattern> <OR_block>
 
 
 ## Replace syntax

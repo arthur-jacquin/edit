@@ -11,6 +11,7 @@
 ### Publication
 
 * rewrite engine
+* makefile for gcc
 * finalise readme.md, tutor.def.md, philosophy.md
 * extensive testing through `make tutor`, adjust casting for hex values
 * finalise config.def.h, including colorscheme

@@ -43,39 +43,133 @@ is_word_boundary(const char *chars, int k)
     }
 }
 
+static int
+parse_rep(const char *sp, int *j, int *l, int *min, int *max)
+{
+    // compute min and max
+    // return 1 on success
+
+    char c;
+
+    if ((c = sp[*l]) == '{') {
+        *min = *max = 0;
+        for ((*j)++, (*l)++; (c = sp[*l]) != '}' && c != ','; (*j)++, (*l)++) {
+            if (!isdigit(c))
+                return 0; // invalid syntax
+            *min = 10*(*min) + c - '0';
+        }
+        if (c == ',') {
+            for ((*j)++, (*l)++; (c = sp[*l]) != '}'; (*j)++, (*l)++) {
+                if (!isdigit(c))
+                    return 0; // invalid syntax
+                *max = 10*(*max) + c - '0';
+            }
+        } else {
+            *max = *min;
+        }
+    } else if (c == '*' || c == '+' || c == '?') {
+        *min = (c == '+') ? 1 : 0;
+        *max = (c == '?') ? 1 : 0;
+        (*j)++; (*l)++;
+    } else {
+        *min = *max = 1;
+    }
+
+    return 1;
+}
+
+static int
+eat_pattern_atom(const char *sp, int *j, int *l)
+{
+    // move *j, *l indexes of sp after the atom pattern
+    // return 1 on success
+
+    int min, max;
+
+    (*j)++; (*l)++;
+    if (sp[*l] == '^' || sp[*l] == '$') {
+        (*j)++; (*l)++;
+    } else if (sp[*l] == '\\' && strchr("AZbB", sp[*l+1])) {
+        (*j) += 2; (*l) += 2;
+    } else {
+        if (sp[*l] == '\\' && strchr("\\^$|*+?{[.dDwW", sp[*l+1])) {
+            (*j) += 2; (*l) += 2;
+        } else if (sp[*l] == '[') {
+            while (sp[*l] != '\0' && sp[*l] != ']') {
+                (*j)++; (*l) += utf8_char_length(sp[*l]);
+            }
+            if (sp[*l] == '\0')
+                return 0;
+            (*j)++; (*l)++;
+        } else {
+            (*j)++; (*l) += utf8_char_length(sp[*l]);
+        }
+        if (!parse_rep(sp, j, l, &min, &max))
+            return 0;
+    }
+
+    return 1;
+}
+
+static int
+eat_pattern_block(const char *sp, int *j, int *l)
+{
+    // move *j, *l indexes of sp after the block pattern
+    // return 1 on success
+
+    int min, max;
+
+    if (sp[*l] == '\\' && sp[*l+1] == '(') {
+        while (!(sp[*l] == '\\' && sp[*l+1] == ')')) {
+            if (!eat_pattern_atom(sp, j, l))
+                return 0;
+            while (sp[*l] == '|')
+                if (!eat_pattern_atom(sp, j, l))
+                    return 0;
+        }
+        (*j) += 2; (*l) += 2;
+        return parse_rep(sp, j, l, &min, &max);
+    } else {
+        return eat_pattern_atom(sp, j, l);
+    }
+}
+
 int
-mark_subpatterns(const char *chars, int dl, int ss, int x, int n)
+mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
 {
     // try to read searched pattern in chars, store identified subpatterns
     // dl must be the visual length of chars, and ss the real selection start
     // return length of read pattern if found at x, of length < n, else 0
 
-    enum markers { NONE, ELEM, BLOCK }; // remember last read element type
-    int in_block, in_class, last_was, found_in_class, is_neg_class;
-    int nb_block, is_block_ok, nb_elem, is_elem_ok;
     int s, st;          // number of subpatterns, start of running subpattern
-    int min, max, a;    // repetition boundaries, generic
-    char c;             // generic
-
     char *sp;           // search pattern
     int lsp, j, l;      // memory length, indexes (characters, bytes) of sp
-    int start_block_j, start_elem_j;
-
     int i, k;           // indexes (characters, bytes) of chars
-    int start_block_i, start_block_k, start_elem_i;
+
+    // states are named to match cheatsheet.md wording
+    enum states {READ_PATTERN, READ_BLOCK, BLOCK_READ, READ_STRING, STRING_READ,
+        READ_ATOM, ATOM_READ, READ_CHARACTER, CHARACTER_READ};
+    int state, in_string, found_in_class, is_neg_class, a;
+
+    // ORed elements
+    int is_block_ok, start_block_i;
+    int is_atom_ok, start_atom_i;
+
+    // repeated elements
+    int is_string_ok, nb_string, start_string_j, start_string_i;
+    int is_char_ok, nb_char, start_char_j, start_char_i;
+    int min, max;
+
+    // TODO manage escaped character list
 
     // init variables
-    in_block = in_class = 0;
-    last_was = NONE;
-    nb_block = nb_elem = 0;
-    is_block_ok = is_elem_ok = 1;
-    s = 1;
-
-    // init indexes
+    state = READ_PATTERN;
+    in_string = 0;
     lsp = strlen(sp = search_pattern.current);
-    j = l = 0;
-    k = get_str_index(chars, i = x);
-
+    l = j = 0;
+    k = get_str_index(chars, i = sx);
+    s = 1;
+    
     // init subpatterns
     subpatterns[0].st = i;
     subpatterns[0].mst = k;
@@ -86,240 +180,192 @@ mark_subpatterns(const char *chars, int dl, int ss, int x, int n)
         subpatterns[a].n = subpatterns[a].mn = 0;
     }
 
-    // try to read whole pattern
-    while (l < lsp) {
-        if (!in_block && !is_block_ok && last_was != BLOCK) {
-            return 0; // pattern does not match
+    // try to read the pattern
+    while (1)
+    switch (state) {
+    case READ_PATTERN:
+        if (l == lsp)
+            return i - sx;
+        state = READ_BLOCK;
+        start_block_i = i;
+        break;
 
-        // CUSTOM CLASS
-        } else if (in_class) {
-            a = utf8_char_length(c);
-            if (c == ']') { // move on
-                in_class = 0;
-                is_elem_ok = (is_neg_class) ? (!found_in_class) : (found_in_class);
-                i++; k += utf8_char_length(chars[k]);
-                j++; l++;
-            } else if (l+a+1 < lsp && sp[l+a] == '-' && sp[l+a+1] != ']') { // range
-                found_in_class |= (compare_chars(sp, l, chars, k) >= 0 &&
-                     compare_chars(sp, l+a+1, chars, k) <= 0);
-                j++; l += a;                        // lower bound
-                j++; l++;                           // "-" separator
-                j++; l += utf8_char_length(sp[l]);  // upper bound
-            } else { // raw comparison
-                found_in_class |= (compare_chars(sp, l, chars, k) == 0);
-                j++; l += a;
-            }
-
-        // ASSERTIONS
-        } else if (((c = sp[l]) == '^') || (c == '\\' && sp[l+1] == 'A')) {
-            if (i > ((c == '^') ? 0 : ss))
-                is_block_ok = 0;
-            j += (c == '\\') ? 2 : 1;
-            l += (c == '\\') ? 2 : 1;
-        } else if ((c == '$') || (c == '\\' && sp[l+1] == 'Z')) {
-            if (l+1 < lsp || i < ((c == '$') ? dl : (x+n)))
-                is_block_ok = 0;
-            j += (c == '\\') ? 2 : 1;
-            l += (c == '\\') ? 2 : 1;
-        } else if (c == '\\' && (sp[l+1] == 'b' || sp[l+1] == 'B')) {
-            a = is_word_boundary(chars, k);
-            if ((sp[l+1] == 'b' && !a) || (sp[l+1] == 'B' && a))
-                is_block_ok = 0;
+    case READ_BLOCK:
+        is_block_ok = 1;
+        if (sp[l] == '\\' && sp[l+1] == '(') {
             j += 2; l += 2;
+            state = READ_STRING;
+            in_string = 1;
+            is_string_ok = 1;
+            nb_string = 0;
+            subpatterns[s].st = start_string_i = i;
+            subpatterns[s].mst = k;
+            start_string_j = j;
+        } else {
+            state = READ_ATOM;
+            start_atom_i = i;
+        }
+        break;
 
-        // REPEATERS
-        } else if (c == '*' || c == '+' || c == '?' || c == '{') {
-            // computing min and max
-            if (c == '{') {
-                min = max = 0;
+    case BLOCK_READ:
+        if (is_block_ok) { // eat following blocks
+            while (sp[l] == '|')
+                if (!eat_pattern_block(sp, &j, &l))
+                    return 0; // syntax error
+            state = READ_PATTERN;
+        } else if (sp[l] == '|') { // another try
+            decrement(chars, &i, &k, start_block_i);
+            j++; l++;
+            state = READ_BLOCK;
+        } else {
+            return 0; // essential block is invalid
+        }
+        break;
+
+    case READ_STRING:
+        if (sp[l] == '\\' && sp[l+1] == ')') {
+            j += 2; l += 2;
+            in_string = 0;
+            state = STRING_READ;
+            nb_string++;
+        } else {
+            state = READ_ATOM;
+            start_atom_i = i;
+        }
+        break;
+
+    case STRING_READ:
+    case CHARACTER_READ:
+        if (!parse_rep(sp, &j, &l, &min, &max)) // compute min and max
+            return 0; // invalid syntax
+        if (state == STRING_READ) {
+            if (!is_string_ok) { // cancelling read
+                if (nb_string - 1 < min)
+                    is_block_ok = 0;
+                decrement(chars, &i, &k, start_string_i);
+            } else if (!max || nb_string < max) { // another read
+                state = READ_STRING;
+                is_string_ok = 1;
+                in_string = 1;
+                start_string_i = i;
+                decrement(sp, &j, &l, start_string_j);
+                break;
+            }
+            subpatterns[s].n = i - subpatterns[s].st;
+            subpatterns[s].mn = k - subpatterns[s].mst;
+            s++;
+            state = BLOCK_READ;
+        } else {
+            if (!is_char_ok) { // cancelling read
+                if (nb_char - 1 < min) {
+                    if (in_string)
+                        is_string_ok = 0;
+                    else
+                        return 0; // essential atom is invalid
+                }
+                decrement(chars, &i, &k, start_char_i);
+            } else if (!max && nb_char < max) { // another read
+                state = READ_CHARACTER;
+                is_char_ok = 1;
+                start_char_i = i;
+                decrement(sp, &j, &l, start_char_j);
+                break;
+            }
+            state = ATOM_READ;
+        }
+        break;
+
+    case READ_ATOM:
+        state = ATOM_READ;
+        if (sp[l] == '^' || sp[l] == '$') { // assertions
+            is_atom_ok = (sp[l] == '^') ? (i == 0) : (i == dl);
+            j++; l++;
+        } else if (sp[l] == '\\' && (sp[l+1] == 'A' || sp[l+1] == 'Z')) {
+            is_atom_ok = (sp[l+1] == 'A') ? (i == ss) : (i == sx + n);
+            j += 2; l += 2;
+        } else if (sp[l] == '\\' && (sp[l+1] == 'b' || sp[l+1] == 'B')) {
+            is_atom_ok = (sp[l+1] == 'B') ^ is_word_boundary(chars, k);
+            j += 2; l += 2;
+        } else { // character
+            state = READ_CHARACTER;
+            is_char_ok = 1;
+            nb_char = 0;
+            start_char_j = j;
+            start_char_i = i;
+        }
+        break;
+
+    case ATOM_READ:
+        if (in_string) {
+            if (is_atom_ok) { // eat following atoms
+                while (sp[l] == '|')
+                    if (!eat_pattern_atom(sp, &j, &l))
+                        return 0; // invalid syntax
+            } else if (sp[l] == '|') { // another try
+                decrement(chars, &i, &k, start_atom_i);
                 j++; l++;
-                for (; (c = sp[l]) != '}' && c != ','; j++, l++) {
-                    if (l+1 == lsp || !isdigit(c))
-                        return 0; // error: bad repeater syntax
-                    min = 10*min + c - '0';
-                }
-                if (c == ',') {
-                    for (; (c = sp[l]) != '}'; j++, l++) {
-                        if (l+1 == lsp || !isdigit(c))
-                            return 0; // error: bad repeater syntax
-                        max = 10*max + c - '0';
-                    }
-                } else {
-                    max = min;
-                }
             } else {
-                min = (c == '+') ? 1 : 0;
-                max = (c == '?') ? 1 : 0;
-                j++; l++;
+                is_string_ok = 0;
             }
-            // compare with number of read elements or blocks
-            if (last_was == NONE) {
-                return 0; // error: repeater must act on element or block
-            } else if (last_was == ELEM) {
-                if (!is_elem_ok) { // cancelling read
-                    if (nb_elem < min)
-                        is_block_ok = 0;
-                    nb_elem = 0;
-                    is_elem_ok = 1;
-                    decrement(chars, &i, &k, start_elem_i);
-                } else if (i == x + n) {
-                    if (nb_elem + 1 < min)
-                        is_block_ok = 0;
-                } else if (max && nb_elem + 1 == max) { // move on
-                    nb_elem = 0;
-                    last_was = NONE;
-                } else { // another read
-                    nb_elem++;
-                    decrement(sp, &j, &l, start_elem_j);
-                }
+            state = READ_STRING;
+        } else if (is_atom_ok) {
+            state = BLOCK_READ;
+        } else {
+            return 0; // essential atom is invalid
+        }
+        break;
+
+    case READ_CHARACTER:
+        if (i == sx + n)
+            return 0; // selection is not long enough
+        if (sp[l] == '\\') {
+            if (strchr("\\^$|*+?{[.", sp[l+1])) { // escaped character
+                is_char_ok = (compare_chars(sp, l+1, chars, k) == 0);
+            } else if (sp[l+1] == 'd' || sp[l+1] == 'D') { // [non] digit
+                is_char_ok = (sp[l+1] == 'D') ^ isdigit(chars[k]);
+            } else if (sp[l+1] == 'w' || sp[l+1] == 'W') { // [non] word char.
+                is_char_ok = (sp[l+1] == 'W') ^ is_word_char(chars[k]);
             } else {
-                if (!is_block_ok) { // cancelling read
-                    if (nb_block - 1 < min)
-                        return 0; // no match: not enough blocks in selection
-                    subpatterns[s-1].n = start_block_i - subpatterns[s-1].st;
-                    subpatterns[s-1].mn = start_block_k - subpatterns[s-1].mst;
-                    decrement(chars, &i, &k, start_block_i);
-                    is_block_ok = 1;
-                    last_was = NONE;
-                } else if (i == x + n) {
-                    if (nb_block < min)
-                        return 0; // no match: not enough blocks in selection
-                } else if (max && nb_block == max) { // move on
-                    subpatterns[s-1].n = i - subpatterns[s-1].st;
-                    subpatterns[s-1].mn = k - subpatterns[s-1].mst;
-                    start_block_i = i;
-                    start_block_k = k;
-                    last_was = NONE;
-                } else { // another read
-                    s--;
-                    start_block_i = i;
-                    start_block_k = k;
-                    in_block = 1;
-                    last_was = NONE;
-                    decrement(sp, &j, &l, start_block_j);
-                }
+                return 0; // invalid syntax
             }
-
-        // OR
-        } else if (c == '|') {
-            if (last_was == NONE) {
-                return 0; // error: | must follow a non-repeated block/element
-            } else if ((last_was == ELEM && is_elem_ok) ||
-                (last_was == BLOCK && is_block_ok)) {
-                last_was = NONE;
-                // move j and l to next location
-                while (sp[l] == '|') {
-                    j++; l++;
-                    if (l == lsp || sp[l] == '|') { // empty pattern
-                        return 0; // error: patterns must be non-null
-                    } else if (sp[l] == '\\' && sp[l+1] == '(') { // block
-                        while (!(sp[l] == '\\' && sp[l+1] == ')')) {
-                            j++; l += utf8_char_length(sp[l]);
-                            if (l+1 == lsp)
-                                return 0; // error: block not ended
-                        }
-                        j += 2; l += 2;
-                        s++;
-                    } else if (sp[l] == '[') { // class
-                        while (sp[l] != ']') {
-                            j++; l += utf8_char_length(sp[l]);
-                            if (l == lsp)
-                                return 0; // error: class not ended
-                        }
-                        j++; l++;
-                    } else if (sp[l] == '\\') { // special
-                        j++; l++;
-                        j++; l += utf8_char_length(sp[l]);
-                    } else { // normal character
-                        j++; l += utf8_char_length(sp[l]);
-                    }
-                }
-            } else { // try the next pattern
-                decrement(chars, &i, &k,
-                    (last_was == ELEM) ? start_elem_i : start_block_i);
-                last_was = NONE;
-                j++; l++;
-                is_block_ok = is_elem_ok = 1;
-            }
-
-        // CUSTOM CLASS START
-        } else if (c == '[') {
-            if (i == x + n)
-                return 0; // no match: early end of selection
-            if (!is_elem_ok)
-                is_block_ok = 0;
-            start_elem_j = j;
-            start_elem_i = i;
-            last_was = ELEM;
-            in_class = 1;
+            j += 2; l += 2;
+        } else if (sp[l] == '[') { // custom class
             found_in_class = is_neg_class = 0;
-            if (sp[l+1] == '^') {
+            j++; l++;
+            if (sp[l] == '^') {
                 j++; l++;
                 is_neg_class = 1;
             }
-            j++; l++;
-
-        // BLOCK START
-        } else if (c == '\\' && sp[l+1] == '(') {
-            if (in_block)
-                return 0; // error: blocks can not be nested
-            in_block = 1;
-            is_block_ok = is_elem_ok = 1;
-            last_was = NONE;
-            nb_block = 0;
-            subpatterns[s].st = start_block_i = i;
-            subpatterns[s].mst = start_block_k = k;
-            start_block_j = j + 2;
-            j += 2; l += 2;
-
-        // BLOCK END
-        } else if (c == '\\' && sp[l+1] == ')') {
-            if (!in_block)
-                return 0; // error: block end without start
-            in_block = 0;
-            last_was = BLOCK;
-            is_elem_ok = 1;
-            subpatterns[s].n = (is_block_ok) ? (i - start_block_i) : 0;
-            subpatterns[s].mn = (is_block_ok) ? (k - start_block_k) : 0;
-            nb_block++;
-            s++;
-            j += 2; l += 2;
-
-        // CHARACTER
-        } else {
-            if (i == x + n)
-                return 0; // no match: early end of selection
-            if (!is_elem_ok)
-                is_block_ok = 0;
-            last_was = ELEM;
-            start_elem_j = j;
-            start_elem_i = i;
-            if (c == '\\') { // known classes and escaped characters
-                j++; l++;
-                c = sp[l];
-                is_elem_ok = (c == 'w' && is_word_char(chars[k])) ||
-                             (c == 'W' && !is_word_char(chars[k])) ||
-                             (c == 'd' && isdigit(chars[k])) ||
-                             (c == 'D' && !isdigit(chars[k])) ||
-                             (strchr("\\^$|*+?{[.", c) != NULL &&
-                              compare_chars(sp, l, chars, k) == 0);
-            } else { // normal characters
-                is_elem_ok = (sp[l] == '.') ||
-                    (compare_chars(sp, l, chars, k) == 0);
+            while (sp[l] != '\0' && sp[l] != ']') {
+                a = utf8_char_length(sp[l]);
+                if (l+a+1 < lsp && sp[l+a] == '-' && sp[l+a+1] != ']') { //range
+                    if (compare_chars(sp, l, chars, k) >= 0 &&
+                         compare_chars(sp, l+a+1, chars, k) <= 0)
+                        found_in_class = 1;
+                    j += 3; l += a + 1 + utf8_char_length(sp[l+a+1]);
+                } else { // raw comparison
+                    if (!compare_chars(sp, l, chars, k))
+                        found_in_class = 1;
+                    j++; l += a;
+                }
             }
+            if (sp[l] == '\0')
+                return 0; // invalid syntax
+            j++; l++;
+            is_char_ok = is_neg_class ^ found_in_class;
+        } else { // any or regular character
+            is_char_ok = (sp[l] == '.' || !compare_chars(sp, l, chars, k));
             j++; l += utf8_char_length(sp[l]);
-            i++; k += utf8_char_length(chars[k]);
         }
+        state = CHARACTER_READ;
+        nb_char++;
+        i++; k += utf8_char_length(chars[k]);
+        break;
     }
-
-    if (in_block || in_class || !is_block_ok || !is_elem_ok)
-        return 0; // error: block or class started but not ended, or no match
-
-    return i - x; // match: return read length
 }
 
 int
-mark_fields(const char *chars, int x, int n)
+mark_fields(const char *chars, int sx, int n)
 {
     // search for fields
     // return number of fields
@@ -329,7 +375,7 @@ mark_fields(const char *chars, int x, int n)
     int i, k;           // indexes (characters, bytes) of chars
 
     // init fields and indexes
-    k = get_str_index(chars, i = x);
+    k = get_str_index(chars, i = sx);
     fields[0].st = st = i;
     fields[0].mst = mst = k;
     fields[0].n = n;
@@ -341,7 +387,7 @@ mark_fields(const char *chars, int x, int n)
 
     // read chars
     f = 1;
-    while (i < x + n && f < 10) {
+    while (i < sx + n && f < 10) {
         if ((chars[k] == settings.field_separator) &&
             (k == 0 || chars[k-1] != '\\')) {
             fields[f].st = st;

@@ -2,10 +2,9 @@
 
 ### Review engine
 
-* design and explain a process that complies to syntax
-* name, order and explain variables
-* rewrite and comment each step, ensure <= 80 chars
-* test everything
+* OR ?
+* redo the block management
+* repeaters on strings ? manage l == lsp ?
 
 
 ### Publication

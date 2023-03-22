@@ -110,13 +110,13 @@
                   | "\b"                    # match a words boundary
                   | "\B"                    # match a non words boundary
 
-    <atom> ::= <assertion> | <character> | <character> <repeater>
+    <atom> ::= <assertion> | <character> <repeater>
 
     <OR_atom> ::= <atom> | <OR_atom> "|" <atom>
 
     <string> ::= "" | <string> <OR_atom>
 
-    <block> ::= <atom> | "\(" <string> "\)" | "\(" <string> "\)" <repeater>
+    <block> ::= <atom> | "\(" <string> "\)" <repeater>
 
     <OR_block> ::= <block> | <OR_block> "|" <block>
 

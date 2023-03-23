@@ -1,6 +1,6 @@
 .DEFAULT: build
 
-build: *.c *.h
+build: *.c *.h config.h
 	tcc -static -o edit edit.c
 
 install: build

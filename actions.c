@@ -31,9 +31,9 @@ lower(struct line *l, struct selection *s)
     char c;
 
     for (k = get_str_index(l->chars, i = s->x); i < s->x + s->n; i++) {
-        if (('A' <= c && c <= 'Z') || c == (char) 0xc3)
-            l->chars[k + (c == (char) 0xc3) ? 1 : 0] |= (1 << 5);
-        k += utf8_char_length(c = l->chars[k]);
+        if (('A' <= (c = l->chars[k]) && c <= 'Z') || c == (char) 0xc3)
+            l->chars[k + ((c == (char) 0xc3) ? 1 : 0)] |= (1 << 5);
+        k += utf8_char_length(c);
     }
 }
 
@@ -46,9 +46,9 @@ upper(struct line *l, struct selection *s)
     char c;
 
     for (k = get_str_index(l->chars, i = s->x); i < s->x + s->n; i++) {
-        if (('a' <= c && c <= 'z') || c == (char) 0xc3)
-            l->chars[k + (c == (char) 0xc3) ? 1 : 0] &= ~(1 << 5);
-        k += utf8_char_length(c = l->chars[k]);
+        if (('a' <= (c = l->chars[k]) && c <= 'z') || c == (char) 0xc3)
+            l->chars[k + ((c == (char) 0xc3) ? 1 : 0)] &= ~(1 << 5);
+        k += utf8_char_length(c);
     }
 }
 

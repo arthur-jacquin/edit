@@ -285,6 +285,8 @@ main(int argc, char *argv[])
         displayed = merge_sel(running, saved);
 
         // refresh screen and wait for input
+        if (in_insert_mode)
+            echo(INSERT_MODE_MESSAGE);
         print_all();
         tb_present();
         tb_poll_event(&ev);
@@ -369,7 +371,6 @@ main(int argc, char *argv[])
                     // fall-through
                 case KB_INSERT_MODE:
                     in_insert_mode = 1;
-                    echo(INSERT_MODE_MESSAGE);
                     break;
                 case KB_MOVE_MATCHING:
                     unwrap_pos(find_matching_bracket());

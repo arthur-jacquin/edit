@@ -73,7 +73,7 @@
 #define COLOR_STRING                99 //
 #define COLOR_COMMENT               172 //
 #define COLOR_BG_DEFAULT            0
-#define COLOR_BG_SELECTIONS         234 //
+#define COLOR_BG_SELECTIONS         238 //
 #define COLOR_BG_MATCHING           45 //
 #define COLOR_BG_COLUMN             234 //
 

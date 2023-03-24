@@ -91,9 +91,11 @@
 
     <non_minus> ::= ...                     # any character but "-"
 
-    <repeater> ::= "*"                      # 0 or more (any number)
+    <repeater> ::= ""                       # exactly 1
+                 | "*"                      # 0 or more (any number)
                  | "+"                      # 1 or more (at least once)
                  | "?"                      # 0 or 1 (at most once)
+                 | "{}"                     # 0 or more (any number)
                  | "{" <int> "}"            # exactly <int>
                  | "{" <int> ",}"           # at least <int>
                  | "{," <int> "}"           # at most <int>

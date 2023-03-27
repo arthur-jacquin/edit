@@ -1,15 +1,6 @@
 ## TODO
 
-### Review engine
-
-* OR ?
-* redo the block management
-* repeaters on strings ? manage l == lsp ?
-
-
-### Publication
-
-* rewrite engine
+* prove engine
 * makefile for gcc
 * finalise readme.md, tutor.def.md, philosophy.md
 * extensive testing through `make tutor`, adjust casting for hex values

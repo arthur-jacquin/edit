@@ -80,6 +80,28 @@ parse_rep(const char *sp, int *j, int *l, int *min, int *max)
 }
 
 static int
+eat_pattern_character(const char *sp, int *j, int *l)
+{
+    // move *j, *l indexes of sp after the character pattern
+    // return 1 on success
+
+    if (sp[*l] == '\\' && strchr("\\^$|*+?{[.dDwW", sp[*l+1])) {
+        (*j) += 2; (*l) += 2;
+    } else if (sp[*l] == '[') {
+        while (sp[*l] != '\0' && sp[*l] != ']') {
+            (*j)++; (*l) += utf8_char_length(sp[*l]);
+        }
+        if (sp[*l] == '\0')
+            return 0;
+        (*j)++; (*l)++;
+    } else {
+        (*j)++; (*l) += utf8_char_length(sp[*l]);
+    }
+
+    return 1;
+}
+
+static int
 eat_pattern_atom(const char *sp, int *j, int *l)
 {
     // move *j, *l indexes of sp after the atom pattern
@@ -92,18 +114,8 @@ eat_pattern_atom(const char *sp, int *j, int *l)
     } else if (sp[*l] == '\\' && strchr("AZbB", sp[*l+1])) {
         (*j) += 2; (*l) += 2;
     } else {
-        if (sp[*l] == '\\' && strchr("\\^$|*+?{[.dDwW", sp[*l+1])) {
-            (*j) += 2; (*l) += 2;
-        } else if (sp[*l] == '[') {
-            while (sp[*l] != '\0' && sp[*l] != ']') {
-                (*j)++; (*l) += utf8_char_length(sp[*l]);
-            }
-            if (sp[*l] == '\0')
-                return 0;
-            (*j)++; (*l)++;
-        } else {
-            (*j)++; (*l) += utf8_char_length(sp[*l]);
-        }
+        if (!eat_pattern_character(sp, j, l))
+            return 0;
         if (!parse_rep(sp, j, l, &min, &max))
             return 0;
     }
@@ -309,6 +321,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
             return 0; // invalid syntax
         } else if (i == sx + n) {
             is_char_ok = 0;
+            eat_pattern_character(sp, &j, &l);
             state = CHARACTER_READ;
             break;
         } if (sp[l] == '\\') {

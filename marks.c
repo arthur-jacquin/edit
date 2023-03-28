@@ -160,19 +160,36 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
     int i, k;           // indexes (characters, bytes) of chars
     int s, a;           // number of subpatterns, generic
 
-    // states are named to match cheatsheet.md wording
+    // states names match cheatsheet.md wording. possible transitions below
     enum states {READ_PATTERN, READ_BLOCK, BLOCK_READ, READ_STRING, STRING_READ,
-        READ_ATOM, ATOM_READ, READ_CHARACTER, CHARACTER_READ};
-    int state, in_string, found_in_class, is_neg_class;
+        READ_ATOM, ATOM_READ, READ_CHAR, CHAR_READ};
+    int state;
 
     // ORed elements
     int is_block_ok, start_block_i;
-    int is_atom_ok, start_atom_i;
+    int is_atom_ok, start_atom_i, in_string;
 
     // repeated elements
     int is_string_ok, nb_string, start_string_j, start_string_i;
-    int is_char_ok, nb_char, start_char_j, start_char_i;
+    int is_char_ok, nb_char, start_char_j, start_char_i, found, is_neg_class;
     int min, max;
+
+    // IN -> READ_PATTERN -> OUT    (j, l), (i, k), state
+    //         |       ^
+    //         V       |
+    // READ_BLOCK --> BLOCK_READ    start_block_i, is_block_ok
+    //   |     |       ^     ^
+    //   |     |       |     |
+    //   |     | STRING_READ |      start_string_{j,i}, is_string_ok, nb_string
+    //   |     |   |   ^     |
+    //   |     V   V   |     |
+    //   |    READ_STRING    |
+    //   |     |       ^     |
+    //   V     V       |     |
+    //  READ_ATOM --> ATOM_READ     in_string, start_atom_i, is_atom_ok
+    //      |             ^
+    //      V             |
+    //  READ_CHAR <-> CHAR_READ     start_char_{j,i}, is_char_ok, nb_char
 
     // init variables
     state = READ_PATTERN;
@@ -288,7 +305,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
             start_char_i = i;
             start_char_j = j;
             nb_char = 0;
-            state = READ_CHARACTER;
+            state = READ_CHAR;
             break;
         }
         state = ATOM_READ;
@@ -315,14 +332,14 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
         }
         break;
 
-    case READ_CHARACTER:
+    case READ_CHAR:
         // is_char_ok must be attributed
         if (l == lsp) {
             return 0; // invalid syntax
         } else if (i == sx + n) {
             is_char_ok = 0;
             eat_pattern_character(sp, &j, &l);
-            state = CHARACTER_READ;
+            state = CHAR_READ;
             break;
         } if (sp[l] == '\\') {
             if (strchr("\\^$|*+?{[.", sp[l+1])) { // escaped character
@@ -336,7 +353,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
             }
             j += 2; l += 2;
         } else if (sp[l] == '[') { // custom class
-            found_in_class = is_neg_class = 0;
+            found = is_neg_class = 0;
             j++; l++;
             if (sp[l] == '^') {
                 j++; l++;
@@ -347,17 +364,17 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
                 if (l+a+1 < lsp && sp[l+a] == '-' && sp[l+a+1] != ']') { //range
                     if (compare_chars(sp, l, chars, k) >= 0 &&
                          compare_chars(sp, l+a+1, chars, k) <= 0)
-                        found_in_class = 1;
+                        found = 1;
                     j += 3; l += a + 1 + utf8_char_length(sp[l+a+1]);
                 } else { // raw comparison
                     if (!compare_chars(sp, l, chars, k))
-                        found_in_class = 1;
+                        found = 1;
                     j++; l += a;
                 }
             }
             if (sp[l] == '\0')
                 return 0; // invalid syntax
-            is_char_ok = is_neg_class ^ found_in_class;
+            is_char_ok = is_neg_class ^ found;
             j++; l++;
         } else { // any or regular character
             is_char_ok = (sp[l] == '.' || (!compare_chars(sp, l, chars, k) &&
@@ -366,10 +383,10 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
         }
         i++; k += utf8_char_length(chars[k]);
         nb_char++;
-        state = CHARACTER_READ;
+        state = CHAR_READ;
         break;
 
-    case CHARACTER_READ:
+    case CHAR_READ:
         if (!parse_rep(sp, &j, &l, &min, &max)) // compute min and max
             return 0; // invalid syntax
         if (!is_char_ok) { // cancelling read
@@ -379,7 +396,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
         } else if (!max || nb_char < max) { // another read
             start_char_i = i;
             decrement(sp, &j, &l, start_char_j);
-            state = READ_CHARACTER;
+            state = READ_CHAR;
             break;
         }
         state = ATOM_READ;

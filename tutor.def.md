@@ -10,18 +10,16 @@
 
 
 Hi and welcome in edit! This tutorial will explain all there is to know to use
-edit. Despite it being quite exhaustive, it won't take more than 10 minutes, as
-edit was designed to be simple to learn and use.
-
-If you are reading this after running `make tutor`, this file is a copy of the
-tutorial. That means you can (and should) try anything this file, you will find
-an unmodified version of this tutorial each time you run `make tutor`.
+edit. If you are reading this after running `make tutor`, this file is a copy of
+the tutorial. That means you can (and should) try all of edit abilities on this
+file, and still find an unmodified version of the tutorial each time you run
+`make tutor`.
 
 Press j or the down arrow key until the first lesson fills the screen.
 
 
 
-# PART 1: THE BASICS
+# SECTION 1: THE BASICS
 
 ## 1.1: visual elements
 
@@ -78,7 +76,7 @@ After startup, the editor loop indefinitely:
 The way an event is processed heavily depends on the mode in which the editor
 is. There are three modes: normal, insert and dialog modes.
 
-At startup, the editor is in normal mode, in which most keys are associated with
+At startup, the editor is in normal mode, in which most keys are associated to
 an editing command. The commands of this mode will be described later.
 
 When in normal mode, you can press `i` to get in insert mode. There, most keys
@@ -113,7 +111,7 @@ Now you know the basics! Let's dive in the edition model.
 
 
 
-# PART 2: THE EDITION MODEL
+# SECTION 2: THE EDITION MODEL
 
 ## 2.1: selections
 
@@ -152,9 +150,9 @@ line, starting at the cursor column and of length zero. This way, commands only
 act on the cursor and the editor behaves as one could expect with a standard
 editor.
 
-A basic command is character deletion. Pressing `x` deletes the character before
+A basic command is character deletion. Pressing `x` deletes the character after
 every selections. If you press `x` now, you will see it only deletes the
-character before the cursor, as expected.
+character after the cursor, as expected.
 
 
 ## 2.3: anchor
@@ -175,7 +173,7 @@ the anchor follows the cursor when not anchored.
 ## 2.4: multiplier
 
 It makes sense for some commands to repeat them a given number of times. Enter a
-multiplier {m} before these commands to get the expected result. For those
+multiplier {m} before these commands to get the expected result. For these
 commands, the default value of 1 is used when no multiplier were given.
 
 Most of the movements commands combines well with a multiplier. Try to precede
@@ -185,11 +183,11 @@ You should be be ready to navigate by yourself in the commands walktrough!
 
 
 
-# PART 3: COMMANDS WALKTHROUGH
+# SECTION 3: COMMANDS WALKTHROUGH
 
 ## 3.1: introduction
 
-This part covers all the commands available in normal mode and their default
+This section covers all the commands available in normal mode and their default
 keybind. Remember that you can get back to normal mode at any moment by pressing
 escape. All of the following commands are condensed in `cheatsheet.md` for quick
 reference.
@@ -198,7 +196,7 @@ Do not forget to test all of the commands while reading this file, as running
 `make tutor` again will give you an unmodified version of the tutorial.
 
 Some mechanisms need more in-depth explanations or custom training to master.
-They are explored in the following parts.
+They are explored in the following sections.
 
 
 ## 3.2: interacting with the editor
@@ -295,8 +293,7 @@ order to select any line whose number is between {min} and {max}.
 Searching will create a new saved selections list containing all substrings of
 previously saved selections matching the given pattern. Note that searching is
 incremental: the potential results will be displayed as you type your search
-pattern. See the search and replace engine section for more details on
-searching.
+pattern. See the regular expressions section for more details on searching.
 
 
 ## 3.7: acting on selections
@@ -311,7 +308,7 @@ once.
               u/U   switch to lowercase/uppercase
     >/<, TAB/^TAB   {m} increase/decrease line indent
                 K   comment/uncomment line
-                r   replace with pattern elements and fields
+                r   replace (support for subpatterns and fields)
 
 See the search and replace engine section for more details on replacing.
 
@@ -319,7 +316,9 @@ See the search and replace engine section for more details on replacing.
 
 If enabled, autocompletion is a special action on selections, as it can be done
 in both normal and insert mode. This is what explains the need for a modifier.
-See the autocomplete section for more details.
+If the end of a selection does not follow the start of a word, the completion is
+aborted. Else the word is completed by the characters common to all words that
+start identically and are strictly longer.
 
 
 ## 3.8: managing lines
@@ -334,80 +333,19 @@ selections but directly on lines:
 
 
 
-# PART 4: AUTOCOMPLETION
 
-Hitting CTRL + A performs autocompletion at the end of each selection. If the
-end of a selection does not follow the start of a word, the completion is
-aborted. Else the word will be completed by the first word in the file that
-starts identically and is strictly longer. Let's try that.
+# SECTION 4: REGULAR EXPRESSIONS
 
-Imagine you want to write the very_long_name_of_a_function defined somewhere in
-the file. You already typed the start of the name. You can try to hit CTRL + A.
-Move your cursor at the end of the following lines and try that:
+## 4.1: introduction
 
-    v
-    very
-
-Note that autocompleting on "v" (and "ve", and "ver") gives "version", as it is
-the first match in the file. Sometimes autocompletion won't give you the word
-you want if it is ambiguous.
-
-
-
-# PART 5: THE SEARCH AND REPLACE ENGINE
-
-The search and replace engine is home-grown, so it needs some explanations. You
-can read about the reasons of designing one in `philosophy.md`.
-
-
-## 5.1: use
-
-Using the engine should feel pretty straightforward as it can be used in a
-typical sed fashion:
-
-1. Choosing a line range with `%`, `.`, `b` or a custom range with `:`
-2. Giving a search pattern with `/` or `f`
-3. Giving a replace pattern with `r`
-
-However, all these steps makes sense individually. As normal mode is entered
-between two steps, you can see at any moment if the result differs from what you
-expected, for example if you entered a bad line number in the custom range
-prompt. You can then restart the process with no consequences.
-
-Moreover, it means that you can use any combination of these steps. For example,
-you can use replace without searching first, if you don't need subpatterns. This
-way it unifies the replace process, wether it's a small replace of a word you
-selected with the running selection or big search-and-replace operation across
-the whole file.
-
-
-## 5.2: search pattern syntax
-
-The search pattern uses regular expressions, whose syntax is essentially a
+The search engine uses regular expressions, whose syntax is essentially a
 subset of PCRE[^1]. If you're new to regular expressions, everything is
-explained in the next part. If you're an experienced user, the syntax is
-described in `cheatsheet.md` in a Backus-Naur form notation for a quick start.
+explained in this section. If you're an experienced user, you can explore the
+condensed syntax description in `cheatsheet.md` in a Backus-Naur form[^2]
+notation and skip this section.
 
 [^1]: https://www.pcre.org/
-
-
-## 5.3: replace pattern syntax
-
-The replace pattern can contain special sequences:
-
-- `$0` and `\0` will be expended to the whole initial selection
-- `${i}` (1 <= {i} <= 9) will be expended to the {i}-th field of the initial
-    selection, where fields are delimited by the runtime-modifiable field
-    separator
-- `\{i}` (1 <= {i} <= 9) will be expended to the {i}-th subpattern matched by
-    the search pattern in the initial selection
-- `\\` and `\$` produces repectively `\` and `$` (escaping sequences)
-
-
-
-# PART 6: REGULAR EXPRESSIONS
-
-## 6.1: introduction
+[^2]: https://en.wikipedia.org/wiki/Backus-Naur_form
 
 A regular expression is a pattern (string) describing a set of strings.
 
@@ -423,13 +361,8 @@ The whole point of regular expressions is to provide a syntax to easily describe
 sets of structurally similar strings. Let's explore these different syntax
 elements with examples.
 
-The syntax is described with the Backus-Naur form notation[^2]. The complete
-description can be found in `cheatsheet.md`.
 
-[^2]: https://en.wikipedia.org/wiki/Backus-Naur_form
-
-
-## 6.2: characters
+## 4.2: characters
 
 The simplest way to match a character is itself: "a" matches "a". However, some
 characters have a special meaning in a pattern. To match these characters, you
@@ -472,7 +405,7 @@ You can use the following block to test all of these options:
     _ - / : & # % ! " @
 
 
-## 6.3: repeaters
+## 4.3: repeaters
 
 Any character in a pattern is to be followed by a repeater. A repeater specifies
 how many times the preceding character should be matched. An empty repeater
@@ -503,15 +436,15 @@ Please note that repeaters always match as much as possible, potentially eating
 too much characters and invalidating a valid match.
 
 
-## 6.4: assertions
+## 4.4: assertions
 
 Assertions do not match any character, but ensure a given position. Let's cover
 an example to understand how it allows for discarding unwanted matches. Given
-the following block, substring B is matched by both "file." and "file.$", but
-only the former regex matches substring A.
+the following block, "file." matches both A and B substrings, but "file.$" only
+matches substring B.
 
     This is a file. This is the first line of this file.
-              ~~~~~                                ~~~~~
+              -----                                -----
                 A                                    B
 
 Repeaters can not be used on assertions. Here are the available assertions:
@@ -531,7 +464,7 @@ automatically delimits the word under the cursor and search for it, padded with
 paragraph with this method. It won't select the one contained in "therefore".
 
 
-## 6.5: groups and OR logic
+## 4.5: groups and OR logic
 
 OR logic is handy for describing set of strings, and is done with "|". For
 example, "0|\D" will match any character but "1" to "9". When OR logic is used
@@ -546,7 +479,7 @@ matched by a group are stored in a subpatterns, and can be reused in a replace
 pattern.
 
 
-## 6.6: creating a pattern
+## 4.6: creating a pattern
 
 You can create a pattern by concatenating the previous elements, as many times
 as needed. If you want to dig deeper in how patterns are understood, here are
@@ -556,10 +489,59 @@ the formal rules used:
 
     <OR_atom> ::= <atom> | <OR_atom> "|" <atom>
 
-    <string> ::= "" | <string> <OR_atom>
+    <group> ::= "" | <group> <OR_atom>
 
-    <block> ::= <atom> | "(" <string> ")" <repeater>
+    <block> ::= <atom> | "(" <group> ")" <repeater>
 
     <OR_block> ::= <block> | <OR_block> "|" <block>
 
     <pattern> ::= "" | <pattern> <OR_block>
+
+
+
+# SECTION 5: THE SEARCH AND REPLACE ENGINE
+
+The search and replace engine is home-grown, so it needs some explanations. You
+can read about the reasons of designing one in `philosophy.md`.
+
+
+## 5.1: use
+
+Using the engine should feel pretty straightforward as it can be used in a
+typical sed fashion:
+
+1. Choosing a line range with `%`, `.`, `b` or a custom range with `:`
+2. Giving a search pattern with `/` or `f`
+3. Giving a replace pattern with `r`
+
+However, all these steps make sense individually. As normal mode is entered
+between two steps, you can see at any moment if the result differs from what you
+expected, for example if you entered a bad line number in the custom range
+prompt. You can then restart the process with no consequences.
+
+Moreover, it means that you can use any combination of these steps. For example,
+you can use replace without searching first, if you don't need subpatterns. This
+way it unifies the replace process, wether it's a small replace of a word you
+selected with the running selection or big search-and-replace operation across
+the whole file.
+
+
+## 5.2: replace pattern syntax
+
+The replace pattern can contain special sequences that will be expended in
+something else (a submatch or a field) in the resulting string. Here is the
+Backus-Naur form notation of the replace syntax:
+
+    <pattern> ::= <regular_char>            # any character except "\" and "$"
+                | "\\" | "\$"               # escaped "\" and "$"
+                | "\0" | "$0"               # whole initial selection
+                | "\" <positive_digit>      # <positive_digit>-th subpattern
+                | "$" <positive_digit>      # <positive_digit>-th field
+                | <pattern> <pattern>       # concatenation
+
+    <positive_digit> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+Using the running selection, try to exchange the fields in "field 1,field 2", or
+to move the letters after the digits in "abc012". For the first exercise, just
+replace the string with the pattern "$2,$1". For the second one, you can start
+by searching "(\w*)(\d*)" and then replace with "\2\1".

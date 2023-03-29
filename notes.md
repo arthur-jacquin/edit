@@ -1,13 +1,12 @@
 ## TODO
 
-what about rule matching ?
-autocomplete to the best substring ?
+autocomplete to the best substring
 
-* makefile for gcc
-* finalise readme.md, tutor.def.md, philosophy.md
+* check how to configure compiler, makefile for gcc
+* rewrite readme.md, philosophy.md
 * extensive testing through `make tutor`, adjust casting for hex values
+* add languages
 * finalise config.def.h, including colorscheme
-* add languages and finalise languages.md
 * final check for each file
 * script, do and upload the screencast, modify readme.md, edit.html accordingly
 * better colors.html

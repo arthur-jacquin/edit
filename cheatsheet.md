@@ -44,7 +44,7 @@
               u/U   switch to lowercase/uppercase
     >/<, TAB/^TAB   {m} increase/decrease line indent
                 K   comment/uncomment line
-                r   replace with pattern elements and fields
+                r   replace (support for subpatterns and fields)
            CTRL+A   autocomplete at the end of each selection
 
     MANAGING LINES

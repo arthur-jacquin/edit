@@ -58,7 +58,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     // return selection queue after this line
 
     // variables
-    uint32_t *ch = _malloc((l->dl) * sizeof(uint16_t)); // Unicode codepoints
+    uint32_t *ch = _malloc((l->dl) * sizeof(uint32_t)); // Unicode codepoints
     uint16_t *fg = _malloc((l->dl) * sizeof(uint16_t)); // foreground attributes
     uint16_t *bg = _malloc((l->dl) * sizeof(uint16_t)); // background attributes
     struct lang *syntax = settings.syntax;

@@ -66,7 +66,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     struct printable *buf = _malloc((l->dl) * sizeof(struct printable));
     struct lang *syntax = settings.syntax;
     struct rule *r;
-    int i, k;                       // index in l->chars (characters, bytes)
+    int i, k;                       // indexes (characters, bytes) in l->chars
     int j, dk, len, color, nb_to_color, underline;
     char c, nc;
 

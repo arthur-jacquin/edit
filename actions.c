@@ -187,9 +187,9 @@ replace(struct line *l, struct selection *s)
     // replace the selection according to search and replace patterns
 
     char *rp, *replaced, *new_replaced, *src;
-    int k, k_chars;                 // index in rp, chars (bytes)
+    int k, k_chars;                 // indexes (bytes) in rp, chars
     int lrp;                        // length of rp
-    int j, lj;                      // index in replaced (characters, bytes)
+    int j, lj;                      // indexes (characters, bytes) in replaced
     int lr;                         // size of replaced buffer
     int mst, n, mn;                 // substring to append to replaced
     struct substring *class;        // pointer to either fields or subpatterns

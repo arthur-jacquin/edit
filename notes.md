@@ -1,5 +1,8 @@
 ## TODO
 
+what about rule matching ?
+autocomplete to the best substring ?
+
 * makefile for gcc
 * finalise readme.md, tutor.def.md, philosophy.md
 * extensive testing through `make tutor`, adjust casting for hex values

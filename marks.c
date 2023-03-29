@@ -85,7 +85,7 @@ eat_pattern_character(const char *sp, int *j, int *l)
     // move *j, *l indexes of sp after the character pattern
     // return 1 on success
 
-    if (sp[*l] == '\\' && strchr("\\^$|*+?{[.dDwW", sp[*l+1])) {
+    if (sp[*l] == '\\' && strchr("\\^$|()*+?{[.dDwW", sp[*l+1])) {
         (*j) += 2; (*l) += 2;
     } else if (sp[*l] == '[') {
         while (sp[*l] != '\0' && sp[*l] != ']') {
@@ -131,8 +131,8 @@ eat_pattern_block(const char *sp, int *j, int *l)
 
     int min, max;
 
-    if (sp[*l] == '\\' && sp[*l+1] == '(') {
-        while (!(sp[*l] == '\\' && sp[*l+1] == ')')) {
+    if (sp[*l] == '(') {
+        while (sp[*l] != ')') {
             if (sp[*l] == '\0' || !eat_pattern_atom(sp, j, l))
                 return 0;
             while (sp[*l] == '|') {
@@ -141,7 +141,7 @@ eat_pattern_block(const char *sp, int *j, int *l)
                     return 0;
             }
         }
-        (*j) += 2; (*l) += 2;
+        (*j)++; (*l)++;
         return parse_rep(sp, j, l, &min, &max);
     } else {
         return eat_pattern_atom(sp, j, l);
@@ -161,16 +161,16 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
     int s, a;           // number of subpatterns, generic
 
     // states names match cheatsheet.md wording. possible transitions below
-    enum states {READ_PATTERN, READ_BLOCK, BLOCK_READ, READ_STRING, STRING_READ,
-        READ_ATOM, ATOM_READ, READ_CHAR, CHAR_READ};
+    enum states { READ_PATTERN, READ_BLOCK, BLOCK_READ, READ_GROUP, GROUP_READ,
+        READ_ATOM, ATOM_READ, READ_CHAR, CHAR_READ };
     int state;
 
     // ORed elements
     int is_block_ok, start_block_i;
-    int is_atom_ok, start_atom_i, in_string;
+    int is_atom_ok, start_atom_i, in_group;
 
     // repeated elements
-    int is_string_ok, nb_string, start_string_j, start_string_i;
+    int is_group_ok, nb_group, start_group_j, start_group_i;
     int is_char_ok, nb_char, start_char_j, start_char_i, found, is_neg_class;
     int min, max;
 
@@ -180,13 +180,13 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
     // READ_BLOCK --> BLOCK_READ    start_block_i, is_block_ok
     //   |     |       ^     ^
     //   |     |       |     |
-    //   |     | STRING_READ |      start_string_{j,i}, is_string_ok, nb_string
+    //   |     | GROUP_READ  |      start_group_{j,i}, is_group_ok, nb_group
     //   |     |   |   ^     |
     //   |     V   V   |     |
-    //   |    READ_STRING    |
+    //   |    READ_GROUP     |
     //   |     |       ^     |
     //   V     V       |     |
-    //  READ_ATOM --> ATOM_READ     in_string, start_atom_i, is_atom_ok
+    //  READ_ATOM --> ATOM_READ     in_group, start_atom_i, is_atom_ok
     //      |             ^
     //      V             |
     //  READ_CHAR <-> CHAR_READ     start_char_{j,i}, is_char_ok, nb_char
@@ -221,17 +221,17 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
         is_block_ok = 1;
         if (l == lsp) {
             return 0; // invalid syntax
-        } else if (sp[l] == '\\' && sp[l+1] == '(') {
-            j += 2; l += 2;
+        } else if (sp[l] == '(') {
+            j++; l++;
             s++;
-            is_string_ok = 1;
-            subpatterns[s].st = start_string_i = i;
+            is_group_ok = 1;
+            subpatterns[s].st = start_group_i = i;
             subpatterns[s].mst = k;
-            start_string_j = j;
-            nb_string = 0;
-            state = READ_STRING;
+            start_group_j = j;
+            nb_group = 0;
+            state = READ_GROUP;
         } else {
-            in_string = 0;
+            in_group = 0;
             start_atom_i = i;
             state = READ_ATOM;
         }
@@ -254,34 +254,34 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
         }
         break;
 
-    case READ_STRING:
+    case READ_GROUP:
         if (l == lsp) {
             return 0; // invalid syntax
-        } else if (sp[l] == '\\' && sp[l+1] == ')') {
-            j += 2; l += 2;
+        } else if (sp[l] == ')') {
+            j++; l++;
             subpatterns[s].n = i - subpatterns[s].st;
             subpatterns[s].mn = k - subpatterns[s].mst;
-            nb_string++;
-            state = STRING_READ;
+            nb_group++;
+            state = GROUP_READ;
         } else {
-            in_string = 1;
+            in_group = 1;
             start_atom_i = i;
             state = READ_ATOM;
         }
         break;
 
-    case STRING_READ:
+    case GROUP_READ:
         if (!parse_rep(sp, &j, &l, &min, &max)) // compute min and max
             return 0; // invalid syntax
-        if (!is_string_ok) { // cancelling read
-            if (nb_string - 1 < min)
+        if (!is_group_ok) { // cancelling read
+            if (nb_group - 1 < min)
                 is_block_ok = 0;
-            decrement(chars, &i, &k, start_string_i);
-        } else if (!max || nb_string < max) { // another read
-            is_string_ok = 1;
-            start_string_i = i;
-            decrement(sp, &j, &l, start_string_j);
-            state = READ_STRING;
+            decrement(chars, &i, &k, start_group_i);
+        } else if (!max || nb_group < max) { // another read
+            is_group_ok = 1;
+            start_group_i = i;
+            decrement(sp, &j, &l, start_group_j);
+            state = READ_GROUP;
             break;
         }
         state = BLOCK_READ;
@@ -312,7 +312,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
         break;
 
     case ATOM_READ:
-        if (in_string) {
+        if (in_group) {
             if (is_atom_ok) {
                 while (sp[l] == '|') { // eat followind ORed atoms
                     j++; l++;
@@ -323,9 +323,9 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
                 j++; l++;
                 decrement(chars, &i, &k, start_atom_i);
             } else {
-                is_string_ok = 0;
+                is_group_ok = 0;
             }
-            state = READ_STRING;
+            state = READ_GROUP;
         } else {
             is_block_ok = is_atom_ok;
             state = BLOCK_READ;
@@ -342,7 +342,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
             state = CHAR_READ;
             break;
         } if (sp[l] == '\\') {
-            if (strchr("\\^$|*+?{[.", sp[l+1])) { // escaped character
+            if (strchr("\\^$|()*+?{[.", sp[l+1])) { // escaped character
                 is_char_ok = (sp[l+1] == chars[k]);
             } else if (sp[l+1] == 'd' || sp[l+1] == 'D') { // [non] digit
                 is_char_ok = (sp[l+1] == 'D') ^ isdigit(chars[k]);
@@ -378,7 +378,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
             j++; l++;
         } else { // any or regular character
             is_char_ok = (sp[l] == '.' || (!compare_chars(sp, l, chars, k) &&
-                !strchr("\\^$|*+?{[.", sp[l])));
+                !strchr("\\^$|()*+?{[.", sp[l])));
             j++; l += utf8_char_length(sp[l]);
         }
         i++; k += utf8_char_length(chars[k]);
@@ -438,7 +438,7 @@ mark_fields(const char *chars, int sx, int n)
             mst = k + 1;
             f++;
         }
-        i++; k += utf8_char_length(chars[k]);
+        i++; k += utf8_char_length(chars[k]); // TODO error with escaped
     }
     if (f < 10) {
         fields[f].st = st;

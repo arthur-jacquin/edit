@@ -1,11 +1,11 @@
 
 
 
-                      _ _ _       _         _             _       _
-              ___  __| (_) |_    | |_ _   _| |_ ___  _ __(_) __ _| |
-             / _ \/ _` | | __|   | __| | | | __/ _ \| '__| |/ _` | |
-            |  __/ (_| | | |_    | |_| |_| | || (_) | |  | | (_| | |
-             \___|\__,_|_|\__|    \__|\__,_|\__\___/|_|  |_|\__,_|_|
+                     _ _ _       _         _             _       _
+             ___  __| (_) |_    | |_ _   _| |_ ___  _ __(_) __ _| |
+            / _ \/ _` | | __|   | __| | | | __/ _ \| '__| |/ _` | |
+           |  __/ (_| | | |_    | |_| |_| | || (_) | |  | | (_| | |
+            \___|\__,_|_|\__|    \__|\__,_|\__\___/|_|  |_|\__,_|_|
 
 
 
@@ -383,19 +383,12 @@ the whole file.
 
 ## 5.2: search pattern syntax
 
-The search pattern uses regular expressions, whose syntax is inspired by
-PCRE[^1] and described in `cheatsheet.md` in a Backus-Naur form style.
+The search pattern uses regular expressions, whose syntax is essentially a
+subset of PCRE[^1]. If you're new to regular expressions, everything is
+explained in the next part. If you're an experienced user, the syntax is
+described in `cheatsheet.md` in a Backus-Naur form notation for a quick start.
 
 [^1]: https://www.pcre.org/
-
-If you're new to regular expressions, reading the syntax description might not
-be sufficient. If you do not want to learn how to use regular expressions, you
-just have to know that some characters needs to be escaped with an antislash (\)
-in the search patterns: ., \, ^, $, |, *, +, ?, {, and [.
-
-Please note that the regular expression engine is not perfect. For example,
-repeaters always match as much as possible, potentially eating too much
-characters and invalidating a valid match.
 
 
 ## 5.3: replace pattern syntax
@@ -419,144 +412,154 @@ The replace pattern can contain special sequences:
 A regular expression is a pattern (string) describing a set of strings.
 
 From now on, the shorter name "regex" will be used to refer to a regular
-expression. A regex is said to "match" a string when the string is in the
-set of strings described by the regex.
+expression. A regex is said to "match" a string when the string is in the set of
+strings described by the regex.
 
 The simplest regexes, the ones that do not use any special feature, describe a
 set reduced to a single string: themselve. For example, the regex "edit" only
-matches the string "edit", and the regex "murcielago" only matches the string
-"murcielago".
+matches the string "edit".
 
-The whole point of regex expressions is to provide a syntax to easily describes
+The whole point of regular expressions is to provide a syntax to easily describe
 sets of structurally similar strings. Let's explore these different syntax
-elements with examples. For each exemple, check what is asserted.
+elements with examples.
+
+The syntax is described with the Backus-Naur form notation[^2]. The complete
+description can be found in `cheatsheet.md`.
+
+[^2]: https://en.wikipedia.org/wiki/Backus-Naur_form
 
 
-## 6.2: syntax elements
+## 6.2: characters
 
-### 6.2.1: assertions
+The simplest way to match a character is itself: "a" matches "a". However, some
+characters have a special meaning in a pattern. To match these characters, you
+need to escape them with an anti-slash: "$" is matched by "\$".
 
-Some elements mark a specific position: `^` (resp. `$`) marks a line start
-(resp. end), `\A` (resp. `\Z`) marks a selection start (resp. end). Let's
-consider the following line:
+    <esc_char> ::= "\" | "^" | "$" | "|" | "(" | ")"
+                 | "*" | "+" | "?" | "{" | "[" | "."
 
-    This is a file. This is the first line of this file.
-              -----                                -----
-                A                                    B
+It is also possible to describe a class of characters. For example, "." matches
+any character, and "\d" matches any digit (from "0" to "9").
 
-Substring B is matched by both "file." and "file.$" regexes, but only the former
-matchs substring A.
+    <character> ::= <regular_char>          # match a non escaped character
+                  | "\" <esc_char>          # match an escaped character
+                  | "."                     # match any character
+                  | "\d" | "\D"             # match any [non] digit
+                  | "\w" | "\W"             # match any [non] word character
+                  | "[" <set> "]"           # match any character in <set>
+                  | "[^" <set> "]"          # match any character not in <set>
 
-Finally, `\b` (resp. `\B`) marks a word boundary (resp. not a word boundary). A
-word boundary is the transition between a word character and a non-word
-character.
+The last two options are custom classes. The <set> list is the concatenation of
+characters and ranges. For example, "[abc]" matches "a", "b" and "c", and
+"[a0-9b]" matches digits, "a" and "b". Use "-" at the beginning/end of the <set>
+so that it is not interpreted as a range. "[a-]" matches "a" and "-".
 
-This is particularly helpful for searching the occurrences of a specific
-variable in code: searching "i" in "print(i)" will match both "i", while "\bi\b"
-only matches the second one. In edit, the `*` command automatically delimits the
-word under the cursor and search for it, padded with `\b` delimiters. Try to
-select all the occurences of "the" in this paragraph with this method. Be
-careful to not select this one: therefore.
+    <set> ::= <items>                       # match characters in <items>
+            | "-" <items>                   # match "-" and <items> characters
+            | <items> "-"                   # match "-" and <items> characters
+            | "-" <items> "-"               # match "-" and <items> characters
 
-### 6.2.2: characters
+    <items> ::= <non_minus>                 # match a character (not "-")
+              | <non_minus> "-" <non_minus> # range (inclusive)
+              | <items> <items>             # match characters in either <items>
 
-The simplest way to match a character is to use the character in the regex.
+You can use the following block to test all of these options:
 
-But some characters have a special meaning in a regex. We previously saw that
-`$` marks an end of line. These characters needs to be "escaped" with an
-antislash. For example, you can use the regex `\$` to match `$`, and `\\` to
-match `\`. The characters to escape are the following:
-
-    \ ^ $ | * + ? { [ .
-
-Some syntax elements refers to classes of characters. For example, `\d` will
-match any digit: `0`, `1` and all the way to `9`. `\D` matches non digits, and
-`\w` (resp. `\W`) matches word characters (resp. non-word characters).
-
-For more specific needs, you can create custom classes of characters. These
-classes are characters lists encapsulated in square bracket. The potential `^`
-symbol at the beginning of the list indicates that the class matches characters
-that are NOT in the rest of the list; else the class matches any characters in
-the list. Let's see some examples:
-
-    "[abc]" matches "a" and "c" but not "e"
-    "[^abc]" matches "e" but not "a" and "c"
-
-You can also use ranges in the list:
-
-    "[a-z]" matches any lowercase letter
-    "[^5-9]" matches "a" and "4" but neither "5" nor "8"
-
-Use `-` at the begininng of the list so that it is not interpreted as a range:
-
-    "[-09]" matches "-", "0" and "9" while "[0-9]" is equivalent to "\d"
-    "[^-a-z]" matches all characters but "-" and lowercase letters
-
-Finally you can combine all of these elements. For example, `[^-a-cX-Z02468]`
-matches all characters but `-`, `a`, `b`, `c`, `X`, `Y`, `Z` and even digits.
-
-You can use the following to train your characters matching ability:
-
+    \ ^ $ | ( ) * + ? { [ .
     a b c d e f g h i j k l m n o p q r s t u v w x y z
     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
-    0 1 2 3 4 5 6 7 8 9 _ - / : & # % µ ! " @
-    \ ^ $ | * + ? { [ .         é à ç µ
-
-    b ba baa baaa baaaa baaaaa baaaaaa 
-
-### 6.2.3: repeaters
-
-You can follow a character expression by a repeater. A repeater specifies how
-many times the preceding character should be matched:
-
-* `*` means 0 or more times (any number of times)
-* `+` means 1 or more times (at least once)
-* `?` means 0 or 1 time (at most once)
-* `{n}` means n times
-* `{min,}` means at least min times
-* `{,max}` means at most min times
-* `{min,max}` means between min and max times
-
-Let's see some examples:
-
-    "a*" matches "", "a" and "aaa"
-    "a+" matches "a" and "aaa" but not ""
-    "a?" matches "" and "a" but not "aaa"
-    "a{5}" only matches "aaaaa"
-    "a{1,3}" only matches "a", "aa" and "aaa"
-
-You can use the following to train your repeaters use:
-
-    a aa aaa aaaa aaaaa aaaaaa aaaaaaa
+    0 1 2 3 4 5 6 7 8 9
+    _ - / : & # % ! " @
 
 
-## 6.3: building a pattern
+## 6.3: repeaters
 
-Now that you read about all the syntax elements supported by edit, let's see how
-to build a pattern.
+Any character in a pattern is to be followed by a repeater. A repeater specifies
+how many times the preceding character should be matched. An empty repeater
+means exactly one time, so that "a" naturally matches "a".
 
-### 6.3.1: concatenation
+    <repeater> ::= ""                       # exactly 1
+                 | "*"                      # 0 or more (any number)
+                 | "+"                      # 1 or more (at least once)
+                 | "?"                      # 0 or 1 (at most once)
+                 | "{}"                     # 0 or more (any number)
+                 | "{" <int> "}"            # exactly <int>
+                 | "{" <int> ",}"           # at least <int>
+                 | "{," <int> "}"           # at most <int>
+                 | "{" <int> "," <int> "}"  # range (inclusive)
 
-The simplest rule is concatenation. Just concatenate regexes to create a new
-one, that matches all possible concatenations of matches. For example, as "a"
-matches "a" and "\d" matches "0", the concatenated regex "a\d" matches "a0".
+You can use the following block to test all of these options, with a pattern
+looking like "x0<rep>x". For example, you can try "x0?x" or "x0{3,}x".
 
-### 6.3.2: OR logic
+    xx
+    x0x
+    x00x
+    x000x
+    x0000x
+    x00000x
+    x000000x
 
-The `|` symbol is a logical OR between the two adjacent elements:
+Please note that repeaters always match as much as possible, potentially eating
+too much characters and invalidating a valid match.
 
-    "\D|6" does not match digits except "6"
-    "a+|b" matches "a", "aaa" and "b"
 
-### 6.3.3: grouping
+## 6.4: assertions
 
-You can group characters of the regex in blocks with delimiters `\(` and `\)`.
-It might be useful for several purposes.
+Assertions do not match any character, but ensure a given position. Let's cover
+an example to understand how it allows for discarding unwanted matches. Given
+the following block, substring B is matched by both "file." and "file.$", but
+only the former regex matches substring A.
 
-First, blocks also support repeaters and OR logic:
+    This is a file. This is the first line of this file.
+              ~~~~~                                ~~~~~
+                A                                    B
 
-    "a\(ba\){4}" only matches "ababababa"
-    "\(apple\)|\(orange\)" only matches "apple" and "orange"
+Repeaters can not be used on assertions. Here are the available assertions:
 
-Lastly, characters matched by this portion of the regex can be reused in a
-replace pattern, which is very powerful.
+    <assertion> ::= "^"                     # match a start of line
+                  | "$"                     # match an end of line
+                  | "\A"                    # match a start of selection
+                  | "\Z"                    # match an end of selection
+                  | "\b"                    # match a words boundary
+                  | "\B"                    # match a non words boundary
+
+Words boundaries are particularly helpful for searching the occurrences of a
+specific variable in code: searching "i" in "print(i)" will match both "i",
+while "\bi\b" only matches the second one. In edit, the `*` command
+automatically delimits the word under the cursor and search for it, padded with
+`\b` delimiters. You can try to select all the occurences of "the" in this
+paragraph with this method. It won't select the one contained in "therefore".
+
+
+## 6.5: groups and OR logic
+
+OR logic is handy for describing set of strings, and is done with "|". For
+example, "0|\D" will match any character but "1" to "9". When OR logic is used
+on characters, it might seem pointless ("0|\D" can be replaced by "[^1-9]").
+Fortunately, it is possible to group characters together, and use the OR logic
+on these groups. Grouping is done with parenthesis. For example,
+"(apple)|(orange)" will match "apple" and "orange".
+
+Grouping is also useful for other purposes. Firstly, you can use repeaters on
+groups. For example, "ababab" is matched by "(ab){3}". Secondly, characters
+matched by a group are stored in a subpatterns, and can be reused in a replace
+pattern.
+
+
+## 6.6: creating a pattern
+
+You can create a pattern by concatenating the previous elements, as many times
+as needed. If you want to dig deeper in how patterns are understood, here are
+the formal rules used:
+
+    <atom> ::= <assertion> | <character> <repeater>
+
+    <OR_atom> ::= <atom> | <OR_atom> "|" <atom>
+
+    <string> ::= "" | <string> <OR_atom>
+
+    <block> ::= <atom> | "(" <string> ")" <repeater>
+
+    <OR_block> ::= <block> | <OR_block> "|" <block>
+
+    <pattern> ::= "" | <pattern> <OR_block>

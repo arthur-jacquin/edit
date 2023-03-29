@@ -78,7 +78,8 @@
 
     <regular_char> ::= ...                  # any character not in <esc_char>
 
-    <esc_char> ::= "\" | "^" | "$" | "|" | "*" | "+" | "?" | "{" | "[" | "."
+    <esc_char> ::= "\" | "^" | "$" | "|" | "(" | ")"
+                 | "*" | "+" | "?" | "{" | "[" | "."
 
     <set> ::= <items>                       # match characters in <items>
             | "-" <items>                   # match "-" and <items> characters
@@ -116,9 +117,9 @@
 
     <OR_atom> ::= <atom> | <OR_atom> "|" <atom>
 
-    <string> ::= "" | <string> <OR_atom>
+    <group> ::= "" | <group> <OR_atom>
 
-    <block> ::= <atom> | "\(" <string> "\)" <repeater>
+    <block> ::= <atom> | "(" <group> ")" <repeater>
 
     <OR_block> ::= <block> | <OR_block> "|" <block>
 

@@ -8,10 +8,8 @@ PROBLEM WHEN SAVING START OF FILE ???
 * finalise config.def.h, including colorscheme
 * final check for each file
 * script, do and upload the screencast, modify readme.md, edit.html accordingly
-* better colors.html
 * github or sourcehut ?
 * upload
-    colors.html
     edit.html
     tarball
     github/sourcehut

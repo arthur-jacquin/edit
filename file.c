@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 #define TRY(A, ERROR)               if ((A) == ERROR) file_connection_error();
 
 static void

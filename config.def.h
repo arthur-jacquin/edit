@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 // MESSAGES AND PROMPTS ********************************************************
 
 #define WELCOME_MESSAGE             "Welcome to edit!"

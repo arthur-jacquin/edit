@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 #define DECLARE_BRACKETS(A, B) \
     case (A): goal = (B); e = 1; break; \
     case (B): goal = (A); e = -1; break;

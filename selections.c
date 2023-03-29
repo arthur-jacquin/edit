@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 struct selection *
 create_sel(int l, int x, int n, struct selection *next)
 {

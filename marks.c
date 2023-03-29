@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 static int
 is_word_boundary(const char *chars, int k)
 {

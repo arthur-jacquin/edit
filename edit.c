@@ -1,4 +1,4 @@
-// see license file for copyright and license details
+// see LICENSE file for copyright and license details
 
 #include <ctype.h>
 #include <stdio.h>
@@ -16,7 +16,7 @@
 #define ERR_MALLOC                  3
 #define ERR_TERM_NOT_BIG_ENOUGH     4
 
-#define VERSION                     "alpha"
+#define VERSION                     "0.1.0-alpha"
 #define HELP_MESSAGE                "Help available at https://jacquin.xyz/edit"
 
 #define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)

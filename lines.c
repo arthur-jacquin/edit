@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 static struct {
     struct line *start;
     int nb_lines;

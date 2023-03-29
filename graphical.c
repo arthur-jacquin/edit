@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 #define MIN_HEIGHT                  2
 #if LINE_NUMBERS_WIDTH < 1
     #define LINE_NUMBERS_MODULUS    1

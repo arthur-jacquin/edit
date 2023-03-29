@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 int
 dialog(const char *prompt, struct interface *interf, int refresh)
 {

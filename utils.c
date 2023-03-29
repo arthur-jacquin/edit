@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 static char utf8_start[4] = {0, 0xc0, 0xe0, 0xf0};
 static char masks[4] = {0x7f, 0x1f, 0x0f, 0x07};
 

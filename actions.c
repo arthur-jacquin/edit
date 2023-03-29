@@ -1,3 +1,5 @@
+// see LICENSE file for copyright and license details
+
 void
 act(void (*process)(struct line *, struct selection *), int line_op)
 {

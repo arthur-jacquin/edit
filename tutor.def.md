@@ -333,7 +333,6 @@ selections but directly on lines:
 
 
 
-
 # SECTION 4: REGULAR EXPRESSIONS
 
 ## 4.1: introduction

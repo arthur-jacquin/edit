@@ -64,6 +64,33 @@ unicode(const char *chars, int k, int len)
     return res;
 }
 
+int
+compare_chars(const char *s1, int k1, const char *s2, int k2)
+{
+    // compare characters from s1 and s2 strings starting at k1 and k2 indexes
+    // return 0 if characters are equal
+    // return a positive (resp. negative) integer if character from s1 is lower
+    // (resp. greater) than character from s2 (as of unicode codepoint)
+
+    int k, l1, l2, delta;
+
+    if ((l1 = utf8_char_length(s1[k1])) != (l2 = utf8_char_length(s2[k2]))) {
+        return l2 - l1;
+    } else {
+        for (k = 0; k < l1; k++) {
+            if (delta = (s2[k2 + k] - s1[k1 + k])) {
+                if (!settings.case_sensitive && k == l1 - 1 &&
+                    (delta == (1 << 5) || delta == - (1 << 5)))
+                    return 0;
+                else
+                    return delta;
+            }
+        }
+
+        return 0;
+    }
+}
+
 void
 insert_utf8(char *chars, int k, int len, uint32_t c)
 {

@@ -1,7 +1,5 @@
 ## TODO
 
-autocomplete to the best substring
-
 * check how to configure compiler, makefile for gcc
 * rewrite readme.md, philosophy.md
 * extensive testing through `make tutor`, adjust casting for hex values

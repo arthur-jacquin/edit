@@ -317,7 +317,7 @@ See the search and replace engine section for more details on replacing.
 If enabled, autocompletion is a special action on selections, as it can be done
 in both normal and insert mode. This is what explains the need for a modifier.
 If the end of a selection does not follow the start of a word, the completion is
-aborted. Else the word is completed by the characters common to all words that
+aborted. Else the word is completed with the characters common to all words that
 start identically and are strictly longer.
 
 
@@ -530,7 +530,7 @@ the whole file.
 
 The replace pattern can contain special sequences that will be expended in
 something else (a submatch or a field) in the resulting string. Here is the
-Backus-Naur form notation of the replace syntax:
+Backus-Naur form description of the replace syntax:
 
     <pattern> ::= <regular_char>            # any character except "\" and "$"
                 | "\\" | "\$"               # escaped "\" and "$"

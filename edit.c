@@ -155,6 +155,7 @@ int is_word_char(char c);
 int utf8_char_length(char c);
 int unicode_char_length(uint32_t c);
 uint32_t unicode(const char *chars, int k, int len);
+int compare_chars(const char *s1, int k1, const char *s2, int k2);
 void insert_utf8(char *chars, int k, int len, uint32_t c);
 int get_str_index(const char *chars, int x);
 void decrement(const char *chars, int *i, int *k, int goal);

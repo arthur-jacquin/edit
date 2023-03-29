@@ -13,11 +13,6 @@
 
 #define IS_TYPE(TYPE, L)            is_in(*(syntax->TYPE), l->chars, k, L)
 
-static struct printable {           // information to print a character
-    uint32_t ch;                    // Unicode codepoint
-    uint16_t fg, bg;                // foreground and background attributes
-};
-
 int scroll_offset;                  // minimum number of lines around cursor
 int screen_height, screen_width;    // terminal dimensions
 char message[INTERFACE_MEM_LENGTH]; // what is printed in the INTERFACE area
@@ -63,7 +58,9 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     // return selection queue after this line
 
     // variables
-    struct printable *buf = _malloc((l->dl) * sizeof(struct printable));
+    uint32_t *ch = _malloc((l->dl) * sizeof(uint16_t)); // Unicode codepoints
+    uint16_t *fg = _malloc((l->dl) * sizeof(uint16_t)); // foreground attributes
+    uint16_t *bg = _malloc((l->dl) * sizeof(uint16_t)); // background attributes
     struct lang *syntax = settings.syntax;
     struct rule *r;
     int i, k;                       // indexes (characters, bytes) in l->chars
@@ -78,9 +75,9 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 
     // decompress UTF-8, initialise foreground and background
     for (i = k = 0; i < l->dl; i++, k += len) {
-        buf[i].ch = unicode(l->chars, k, len = utf8_char_length(l->chars[k]));
-        buf[i].fg = COLOR_DEFAULT;
-        buf[i].bg = COLOR_BG_DEFAULT;
+        ch[i] = unicode(l->chars, k, len = utf8_char_length(l->chars[k]));
+        fg[i] = COLOR_DEFAULT;
+        bg[i] = COLOR_BG_DEFAULT;
     }
 
     // foreground
@@ -91,16 +88,18 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 
         // detect a matching rule
         for (r = *(syntax->rules); r->mark[0]; r++)
-            if (((i == 0) || !(r->start_of_line)) &&
-                (!strncmp(r->mark, &(l->chars[k]), strlen(r->mark))))
-                    break;
+            if (!strncmp(&(l->chars[((r->start_of_line) ? 0 : k)]),
+                r->mark, strlen(r->mark)))
+                break;
 
         if (r->mark[0]) {
             // RULE
+            if (r->start_of_line)
+                i = 0;
             for (j = 0; j < strlen(r->mark); j++)
-                buf[i++].fg = r->color_mark;
+                fg[i++] = r->color_mark;
             while (i < l->dl)
-                buf[i++].fg = r->color_end_of_line;
+                fg[i++] = r->color_end_of_line;
         } else if (syntax->highlight_elements) {
             while (i < l->dl) {
                 // WORD
@@ -161,7 +160,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                 }
 
                 for (j = 0; j < nb_to_color; j++)
-                    buf[i++].fg = color;
+                    fg[i++] = color;
             }
         }
     }
@@ -172,16 +171,16 @@ print_line(const struct line *l, struct selection *s, int screen_line)
             s = s->next;
         while (s != NULL && s->l == l->line_nb) {
             for (i = 0; i < s->n && s->x + i < l->dl; i++)
-                buf[s->x + i].bg = COLOR_BG_SELECTIONS;
+                bg[s->x + i] = COLOR_BG_SELECTIONS;
             s = s->next;
         }
     }
 #ifdef HIGHLIGHT_MATCHING_BRACKET
     if (is_bracket) {
         if (l->line_nb == first_line_nb + y)
-            buf[x].bg = COLOR_BG_MATCHING;
+            bg[x] = COLOR_BG_MATCHING;
         if (l->line_nb == matching_bracket.l)
-            buf[matching_bracket.x].bg = COLOR_BG_MATCHING;
+            bg[matching_bracket.x] = COLOR_BG_MATCHING;
     }
 #endif // HIGHLIGHT_MATCHING_BRACKET
 
@@ -190,19 +189,21 @@ print_line(const struct line *l, struct selection *s, int screen_line)
         tb_printf(0, screen_line, COLOR_LINE_NUMBERS, COLOR_BG_DEFAULT,
             "%*d ", LINE_NUMBERS_WIDTH - 1, (l->line_nb)%LINE_NUMBERS_MODULUS);
     for (i = 0; i < l->dl; i++)
-        tb_set_cell(i + LINE_NUMBERS_WIDTH, screen_line, buf[i].ch,
-            buf[i].fg | underline, buf[i].bg);
+        tb_set_cell(i + LINE_NUMBERS_WIDTH, screen_line, ch[i],
+            fg[i] | underline, bg[i]);
     for (i += LINE_NUMBERS_WIDTH; i < screen_width; i++)
         tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
 #ifdef VISUAL_COLUMN
     tb_set_cell(VISUAL_COLUMN + LINE_NUMBERS_WIDTH, screen_line,
-        (VISUAL_COLUMN < l->dl) ? (buf[VISUAL_COLUMN].ch) : ' ',
-        (VISUAL_COLUMN < l->dl) ? (buf[VISUAL_COLUMN].fg | underline) :
+        (VISUAL_COLUMN < l->dl) ? (ch[VISUAL_COLUMN]) : ' ',
+        (VISUAL_COLUMN < l->dl) ? (fg[VISUAL_COLUMN] | underline) :
             COLOR_DEFAULT, COLOR_BG_COLUMN);
 #endif // VISUAL_COLUMN
 
-    // forget buffer
-    free(buf);
+    // forget buffers
+    free(ch);
+    free(fg);
+    free(bg);
 
     return s;
 }

@@ -437,8 +437,10 @@ mark_fields(const char *chars, int sx, int n)
             st = i + 1;
             mst = k + 1;
             f++;
+        } else if (chars[k] == '\\') {
+            i++; k++;
         }
-        i++; k += utf8_char_length(chars[k]); // TODO error with escaped
+        i++; k += utf8_char_length(chars[k]);
     }
     if (f < 10) {
         fields[f].st = st;

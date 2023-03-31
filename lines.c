@@ -228,14 +228,17 @@ insert_line(int line_nb, int ml, int dl)
         link_lines(new, NULL);
     } else {
         // shift line_nb for lines and selections
-        shift_line_nb((line_nb >= first_line_nb) ?
-            first_line_on_screen : first_line, line_nb, 0, 1);
+        replaced_line = get_line(line_nb - first_line_nb);
+        shift_line_nb(replaced_line, line_nb, 0, 1);
         shift_sel_line_nb(saved, line_nb, 0, 1);
 
         // insert the new line
-        replaced_line = get_line(line_nb - first_line_nb);
         link_lines(replaced_line->prev, new);
         link_lines(new, replaced_line);
+        if (is_first_line(new))
+            first_line = new;
+        if (replaced_line == first_line_on_screen)
+            first_line_on_screen = new;
     }
     nb_lines++;
     has_been_changes = 1;

@@ -1,6 +1,5 @@
 ## TODO
 
-PROBLEM WHEN SAVING START OF FILE ???
 moving multiple lines
 
 * rewrite philosophy.md

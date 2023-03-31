@@ -1,45 +1,5 @@
 # Philosophy
 
-## The story
-
-When I started programming, I found the ubitiquous [vim](https://www.vim.org). I fell in love with its
-logic, efficiency and power. But as I used it, I started to notice areas where
-vim not fitted my needs the way I wanted, and I searched for alternatives.
-Good news: there are plenty! Here is a curated list:
-
-Some are very small:
-* [kilo](https://github.com/antirez/kilo) (C)
-* [kibi](https://github.com/ilai-deutel/kibi) (Rust)
-
-Some are innovative:
-* [kakoune](https://kakoune.org) (C++): cleaner editing model
-* [sam](http://doc.cat-v.org/plan_9/4th_edition/papers/sam/) (C): bringing structural regular expressions
-* [vis](https://github.com/martanne/vis) (C, Lua): smart combination of vim and sam
-* [de](https://github.com/driusan/de) (Go): mix of vim and acme, integrates with p9p plumbing
-
-Some are neither crazy small nor very innovative, but still look solid:
-* [mle](https://github.com/adsr/mle) (C)
-* [micro](https://github.com/zyedidia/micro) (Go)
-* [aretex](https://github.com/aretext/aretext) (Go)
-* [smith](https://github.com/IGI-111/Smith) (Rust)
-* [iota](https://github.com/gchp/iota) (Rust)
-
-So why writing a new one ? There are two main reasons.
-
-The first one is the learning experience. After reading "The C programming
-language" from Dennis Ritchie and Brian Kernighan, I was looking for a project
-to try my early C skills. edit was a perfect fit. I learned a lot, and had so
-much fun along the way.
-
-The other reason is that I wanted a text editor written the [suckless](https://suckless.org) way.
-I haven't found one combining a capable, smooth editing model and a simple,
-small C codebase using only compile-time configuration. edit tries to do that.
-
-Before publishing it, I used it for several months to polish it to my needs. It
-should now be quite feature-stable. If you wonder if the editing model will work
-for you, you can read about the design choices below.
-
-
 ## Simplicity as the utmost goal
 
 The main goal of the editor is simplicity. I believe it helps for the secondary
@@ -55,34 +15,31 @@ goals:
 
 edit development is inspired by the suckless philosophy.
 
-### Written in less than 2500 lines of C, with no dependencies
+### Written in less than 3000 lines of C, with no dependencies
 
 The stability (and the technical qualities) of the C language explains its
 longevity and its wide avaibility. Combined with a small codebase with no
 dependencies (except standard library), choosing C ensures great portability.
 
-### Produces a standalone, statically linked executable
+### Produces a freestanding, statically linked executable
 
-It eliminates some potential runtime bugs, increase its portability, and avoid
+It eliminates some potential runtime bugs, increases its portability, and avoids
 the need for a dynamic linker.
 
 ### Textual, compile-time configuration, with sane defaults
 
-On vim, a `.vimrc` is almost mandatory to get a sensible editor. With edit,
-configuration is not needed: a default configuration `config.def.h` is provided.
-This file contains all the settings one could want to modify, which eases
-discoverability. It also makes it simple to save the configuration for the
-future.
+On vim, a `.vimrc` is needed to get a sensible editor. With edit, a sane
+default configuration is provided in `config.def.h`. This file contains all the
+settings one could want to modify, which eases discoverability.
 
-As editing this file and compiling are considered to be a part of the editor
-experience, the editor is not to be packaged other than in a tarball.
+The fact that the configuration is textual makes it simple to save the
+configuration for the future. Editing the configuration file and compiling are
+considered to be a part of the editor experience.
 
 ### Keyboard-centric, terminal-based editor
 
-While I prefer the terminal-keyboard combination, I think the user should not be
-retained to use the mouse power. By default, edit supports scrolling and moving
-the cursor with the mouse. If it bothers you, you may disable this compile-time
-option.
+Everything can be done with the keyboard, but mouse is supported (scrolling,
+moving the cursor). One may disable this compile-time option.
 
 ### Only edits text
 
@@ -99,15 +56,9 @@ It is not a word processor: it has no styling or spell checking.
 ### Feature-stable
 
 edit is not meant to grow indefinitely. It has a finite number of carefully
-chosen features. These can be all discovered by doing the 10 minute tutorial
-(`make tutor`) or reading the configuration file, where a key is associated to
-each command.
-
-It avoids the feeling of being overwhelmed by the number of features, which can
-happen when starting to use vim. If you're new to advanced text editing, no need
-to master all of them at first read, but you know what exists and where to find
-the information. The learning curve is therefore pretty gentle, unless you want
-to dig into it faster than needed.
+chosen features, that are all explained in the tutorial. It avoids the feeling
+of being overwhelmed by the number of features, which can happen when starting
+to use vim.
 
 
 ## User experience design choices
@@ -125,14 +76,14 @@ not biaised towards insertion (which is not the main editing task).
 The following points were inspired by kakoune, which has done a great job at
 explaining its philosophy. Refer to their documentation for more details[^1].
 
-[^1]: [kakoune philosophy](https://kakoune.org/why-kakoune/why-kakoune.html)
+[^1]: https://kakoune.org/why-kakoune/why-kakoune.html
 
 edit is selection-centric, as most editing commands act on a list of selections.
 This approach easily enables multi-cursor, visual block and column editing.
 
 Selecting happens before action like in kakoune, and not the other way around
-like in vim. It provides more interactivity, as you can see what you will act on
-before action, enabling you to correct the selections without having to undo the
+like in vim. It provides more interactivity, as one can see what edit will act
+on before action, enabling correcting the selections without having to undo the
 action (something that is not possible in edit).
 
 ### No edition language
@@ -149,30 +100,31 @@ The search and replace engine is home-grown. While it avoids the need for
 dependencies, it is not to be seen as a weaker, spare replacement. The search is
 incremental and supports regular expressions, and the replace supports the reuse
 of subpatterns and fields from the to-be-replaced string: the power of sed and
-awk combined! Please refer to the tutorial for a more precise description.
+awk combined! The engine is also better integrated in the editor that a sed call
+would have. Please refer to the tutorial for a more precise description.
 
 
 ## Code-related design choices
 
 The main goal being simplicity for both code and usability, many features that
-might be considered interesting but that brings too much complexity to my tastes
-have intentionnally been left aside.
+might be considered interesting but that brings much complexity have
+intentionnally been left aside.
 
-edit has limited abilities. It is a feature. Some lacks might be a breaker for
-you: reading the following will help in deciding if edit is capable enough for
-your workflow. If not, one of the editor listed at the top of this file might
-better suits you ;)
+edit has limited abilities. It is a feature. Reading the following may help in
+deciding if edit is capable enough for your workflow. If not, others editors are
+listed at the end of this file.
+
 
 ### No support for every terminal
 
 Even if edit has no dependencies, it won't run everywhere, as the terminal
 drawing library (termbox[^2]) does not support all terminals. For example, it
-won't run on Windows, unless you use WSL or a similar solution.
+won't run on Windows, unless one use WSL or a similar solution.
 
-[^2]: [termbox2](https://github.com/termbox/termbox2)
+[^2]: https://github.com/termbox/termbox2
 
 All the interaction between edit and its environment happens through
-`termbox.h`. Therefore if you want to embed the editor in your own (GPLv3)
+`termbox.h`. Therefore if one want to embed the editor in its own (GPLv3)
 software, make it work on Windows, or build a Graphical User Interface, all you
 have to do is to replace `termbox.h` with a file adapted to your targetted
 environment and providing the same API.
@@ -180,35 +132,28 @@ environment and providing the same API.
 ### No elaborated data structures for storing text
 
 Some editors provides elaborated data structures for storing text: conflict-free
-replicated data type in xi[^2], database in sam...). This upfront complexity
-might be useful or even crucial when editing really, really big files, but
-this is not what edit strives for.
+replicated data type in xi[^3], database in sam...). This upfront complexity
+might be useful or even crucial with collaborative editing or really, really big
+files, but this is not what edit strives for.
 
-[^2]: [CRDT](https://xi-editor.io/docs/crdt-details.html)
-
-### UTF-8 only
-
-There exists plenty encodings, but UTF-8 makes the most sense. Obviously, plain
-ASCII is also supported as it's a subset of UTF-8. For other encodings, you
-might have to translate the file first.
+[^3]: https://xi-editor.io/docs/crdt-details.html
 
 ### No undo/redo
 
 When I was using vim, I found out I was saving the file so often that undoing
 was most of the time equivalent to reloading the file. Frequent saves and
-occasionnal reloads avoids the need for autosave and undo/redo system.
+occasionnal reloads avoid the need for autosave and undo/redo system.
 
 ### Wrong syntax highlight for multiline elements
 
-Contrary to sam and its structural regular expressions[^3], the line abstraction
+Contrary to sam and its structural regular expressions[^4], the line abstraction
 is central in edit. The syntax highlighting system operates on each line
 independently. Therefore, multiline strings and comments are not highlighted as
 one could expect. However, the commenting command use single line comments: the
 user is encouraged to use it over ranges of lines instead of using multiline
 comments.
 
-[^3]: [structural regexp](https://doc.cat-v.org/bell_labs/structural_regexps/se.pdf)
-
+[^4]: https://doc.cat-v.org/bell_labs/structural_regexps/se.pdf
 
 ### No plugins support
 
@@ -224,5 +169,26 @@ aside.
 
 ### Others limitations
 
-* transform tabs to spaces
+* only works with UTF-8 encoding
+* transforms tabs to spaces
 * does not visually wrap lines
+
+
+## Interesting alternatives
+
+Crazy small editors:
+* [kilo](https://github.com/antirez/kilo) (C)
+* [kibi](https://github.com/ilai-deutel/kibi) (Rust)
+
+Innovative editors:
+* [kakoune](https://kakoune.org) (C++)
+* [sam](http://doc.cat-v.org/plan_9/4th_edition/papers/sam/) (C)
+* [vis](https://github.com/martanne/vis) (C, Lua)
+* [de](https://github.com/driusan/de) (Go)
+
+Others:
+* [micro](https://github.com/zyedidia/micro) (Go)
+* [aretex](https://github.com/aretext/aretext) (Go)
+* [smith](https://github.com/IGI-111/Smith) (Rust)
+* [iota](https://github.com/gchp/iota) (Rust)
+* [mle](https://github.com/adsr/mle) (C)

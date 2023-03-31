@@ -520,7 +520,7 @@ prompt. You can then restart the process with no consequences.
 
 Moreover, it means that you can use any combination of these steps. For example,
 you can use replace without searching first, if you don't need subpatterns. This
-way it unifies the replace process, wether it's a small replace of a word you
+way it unifies the replace process, whether it's a small replace of a word you
 selected with the running selection or big search-and-replace operation across
 the whole file.
 

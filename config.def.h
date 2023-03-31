@@ -176,8 +176,11 @@
 
 // Please define at least one language. If a language you want isn't supported
 // yet, you can add it yourself in languages.h. Currently supported languages:
-// C, MARKDOWN, PYTHON
+// AWK, C, CPP, CSS, DIFF, GEMTEXT, GO, HASKELL, HTML, JAVA, JAVASCRIPT, JSON,
+// LUA, MAKE, MAN, MARKDOWN, OCAML, PERL, PHP, PYTHON, R, RUBY, RUST, SED, SH,
+// SQL, SWIFT, TEX, YAML
 
 #define C
 #define MARKDOWN
 #define PYTHON
+#define SH

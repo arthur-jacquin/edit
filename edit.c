@@ -145,7 +145,7 @@ int select_word_under_cursor(void);
 void shift_sel_line_nb(struct selection *a, int min, int max, int delta);
 void move_sel_end_of_line(struct selection *a, int l, int x, int concatenate);
 void remove_sel_line_range(int min, int max);
-void reorder_sel(int l, int new_l);
+void reorder_sel(int l, int nb, int new_l);
 
 // utils.c
 #define ABS(A)                      ((A < 0) ? -(A) : A)

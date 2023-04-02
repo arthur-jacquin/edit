@@ -247,49 +247,57 @@ insert_line(int line_nb, int ml, int dl)
 void
 move_line(int delta)
 {
-    // move cursor line, return new line_nb
+    // move running selected lines from delta
 
-    struct line *src, *dest;
-    int cursor_line, new_line_nb;
+    struct line *start_l, *end_l, *l;
+    int start, end, nb, new_line_nb;
 
     // compute new line number
-    cursor_line = first_line_nb + y;
-    new_line_nb = MAX(cursor_line + delta, 1);
-    new_line_nb = MIN(new_line_nb, nb_lines);
-    if (new_line_nb == cursor_line)
+    start = end = first_line_nb + y;
+    if (anchored) {
+        if (anchor.l < start)
+            start = anchor.l;
+        else
+            end = anchor.l;
+    }
+    new_line_nb = MAX(start + delta, 1);
+    new_line_nb = MIN(new_line_nb, nb_lines - (end - start));
+    if (new_line_nb == start)
          return;
 
-    src = get_line(y);
-    dest = get_line(new_line_nb - first_line_nb);
-
     // reorder selections, anchor
-    reorder_sel(cursor_line, new_line_nb);
+    reorder_sel(start, nb = end - start + 1, new_line_nb);
 
     // reorder lines
+    start_l = get_line(start - first_line_nb);
+    end_l = get_line(end - first_line_nb);
     if (delta > 0) {
-        shift_line_nb(first_line, cursor_line + 1, new_line_nb, -1);
-        if (src == first_line_on_screen)
-            first_line_on_screen = src->next;
-        if (is_first_line(src))
-            first_line = src->next;
-        link_lines(src->prev, src->next);
-        link_lines(src, dest->next);
-        link_lines(dest, src);
+        l = get_line(end + new_line_nb - start - first_line_nb);
+        shift_line_nb(end_l, end + 1, end + new_line_nb - start, -nb);
+        if (start_l == first_line_on_screen)
+            first_line_on_screen = end_l->next;
+        if (is_first_line(start_l))
+            first_line = end_l->next;
+        link_lines(start_l->prev, end_l->next);
+        link_lines(end_l, l->next);
+        link_lines(l, start_l);
+        shift_line_nb(start_l, start, end, new_line_nb - start);
     } else {
-        shift_line_nb(first_line, new_line_nb, first_line_nb + y - 1, 1);
-        if (dest == first_line_on_screen)
-            first_line_on_screen = src;
-        if (is_first_line(dest))
-            first_line = src;
-        link_lines(src->prev, src->next);
-        link_lines(dest->prev, src);
-        link_lines(src, dest);
+        l = get_line(new_line_nb - first_line_nb);
+        shift_line_nb(start_l, start, end, new_line_nb - start);
+        if (l == first_line_on_screen)
+            first_line_on_screen = start_l;
+        if (is_first_line(l))
+            first_line = start_l;
+        link_lines(start_l->prev, end_l->next);
+        link_lines(l->prev, start_l);
+        link_lines(end_l, l);
+        shift_line_nb(l, new_line_nb, start - 1, nb);
     }
-    src->line_nb = new_line_nb;
     has_been_changes = 1;
 
     // move cursor
-    y = new_line_nb - first_line_nb;
+    y += new_line_nb - start;
 }
 
 void

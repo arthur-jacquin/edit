@@ -440,7 +440,7 @@ remove_sel_line_range(int min, int max)
 }
 
 void
-reorder_sel(int l, int new_l)
+reorder_sel(int l, int nb, int new_l)
 {
     // reorder selections to adjust to move_line
 
@@ -450,8 +450,17 @@ reorder_sel(int l, int new_l)
 
     // compute delimiters of ranges to invert
     first_start = MIN(l, new_l);
-    first_end = (l > new_l) ? (l - 1) : l;
-    second_end = MAX(l, new_l);
+    first_end = l + ((l < new_l) ? nb : 0) - 1;
+    second_end = MAX(l, new_l) + nb - 1;
+
+    // move anchor
+    if (anchored) {
+        if (first_start <= anchor.l && anchor.l <= first_end) {
+            anchor.l += ((l < new_l) ? (new_l - l) : nb);
+        } else if (first_end < anchor.l && anchor.l <= second_end) {
+            anchor.l -= ((l < new_l) ? nb : (l - new_l));
+        }
+    }
 
     // skip selections before ranges, identify last_before
     s = last = saved;
@@ -473,7 +482,7 @@ reorder_sel(int l, int new_l)
     if (s->l <= first_end) {
         first = s;
         while (s != NULL && s->l <= first_end) {
-            s->l = (l > new_l) ? (s->l + 1) : new_l;
+            s->l += (l < new_l) ? (new_l - l) : nb;
             last = s;
             s = s->next;
         }
@@ -488,7 +497,7 @@ reorder_sel(int l, int new_l)
     if (s->l <= second_end) {
         second = s;
         while (s != NULL && s->l <= second_end) {
-            s->l = (l > new_l) ? new_l : (s->l - 1);
+            s->l -= (l < new_l) ? nb : (l - new_l);
             last = s;
             s = s->next;
         }
@@ -511,13 +520,5 @@ reorder_sel(int l, int new_l)
     } else {
         last_second->next = first;
         last_first->next = s;
-    }
-
-    // move anchor
-    if (anchored) {
-        if (first_start <= anchor.l && anchor.l <= first_end)
-            anchor.l = (l > new_l) ? (anchor.l + 1) : new_l;
-        if (first_end < anchor.l && anchor.l <= second_end)
-            anchor.l = (l > new_l) ? new_l : (anchor.l - 1);
     }
 }

@@ -1,7 +1,5 @@
 ## TODO
 
-missing matching
-
 * rewrite philosophy.md
 * extensive testing through `make tutor`, adjust casting for hex values
 * add languages

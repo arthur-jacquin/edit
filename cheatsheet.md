@@ -52,7 +52,7 @@
               y/Y   yank {m} lines/blocks, starting at cursor
               d/D   delete {m} lines/blocks, starting at cursor
               p/P   paste after/before cursor line {m} times
-     SHIFT+arrows   move cursor line {m} lines up/down
+     SHIFT+arrows   move lines of running selections {m} lines up/down
 
 
 ## Settings

@@ -65,19 +65,19 @@
 #ifdef TERM_256_COLORS_SUPPORT
 #define OUTPUT_MODE                 TB_OUTPUT_256
 #define COLOR_DEFAULT               15
-#define COLOR_RULER                 COLOR_DEFAULT //
-#define COLOR_DIALOG                COLOR_DEFAULT //
-#define COLOR_LINE_NUMBERS          238 //
-#define COLOR_KEYWORD               99 //
-#define COLOR_FLOW_CONTROL          32 //
-#define COLOR_BUILT_IN              32 //
-#define COLOR_NUMBER                99 //
-#define COLOR_STRING                99 //
-#define COLOR_COMMENT               172 //
+#define COLOR_RULER                 COLOR_DEFAULT
+#define COLOR_DIALOG                COLOR_DEFAULT
+#define COLOR_LINE_NUMBERS          238
+#define COLOR_KEYWORD               99
+#define COLOR_FLOW_CONTROL          32
+#define COLOR_BUILT_IN              COLOR_DEFAULT
+#define COLOR_NUMBER                COLOR_KEYWORD
+#define COLOR_STRING                COLOR_NUMBER
+#define COLOR_COMMENT               172
 #define COLOR_BG_DEFAULT            0
-#define COLOR_BG_SELECTIONS         238 //
-#define COLOR_BG_MATCHING           45 //
-#define COLOR_BG_COLUMN             234 //
+#define COLOR_BG_SELECTIONS         238
+#define COLOR_BG_MATCHING           213
+#define COLOR_BG_COLUMN             232
 
 // 8 colors mode: available colors are TB_BLACK, TB_RED, TB_GREEN, TB_YELLOW,
 // TB_BLUE, TB_MAGENTA, TB_CYAN, and TB_WHITE

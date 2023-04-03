@@ -48,8 +48,7 @@ edit is text editor. It edits text, not file archives or compressed files.
 It is not an IDE: it has no built-in terminal, file manager, git integration or
 syntax/compiler warnings and errors.
 
-It is neither a multiplexer nor a window manager: it has no splits, tabs or
-buffers.
+It is neither a multiplexer nor a window manager: it has no splits or tabs.
 
 It is not a word processor: it has no styling or spell checking.
 
@@ -99,9 +98,9 @@ the code, without reducing functionnality. As edit does not provide a proper
 The search and replace engine is home-grown. While it avoids the need for
 dependencies, it is not to be seen as a weaker, spare replacement. The search is
 incremental and supports regular expressions, and the replace supports the reuse
-of subpatterns and fields from the to-be-replaced string: the power of sed and
-awk combined! The engine is also better integrated in the editor that a sed call
-would have. Please refer to the tutorial for a more precise description.
+of subpatterns and fields from the to-be-replaced string. The engine is also
+better integrated in the editor that a sed call would have. Please refer to the
+tutorial for a more precise description.
 
 
 ## Code-related design choices
@@ -110,10 +109,9 @@ The main goal being simplicity for both code and usability, many features that
 might be considered interesting but that brings much complexity have
 intentionnally been left aside.
 
-edit has limited abilities. It is a feature. Reading the following may help in
-deciding if edit is capable enough for your workflow. If not, others editors are
-listed at the end of this file.
-
+edit has limited abilities. Reading the following may help in deciding if edit
+is capable enough for your workflow. If not, others editors are listed at the
+end of this file.
 
 ### No support for every terminal
 
@@ -125,8 +123,8 @@ won't run on Windows, unless one use WSL or a similar solution.
 
 All the interaction between edit and its environment happens through
 `termbox.h`. Therefore if one want to embed the editor in its own (GPLv3)
-software, make it work on Windows, or build a Graphical User Interface, all you
-have to do is to replace `termbox.h` with a file adapted to your targetted
+software, make it work on Windows, or build a Graphical User Interface, all
+there is to do is to replace `termbox.h` with a file adapted to the targetted
 environment and providing the same API.
 
 ### No elaborated data structures for storing text
@@ -158,12 +156,12 @@ comments.
 ### No plugins support
 
 As edit is considered mostly complete feature-wise, I have not seen the
-justification for designing a plugin support. If you want to add functionnality,
-patch it, fork it, but an interface for plugins is not something edit will have.
+justification for designing a plugin support. One can patch or fork edit to add
+functionnality, but an interface for plugins is not something edit will have.
 
 ### Not a client-server architecture
 
-Many editors does that, and in some cases it might be useful, but I don't really
+Many editors do that, and in some cases it might be useful, but I don't really
 see the *need* in most use cases, and as it adds some complexity, I left it
 aside.
 

@@ -86,7 +86,7 @@
 #define COLOR_DEFAULT               TB_WHITE
 #define COLOR_RULER                 COLOR_DEFAULT
 #define COLOR_DIALOG                COLOR_DEFAULT
-#define COLOR_LINE_NUMBERS          COLOR_DEFAULT 
+#define COLOR_LINE_NUMBERS          COLOR_DEFAULT
 #define COLOR_KEYWORD               TB_BLUE
 #define COLOR_FLOW_CONTROL          TB_CYAN
 #define COLOR_BUILT_IN              COLOR_DEFAULT

@@ -304,7 +304,7 @@ the following actions are executed at most once per line, so that even if there
 are two saved selections on a given line, running `>` will only indent that line
 once.
 
-          x/<DEL>   suppress selection content if any, else char. before/after 
+          x/<DEL>   suppress selection content if any, else char. before/after
               u/U   switch to lowercase/uppercase
     >/<, TAB/^TAB   {m} increase/decrease line indent
                 K   comment/uncomment line

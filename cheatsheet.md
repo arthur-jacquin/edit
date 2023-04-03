@@ -40,7 +40,7 @@
 
     ACTING ON SELECTIONS
 
-          x/<DEL>   suppress selection content if any, else char. before/after 
+          x/<DEL>   suppress selection content if any, else char. before/after
               u/U   switch to lowercase/uppercase
     >/<, TAB/^TAB   {m} increase/decrease line indent
                 K   comment/uncomment line

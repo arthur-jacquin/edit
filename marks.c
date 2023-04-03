@@ -171,7 +171,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
     lsp = strlen(sp = search_pattern.current);
     l = j = 0;
     s = 0;
-    
+
     // init subpatterns
     subpatterns[0].st = i = sx;
     subpatterns[0].mst = k = get_str_index(chars, i);

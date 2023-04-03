@@ -181,7 +181,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     if (is_bracket) {
         if (l->line_nb == first_line_nb + y)
             bg[x] = COLOR_BG_MATCHING;
-        if (l->line_nb == matching_bracket.l && matching_bracket.x < l->dl)
+        if (l->line_nb == matching_bracket.l)
             bg[matching_bracket.x] = COLOR_BG_MATCHING;
     }
 #endif // HIGHLIGHT_MATCHING_BRACKET

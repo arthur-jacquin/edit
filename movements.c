@@ -133,6 +133,8 @@ find_matching_bracket(void)
         if (nc == c)
             nb++;
     }
+    if (nb)
+        is_bracket = 0;
 
     return pos_of(l->line_nb, dx);
 }

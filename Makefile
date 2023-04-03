@@ -1,7 +1,7 @@
 include config.mk
 
 edit: *.c config.h languages.h termbox.h
-	${CC} -static -o edit edit.c
+	${CC} -o edit edit.c
 
 config.h: config.def.h
 	cp config.def.h $@

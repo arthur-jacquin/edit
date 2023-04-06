@@ -1,15 +1,20 @@
-## TODO
+# TODO
 
-* clipboard: manage y, first_line, first_line_on_screen
+## for 0.1.0
 
-* add languages, modify config.def.h accordingly
-* finalise colorscheme
-* final check for each file
 * script, do and upload the screencast, modify readme.md, edit.html accordingly
-* upload
-    edit.html
-    tarball
-    github
+* add screencast to edit.html, upload
 
-objectifs: doux, calme, joyeux
-bleu: 32, 45; vert: 34, rose: 170, 207, 213; orange: 172, 208; violet: 135, 99
+## for 1.0.0
+
+* hunt for bugs
+* add languages in languages.h
+* better attribute_x management ?
+* clipboard: better y, first_line, first_line_on_screen management ?
+* better colorscheme ?
+
+## at each version
+
+* final check for each file
+* upload tarball
+* push on github

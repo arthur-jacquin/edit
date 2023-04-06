@@ -105,29 +105,24 @@ struct rule c_rules[] = {
 
 #ifdef CPP
 char *cpp_names = "cpp hpp cc cxx hxx ";
-char *cpp_kw = "";
-char *cpp_fc = "";
+char *cpp_kw = ""
+    "true false NULL nullptr sizeof alignof typeid and or xor not and_eq or_eq "
+    "xor_eq not_eq bitor compl bitand const_cast dynamic_cast reinterpret_cast "
+    "static_cast float double bool char int short long enum void struct union "
+    "typedef unsigned signed inline size_t ssize_t int8_t int16_t int32_t "
+    "int64_t intptr_t uint8_t uint16_t uint32_t uint64_t uintptr_t char8_t "
+    "char16_t char32_t wchar_t final override auto volatile constexpr "
+    "consteval constinit const mutable register thread_local static extern "
+    "decltype explicit virtual class namespace template typename this friend "
+    "using public protected private noexcept concept requires import export "
+    "module operator new delete static_assert ";
+char *cpp_fc = ""
+    "for if while do else case default switch try throw catch goto continue "
+    "break return ";
 char *cpp_bi = "";
 char *cpp_cm = "// ";
-// alignas alignof and and_eq asm atomic_cancel
-// atomic_commit atomic_noexcept bitand bitor bool break case
-// catch char char8_t char16_t char32_t class compl concept
-// const consteval constexpr constinit const_cast continue co_await
-// co_return co_yield decltype default delete do double dynamic_cast
-// else enum explicit export extern false float for friend goto if
-// inline int long mutable namespace new noexcept not not_eq nullptr
-// operator or or_eq private protected public register reinterpret_cast
-// return short signed sizeof static static_assert static_cast struct
-// switch template this thread_local throw true try typedef typeid
-// typename union unsigned using virtual void volatile wchar_t while
-// xor xor_eq
-// concept requires typename template class friend inline
-// constexpr consteval constinit public protected private export import
-// module using static_assert static_cast dynamic_cast reinterpret_cast
-// const_cast typeid typename this throw catch try operator new delete
-// noexcept alignas alignof and and_eq bitand bitor compl not not_eq or
-// or_eq xor xor_eq co_await co_return co_yield
 struct rule cpp_rules[] = {
+    {"#",   0,  COLOR_KEYWORD,      COLOR_KEYWORD},
     {"",    0,  0,                  0},
 };
 #endif // CPP

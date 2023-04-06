@@ -1,16 +1,12 @@
 # TODO
 
-## for 0.1.0
-
-* add languages in languages.h
-
 ## for 1.0.0
 
 * hunt for bugs
+* add languages in languages.h, better languages ?
 * better attribute_x management ?
 * clipboard: better y, first_line, first_line_on_screen management ?
 * better colorscheme ?
-* better languages ?
 
 ## at each version
 

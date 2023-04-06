@@ -234,8 +234,6 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
             return 0; // invalid syntax
         } else if (sp[l] == ')') {
             j++; l++;
-            subpatterns[s].n = i - subpatterns[s].st;
-            subpatterns[s].mn = k - subpatterns[s].mst;
             nb_group++;
             state = GROUP_READ;
         } else {
@@ -259,6 +257,8 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
             state = READ_GROUP;
             break;
         }
+        subpatterns[s].n = i - subpatterns[s].st;
+        subpatterns[s].mn = k - subpatterns[s].mst;
         state = BLOCK_READ;
         break;
 

@@ -342,6 +342,7 @@ void
 move_to_clip(int starting_line_nb, int nb)
 {
     // copy nb lines to clipboard, starting at line number starting_line_nb
+    // assume cursor line is a moved line
 
     struct line *starting, *ending;
 
@@ -352,19 +353,25 @@ move_to_clip(int starting_line_nb, int nb)
     // delimit range to be moved to clip
     starting = get_line(starting_line_nb - first_line_nb);
     ending = get_line(starting_line_nb + nb - 1 - first_line_nb);
-    if (is_last_line(ending)) {
-        if (is_first_line(starting)) {
-            // create empty line
-            first_line = first_line_on_screen = create_line(1, 1, 0);
-            nb_lines = 1;
-        } else {
-            nb_lines -= nb;
-        }
+    shift_line_nb(ending, ending->line_nb + 1, 0, -nb);
+    nb_lines -= nb;
+    if (starting_line_nb > first_line_nb) {
+        y = starting_line_nb - first_line_nb;
     } else {
-        if (is_first_line(starting))
-            first_line = first_line_on_screen = ending->next;
-        shift_line_nb(ending, ending->line_nb + 1, 0, -nb);
-        nb_lines -= nb;
+        if (is_last_line(ending)) {
+            if (is_first_line(starting)) {
+                // create empty line
+                first_line = first_line_on_screen = create_line(1, 1, 0);
+                nb_lines = 1;
+            } else {
+                first_line_on_screen = starting->prev;
+            }
+        } else {
+            first_line_on_screen = ending->next;
+            if (is_first_line(starting))
+                first_line = first_line_on_screen;
+        }
+        y = 0;
     }
 
     // move lines to clip
@@ -421,6 +428,9 @@ insert_clip(struct line *starting_line, int below)
     copy_to_clip(first_inserted_line_nb, clipboard.nb_lines);
 
     // move cursor
-    if (!below)
+    if (!below) {
+        if (y == 0)
+            first_line_on_screen = get_line(-clipboard.nb_lines);
         y += clipboard.nb_lines;
+    }
 }

@@ -1,5 +1,8 @@
 # TODO
 
+* move to sourcehut
+* autocomplete bug
+
 ## for 1.0.0
 
 * hunt for bugs

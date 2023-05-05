@@ -1,14 +1,16 @@
 # TODO
 
+## known problems
+
+* fix bug in autocompletion
+* unsupported languages
+
+## potential improvements
+
+* change way to test for NULL pointers
 * move to sourcehut
-* autocomplete bug
-
-## for 1.0.0
-
-* hunt for bugs
-* add languages in languages.h, better languages ?
-* better attribute_x management ?
-* better colorscheme ?
+* change regex recognition
+* add support for more languages
 
 ## at each version
 

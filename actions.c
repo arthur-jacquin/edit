@@ -255,75 +255,64 @@ autocomplete(struct line *l, struct selection *s)
     // that are common to all words that start identically and are strictly
     // longer
 
-    struct line *sl;
-    int dx, k;                      // indexes (characters, bytes) in *sl
-    int i1, k1, i2, k2;             // indexes (characters, bytes) of delimiters
-    int ready;
-    char *tmp;
+    struct line *sl;                // line pointer to go through the file
+    int k;                          // index (bytes) in *sl
+    int k1, k2, it, kt;             // indexes to delimit start of word in *l
 
-    char *match;                    // pointer to string containing first match
-    int ms, dl, ml;                 // start (bytes), length (characters, bytes)
+    char *match, *tmp;              // pointer to string containing first match
+    int ms, dl, ml, max_ml;         // start (bytes), length (characters, bytes)
 
     // delimit word before selection
-    k2 = k1 = get_str_index(l->chars, i2 = i1 = s->x + s->n);
-    if (i1 == 0)
-        return;
-    decrement(l->chars, &i1, &k1, i1 - 1);
-    while (i1 > 0 && is_word_char(l->chars[k1]))
-        decrement(l->chars, &i1, &k1, i1 - 1);
-    if (!is_word_char(l->chars[k1])) {
-        i1++; k1 += utf8_char_length(l->chars[k1]);
+    k1 = k2 = kt = get_str_index(l->chars, it = s->x + s->n);
+    while (kt == k2 || is_word_char(l->chars[kt])) {
+        k1 = kt;
+        if (kt > 0)
+            decrement(l->chars, &it, &kt, it - 1);
+        else
+            break;
     }
-    if (i1 == i2)
+    if (k1 == k2)
         return;
 
-    // search for the same start of word in the file
+    // search for potential completions
     sl = first_line;
-    dx = k = 0;
-    ready = 1;
+    k = 0;
     match = NULL;
-    while (1) {
-        // find next start of word
-        while (1) {
-            if (ready == is_word_char(sl->chars[k]))
-                ready++;
-            if (ready == 2)
-                break;
-            if (dx == sl->dl) {
-                if (sl->next == NULL) {
-                    // end of file, autocomplete with longest possible substring
-                    if (match != NULL) {
-                        tmp = (char *) _malloc(ml);
-                        strncpy(tmp, &(match[ms]), ml);
-                        replace_chars(l, s, i2, 0, dl, ml);
-                        strncpy(&(l->chars[k2]), tmp, ml);
-                        free(tmp);
-                    }
-                    return;
-                }
-                sl = sl->next;
-                dx = k = 0;
-            } else {
-                k += utf8_char_length(sl->chars[k]);
-                dx++;
-            }
-        }
-        ready = 0;
+    while (sl != NULL) {
         // check if match
-        if (((k + k2 - k1) < sl->ml) &&
+        if ((is_word_char(sl->chars[k]) && is_word_boundary(sl->chars, k)) &&
+            ((k + k2 - k1) < sl->ml) &&
             (!strncmp(&(l->chars[k1]), &(sl->chars[k]), k2 - k1)) &&
             (is_word_char(sl->chars[k + k2 - k1]))) {
             k += k2 - k1;
             ml = dl = 0;
-            while (is_word_char(sl->chars[k + ml]) && (match == NULL ||
-                !compare_chars(match, ms + ml, sl->chars, k + ml))) {
+            while ((!match) ? (is_word_char(sl->chars[k + ml])) : (ml < max_ml
+                && !compare_chars(match, ms + ml, sl->chars, k + ml))) {
                 dl++; ml += utf8_char_length(sl->chars[k + ml]);
             }
+            max_ml = ml;
             if (match == NULL) {
                 match = sl->chars;
                 ms = k;
             }
         }
+
+        // move on
+        if (sl->chars[k] == '\0') {
+            sl = sl->next;
+            k = 0;
+        } else {
+            k += utf8_char_length(sl->chars[k]);
+        }
+    }
+
+    // replacement with longest possible substring
+    if (match != NULL) {
+        tmp = (char *) _malloc(ml);
+        strncpy(tmp, &(match[ms]), ml);
+        replace_chars(l, s, s->x + s->n, 0, dl, ml);
+        strncpy(&(l->chars[k2]), tmp, ml);
+        free(tmp);
     }
 }
 #endif // ENABLE_AUTOCOMPLETE

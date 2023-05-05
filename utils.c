@@ -12,6 +12,24 @@ is_word_char(char c)
 }
 
 int
+is_word_boundary(const char *chars, int k)
+{
+    // detect if k is the memory index of a word boundary in chars
+
+    int i, is_word;
+
+    i = 1;
+    is_word = is_word_char(chars[k]);
+
+    if (k == 0) {
+        return is_word;
+    } else {
+        decrement(chars, &i, &k, 0);
+        return (is_word != is_word_char(chars[k]));
+    }
+}
+
+int
 utf8_char_length(char c)
 {
     // compute the length in bytes of UTF8 character starting by byte c

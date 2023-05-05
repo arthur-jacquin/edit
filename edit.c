@@ -152,6 +152,7 @@ void reorder_sel(int l, int nb, int new_l);
 #define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
 #define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
 int is_word_char(char c);
+int is_word_boundary(const char *chars, int k);
 int utf8_char_length(char c);
 int unicode_char_length(uint32_t c);
 uint32_t unicode(const char *chars, int k, int len);

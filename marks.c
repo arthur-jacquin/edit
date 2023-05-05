@@ -1,24 +1,6 @@
 // see LICENSE file for copyright and license details
 
 static int
-is_word_boundary(const char *chars, int k)
-{
-    // detect if k is the memory index of a word boundary in chars
-
-    int i, is_word;
-
-    i = 1;
-    is_word = is_word_char(chars[k]);
-
-    if (k == 0) {
-        return is_word;
-    } else {
-        decrement(chars, &i, &k, 0);
-        return (is_word != is_word_char(chars[k]));
-    }
-}
-
-static int
 parse_rep(const char *sp, int *j, int *l, int *min, int *max)
 {
     // compute min and max

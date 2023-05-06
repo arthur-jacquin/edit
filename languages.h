@@ -186,7 +186,7 @@ char *sql_kw = ""
     "SAVEPOINT SELECT SET TABLE TEMP TEMPORARY THEN TIES TO TRANSACTION "
     "TRIGGER UNBOUNDED UNION UNIQUE UPDATE USING VACUUM VALUES VIEW VIRTUAL "
     "WHEN WHERE WINDOW WITH WITHOUT ";
-char *sql_fc = ""
+char *sql_fc = "";
 char *sql_bi = ""
     "avg count count group_concat group_concat max min sum total "
     "abs changes char coalesce format glob hex ifnull iif instr "

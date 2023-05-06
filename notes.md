@@ -2,9 +2,6 @@
 
 ## known problems
 
-* fix bug in autocompletion
-* unsupported languages
-
 ## potential improvements
 
 * change way to test for NULL pointers

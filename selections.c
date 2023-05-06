@@ -322,7 +322,7 @@ search_word_under_cursor(void)
     if (!is_word_char(l->chars[k]))
         return 0;
 
-    // delimits the word
+    // delimit the word
     while (is_word_char(l->chars[k])) {
         k1 = k;
         if (k > 0)

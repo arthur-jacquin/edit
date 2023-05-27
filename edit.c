@@ -18,6 +18,7 @@
 
 #define VERSION                     "0.2.0"
 #define HELP_MESSAGE                "Help available at https://jacquin.xyz/edit"
+#define TERM_NOT_BIG_ENOUGH         "Terminal is too small."
 
 #define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
 #define INTERFACE_MEM_LENGTH        (4*INTERFACE_WIDTH + 1)
@@ -276,6 +277,7 @@ main(int argc, char *argv[])
             if (has_been_changes)
                 write_file(BACKUP_FILE_NAME);
             tb_shutdown();
+            fprintf(stderr, "%s\n", TERM_NOT_BIG_ENOUGH);
             return ERR_TERM_NOT_BIG_ENOUGH;
         }
 

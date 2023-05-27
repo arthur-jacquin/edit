@@ -35,8 +35,7 @@ init_termbox(void)
 #else
     tb_set_input_mode(TB_INPUT_ESC);
 #endif // MOUSE_SUPPORT
-    if (resize(tb_width(), tb_height()))
-        has_been_invalid_resizing = 1;
+    has_been_invalid_resizing = resize(tb_width(), tb_height());
 }
 
 int

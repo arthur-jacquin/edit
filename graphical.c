@@ -84,8 +84,7 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     // foreground
     if (settings.syntax_highlight && syntax != NULL) {
         // ignore blank characters at the beginning of the line
-        for (i = k = 0; l->chars[k] == ' '; i++, k++)
-            ;
+        i = k = find_first_non_blank(l);
 
         // detect a matching rule
         for (r = *(syntax->rules); r->mark[0]; r++)

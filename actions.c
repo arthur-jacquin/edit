@@ -108,9 +108,7 @@ comment(struct line *l, struct selection *s)
     int k, kp, syntax_length;
 
     // detect first character of the line, ignores empty lines
-    for (k = 0; l->chars[k] == ' '; k++)
-        ;
-    if (l->chars[k] == '\0')
+    if (l->chars[k = find_first_non_blank(l)] == '\0')
         return;
 
     syntax_length = strlen(comment_syntax);

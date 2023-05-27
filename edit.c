@@ -493,8 +493,7 @@ main(int argc, char *argv[])
                     break;
                 case KB_ACT_INCREASE_INDENT:
                 case KB_ACT_DECREASE_INDENT:
-                    asked_indent = settings.tab_width *
-                        way(ev.ch == KB_ACT_INCREASE_INDENT);
+                    asked_indent = way(ev.ch == KB_ACT_INCREASE_INDENT);
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
@@ -564,7 +563,7 @@ main(int argc, char *argv[])
                     break;
                 case TB_KEY_TAB:
                 case TB_KEY_BACK_TAB:
-                    asked_indent = settings.tab_width*way(ev.key == TB_KEY_TAB);
+                    asked_indent = way(ev.key == TB_KEY_TAB);
                     act(indent, 1);
                     break;
 #ifdef ENABLE_AUTOCOMPLETE

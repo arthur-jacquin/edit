@@ -77,8 +77,7 @@ split(struct line *l, struct selection *s)
 void
 indent(struct line *l, struct selection *s)
 {
-    // indent, until finding a settings.tab_width multiple in insert_mode,
-    // else of up to asked_indent
+    // indent until finding a settings.tab_width multiple
 
     int k, start, n;
 
@@ -86,36 +85,17 @@ indent(struct line *l, struct selection *s)
     if (!in_insert_mode && l->dl == 0)
         return;
 
+    start = in_insert_mode ? s->x : find_first_non_blank(l);
     if (asked_indent > 0) {
-        // calibrate
-        if (in_insert_mode) {
-            start = s->x;
-            for (n = 1; (start + n)%(settings.tab_width); n++)
-                ;
-        } else {
-            start = 0;
-            n = asked_indent;
-        }
-
-        // insert indent
+        n = asked_indent*(settings.tab_width) - start%(settings.tab_width);
         k = replace_chars(l, s, start, 0, n, n);
         memset(&(l->chars[k]), ' ', n);
     } else {
-        // calibrate
-        if (in_insert_mode) {
-            k = get_str_index(l->chars, s->x);
-            for (n = 0; n < k && l->chars[k - n - 1] == ' ' &&
-                (!n || (s->x - n)%(settings.tab_width)); n++)
-                ;
-            start = s->x - n;
-        } else {
-            start = 0;
-            for (n = 0; n < (-asked_indent) && l->chars[n] == ' '; n++)
-                ;
-        }
-
-        // suppress indent
-        replace_chars(l, s, start, n, 0, 0);
+        k = get_str_index(l->chars, start);
+        for (n = 0; n < k && n < (-asked_indent - 1)*(settings.tab_width) + 1 +
+            (start - 1)%(settings.tab_width) && l->chars[k - n - 1] == ' '; n++)
+            ;
+        replace_chars(l, s, start - n, n, 0, 0);
     }
 }
 

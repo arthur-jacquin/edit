@@ -55,19 +55,16 @@ unwrap_pos(struct pos p)
 }
 
 int
-find_first_non_blank(void)
+find_first_non_blank(const struct line *l)
 {
-    // find the first non blank character on the cursor line
+    // find the first non blank character on the given line
 
-    struct line *l;
-    int i, nx;
+    int i;
 
-    l = get_line(y);
-    for (i = nx = l->ml - 1; i >= 0; i--)
-        if (l->chars[i] != ' ')
-            nx = i;
+    for (i = 0; l->chars[i] == ' '; i++)
+        ;
 
-    return nx;
+    return i;
 }
 
 struct pos

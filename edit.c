@@ -120,7 +120,7 @@ int mark_fields(const char *chars, int sx, int n);
 int move(struct line **l, int *dx, int sens);
 struct pos pos_of(int l, int x);
 void unwrap_pos(struct pos p);
-int find_first_non_blank(void);
+int find_first_non_blank(const struct line *l);
 struct pos find_start_of_word(int n);
 struct pos find_matching_bracket(void);
 struct pos find_next_selection(int delta);
@@ -383,7 +383,7 @@ main(int argc, char *argv[])
                     x = 0; attribute_x = 1;
                     break;
                 case KB_MOVE_NON_BLANK:
-                    x = find_first_non_blank(); attribute_x = 1;
+                    x = find_first_non_blank(get_line(y)); attribute_x = 1;
                     break;
                 case KB_MOVE_END_LINE:
                     x = get_line(y)->dl; attribute_x = 1;

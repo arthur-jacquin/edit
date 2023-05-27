@@ -80,7 +80,7 @@ indent(struct line *l, struct selection *s)
     // indent, until finding a settings.tab_width multiple in insert_mode,
     // else of up to asked_indent
 
-    int k, start;
+    int k, start, n;
 
     // ignores empty lines in normal mode
     if (!in_insert_mode && l->dl == 0)
@@ -89,37 +89,33 @@ indent(struct line *l, struct selection *s)
     if (asked_indent > 0) {
         // calibrate
         if (in_insert_mode) {
-            asked_indent = 1;
-            while ((s->x + asked_indent)%(settings.tab_width))
-                asked_indent++;
             start = s->x;
+            for (n = 1; (start + n)%(settings.tab_width); n++)
+                ;
         } else {
             start = 0;
+            n = asked_indent;
         }
 
         // insert indent
-        k = replace_chars(l, s, start, 0, asked_indent, asked_indent);
-        memset(&(l->chars[k]), ' ', asked_indent);
+        k = replace_chars(l, s, start, 0, n, n);
+        memset(&(l->chars[k]), ' ', n);
     } else {
         // calibrate
         if (in_insert_mode) {
-            asked_indent = 0;
-            while ((s->x - asked_indent > 0) &&
-                (l->chars[get_str_index(l->chars,
-                    s->x - asked_indent - 1)] == ' ') &&
-                (!asked_indent || (s->x - asked_indent)%(settings.tab_width)))
-                asked_indent++;
-            if ((start = s->x - asked_indent) < 0)
-                return;
-        } else {
-            for (k = 0; k < (-asked_indent) && l->chars[k] == ' '; k++)
+            k = get_str_index(l->chars, s->x);
+            for (n = 0; n < k && l->chars[k - n - 1] == ' ' &&
+                (!n || (s->x - n)%(settings.tab_width)); n++)
                 ;
-            asked_indent = k;
+            start = s->x - n;
+        } else {
             start = 0;
+            for (n = 0; n < (-asked_indent) && l->chars[n] == ' '; n++)
+                ;
         }
 
         // suppress indent
-        replace_chars(l, s, start, asked_indent, 0, 0);
+        replace_chars(l, s, start, n, 0, 0);
     }
 }
 

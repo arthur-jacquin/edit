@@ -92,15 +92,17 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                 r->mark, strlen(r->mark)))
                 break;
 
+        // potential rule mark
         if (r->mark[0]) {
             // RULE
             if (r->start_of_line)
                 i = 0;
             for (j = 0; j < strlen(r->mark); j++)
                 fg[i++] = r->color_mark;
-            while (i < l->dl)
-                fg[i++] = r->color_end_of_line;
-        } else if (syntax->highlight_elements) {
+            k = i;
+        }
+
+        if (syntax->highlight_elements) {
             while (i < l->dl) {
                 // WORD
                 if (is_word_char(c = l->chars[k])) {
@@ -159,9 +161,18 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                     k += utf8_char_length(c);
                 }
 
+                // color override if a rule matched
+                if (r->mark[0] && color != COLOR_COMMENT)
+                    color = r->color_end_of_line;
+
                 for (j = 0; j < nb_to_color; j++)
                     fg[i++] = color;
             }
+
+        // potential rule end of line (in case comments are not highlighted)
+        } else if (r->mark[0]) {
+            while (i < l->dl)
+                fg[i++] = r->color_end_of_line;
         }
     }
 

@@ -6,11 +6,17 @@
 
 ## potential improvements
 
-* add "split sel to SEP", "trim"
+* add support for tabs
+* switch to tabs-alike deletion when there is only spaces
+* add hexadecimal numbers
+* add a flag to include all languages
+* add line wrapping
 * change way to test for NULL pointers
+* avoid malloc/free Unicode/attributes buffers at each line printing
 * move to sourcehut
 * change regex recognition
 * add support for more languages
+* port to Windows
 
 ## at each version
 

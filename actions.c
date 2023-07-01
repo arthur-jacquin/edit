@@ -172,7 +172,7 @@ replace(struct line *l, struct selection *s)
 
     // search for fields and subpatterns
     mark_fields(l->chars, s->x, s->n);
-    mark_subpatterns(l->chars, l->dl, s->x, s->x, s->n);
+    mark_subpatterns(search_pattern.current, l->chars, l->dl, s->x, s->x, s->n);
 
     // malloc then populate replaced, adjust its length dynamically
     lrp = strlen(rp = replace_pattern.current);

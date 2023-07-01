@@ -113,7 +113,8 @@ void move_to_clip(int starting_line_nb, int nb);
 void insert_clip(struct line *starting_line, int below);
 
 // marks.c
-int mark_subpatterns(const char *chars, int dl, int ss, int sx, int n);
+int mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx,
+    int n);
 int mark_fields(const char *chars, int sx, int n);
 
 // movements.c

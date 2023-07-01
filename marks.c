@@ -106,13 +106,13 @@ eat_pattern_block(const char *sp, int *j, int *l)
 }
 
 int
-mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
+mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx,
+    int n)
 {
-    // try to read searched pattern in chars, store identified subpatterns
+    // try to read searched pattern sp in chars, store identified subpatterns
     // dl must be the visual length of chars, and ss the real selection start
-    // return length of read pattern if found at x, of length < n, else 0
+    // return length of read pattern if found at sx, of length < n, else 0
 
-    char *sp;           // search pattern
     int j, l, lsp;      // indexes (characters, bytes), memory length of sp
     int i, k;           // indexes (characters, bytes) of chars
     int s, a;           // number of subpatterns, generic
@@ -150,7 +150,7 @@ mark_subpatterns(const char *chars, int dl, int ss, int sx, int n)
 
     // init variables
     state = READ_PATTERN;
-    lsp = strlen(sp = search_pattern.current);
+    lsp = strlen(sp);
     l = j = 0;
     s = 0;
 

@@ -287,7 +287,8 @@ search(struct selection *a)
         // try to match pattern at any starting point
         k = 0;
         while (k < a->n) {
-            if (len = mark_subpatterns(l->chars, l->dl, a->x, a->x+k, a->n-k)) {
+            if (len = mark_subpatterns(search_pattern.current, l->chars, l->dl,
+                a->x, a->x + k, a->n - k)) {
                 new = create_sel(l->line_nb, a->x + k, len, NULL);
                 if (last == NULL) {
                     res = last = new;

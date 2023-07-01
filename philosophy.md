@@ -168,7 +168,7 @@ aside.
 ### Others limitations
 
 * only works with UTF-8 encoding
-* transforms tabs to spaces
+* transforms tabs to spaces (but saves tabs for makefiles)
 * does not visually wrap lines
 
 

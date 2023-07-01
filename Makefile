@@ -11,7 +11,7 @@ clean:
 
 dist: clean
 	tar -cf edit-${VERSION}.tar LICENSE Makefile readme.md *.md \
-		config.def.h config.mk languages.h termbox.h *.c edit.1
+	    config.def.h config.mk languages.h termbox.h *.c edit.1
 	gzip edit-${VERSION}.tar
 
 install: edit

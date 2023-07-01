@@ -124,11 +124,13 @@ void
 write_file(const char *file_name)
 {
     // read the first_line list and store the content in file_name file
+    // trim end of line spaces, and insert tabulations for makefiles
 
     FILE *dest_file = NULL;
     struct line *l;
     char *chars;
-    char c;
+    int k, nb_bytes;
+    int is_makefile = !strcmp(file_name, "Makefile");
 
     // open connection to dest_file
     TRY(dest_file = fopen(file_name, "w"), NULL)
@@ -137,8 +139,21 @@ write_file(const char *file_name)
     l = first_line;
     while (l != NULL) {
         chars = l->chars;
-        while (c = *chars++)
-            TRY(putc(c, dest_file), EOF)
+        nb_bytes = l->ml - 1;
+
+        // trim end of line spaces
+        for (k = l->ml - 2; k >= 0 && chars[k] == ' '; k--)
+            nb_bytes--;
+
+        // insert tabulations for makefiles
+        if (is_makefile && !strncmp(chars, "        ", settings.tab_width)) {
+            TRY(putc('\t', dest_file), EOF)
+            chars += settings.tab_width;
+            nb_bytes -= settings.tab_width;
+        }
+
+        for (k = 0; k < nb_bytes; k++)
+            TRY(putc(*chars++, dest_file), EOF)
         TRY(putc('\n', dest_file), EOF)
         l = l->next;
     }

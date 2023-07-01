@@ -6,10 +6,7 @@
 
 ## potential improvements
 
-* add support for tabs
-* switch to tabs-alike deletion when there is only spaces
 * add a flag to include all languages
-* add line wrapping
 * change way to test for NULL pointers
 * avoid malloc/free Unicode/attributes buffers at each line printing
 * move to sourcehut

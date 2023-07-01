@@ -123,10 +123,9 @@ print_line(const struct line *l, struct selection *s, int screen_line)
                     k += dk;
 
                 // NUMBER
-                } else if (isdigit(c) || (k+1 < l->ml && (c == '-' || c == '.')
-                    && (isdigit(l->chars[k+1]) || l->chars[k+1] == '.'))) {
-                    for (j = 1; isdigit(c = l->chars[k+j]) || c == '.'; j++)
-                        ;
+                } else if (j = mark_subpatterns(
+                    "(0b[01]+)|(0x[0-9a-fA-F]+)|(-?\\d+\\.?\\d*)|(-?\\.\\d+)",
+                    l->chars, l->dl, i, i, l->dl - i + 1)) {
                     color = COLOR_NUMBER;
                     nb_to_color = j;
                     k += j;

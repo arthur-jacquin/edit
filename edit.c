@@ -16,7 +16,7 @@
 #define ERR_MALLOC                  3
 #define ERR_TERM_NOT_BIG_ENOUGH     4
 
-#define VERSION                     "0.2.1"
+#define VERSION                     "0.2.2"
 #define HELP_MESSAGE                "Help available at https://jacquin.xyz/edit"
 #define TERM_NOT_BIG_ENOUGH         "Terminal is too small."
 

@@ -6,7 +6,6 @@
 
 ## potential improvements
 
-* avoid malloc/free Unicode/attributes buffers at each line printing
 * move to sourcehut
 * change regex recognition
 * add support for more languages

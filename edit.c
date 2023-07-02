@@ -81,6 +81,7 @@ void load_file(int first_line_on_screen_nb);
 void write_file(const char *file_name);
 
 // graphical.c
+void init_buffers(void);
 void init_termbox(void);
 int resize(int width, int height);
 struct selection *print_line(const struct line *l, struct selection *s,
@@ -252,6 +253,7 @@ main(int argc, char *argv[])
     INIT_INTERFACE(settings_int, "")
     INIT_INTERFACE(command_int, "")
 
+    init_buffers();
     init_termbox();
     echo(WELCOME_MESSAGE);
 

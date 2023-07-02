@@ -28,6 +28,22 @@ struct lang {               // used for syntax highlighting and autocommenting
 };
 
 
+// LANGUAGES PACKS *************************************************************
+
+// define these languages packs in config.h to get many languages in one line
+
+#ifdef ALL_LANGUAGES
+#define C
+#define DIFF
+#define GEMTEXT
+#define MARKDOWN
+#define OCAML
+#define PYTHON
+#define SH
+#define SQL
+#endif // ALL_LANGUAGES
+
+
 // LANGUAGES DEFINITION ********************************************************
 
 // useful ressources:

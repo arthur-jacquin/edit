@@ -6,7 +6,6 @@
 
 ## potential improvements
 
-* add a flag to include all languages
 * change way to test for NULL pointers
 * avoid malloc/free Unicode/attributes buffers at each line printing
 * move to sourcehut

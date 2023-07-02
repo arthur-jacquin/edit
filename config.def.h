@@ -178,6 +178,11 @@
 // yet, you can add it yourself in languages.h. Currently supported languages:
 // C, DIFF, GEMTEXT, MARKDOWN, OCAML, PYTHON, SH, SQL
 
+// For ease of use, some languages packs are defined in languages.h. For
+// example, defining ALL_LANGUAGES will get you all the currently supported
+// languages. However, beware that doing so might result in a rather large
+// executable.
+
 #define C
 #define MARKDOWN
 #define PYTHON

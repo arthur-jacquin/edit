@@ -8,7 +8,7 @@ is_word_char(char c)
 {
     // check if c is the start of a word character
 
-    return isalpha(c) || (c == '_') || (c == (char) 0xc3);
+    return (isalpha(c) || (c == '_') || (c == (char) 0xc3));
 }
 
 int
@@ -24,7 +24,7 @@ is_word_boundary(const char *chars, int k)
     if (k == 0) {
         return is_word;
     } else {
-        decrement(chars, &i, &k, 0);
+        decrement(chars, &i, &k, i - 1);
         return (is_word != is_word_char(chars[k]));
     }
 }
@@ -98,7 +98,7 @@ compare_chars(const char *s1, int k1, const char *s2, int k2)
         return l2 - l1;
     } else {
         for (k = 0; k < l1; k++) {
-            if (delta = (s2[k2 + k] - s1[k1 + k])) {
+            if ((delta = s2[k2 + k] - s1[k1 + k])) {
                 if (!settings.case_sensitive && k == l1 - 1 &&
                     (delta == (1 << 5) || delta == - (1 << 5)))
                     return 0;
@@ -163,7 +163,7 @@ is_in(const char *list, const char *chars, int x, int length)
 
     i = j = 0;
     ok = 1;
-    while (c = list[i++]) {
+    while ((c = list[i++])) {
         if (c == ' ') {
             if (ok && j == length) {
                 return 1;
@@ -171,7 +171,7 @@ is_in(const char *list, const char *chars, int x, int length)
                 j = 0;
                 ok = 1;
             }
-        } else if (c != chars[x+(j++)]) {
+        } else if (c != chars[x + (j++)]) {
             ok = 0;
         }
     }
@@ -186,7 +186,7 @@ _malloc(int size)
 
     void *res;
 
-    if ((res = malloc(size)) == NULL) {
+    if (!(res = malloc(size))) {
         tb_shutdown();
         exit(ERR_MALLOC);
     }

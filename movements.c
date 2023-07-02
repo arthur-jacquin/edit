@@ -164,9 +164,7 @@ find_next_selection(int delta)
             last_strictly_before--;
         if (last_strictly_before < 0)
             return pos_of(0, 0); // none strictly before
-        asked_number = last_strictly_before + delta + 1;
-        if (asked_number < 0)
-            asked_number = 0;
+        asked_number = MAX(last_strictly_before + delta + 1, 0);
     }
 
     return get_pos_of_sel(saved, asked_number);
@@ -207,7 +205,7 @@ move_to_cursor(void)
     // move to the closest possible position
 
     static int saved_x;             // if !attribute_x, this value defines x
-    int nl, nx, delta;
+    int nl, max_x, delta;
 
     // adjust asked line number
     nl = MAX(first_line_nb + y, 1);
@@ -228,8 +226,6 @@ move_to_cursor(void)
     x = saved_x;
 #endif // REMEMBER_CURSOR_COLUMN
     attribute_x = 0;
-    if (x > (nx = MIN(get_line(y)->dl, screen_width - 1 - LINE_NUMBERS_WIDTH)))
-        x = nx;
-    if (x < 0)
-        x = 0;
+    max_x = MIN(get_line(y)->dl, screen_width - 1 - LINE_NUMBERS_WIDTH);
+    x = MIN(MAX(x, 0), max_x);
 }

@@ -58,7 +58,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                         // delete dx-th displayable character
                         k = get_str_index(interf->current, dx - 1);
                         len = utf8_char_length(interf->current[k]);
-                        while (interf->current[k] = interf->current[k + len])
+                        while ((interf->current[k] = interf->current[k + len]))
                             k++;
                         dx--;
                         n--;
@@ -75,7 +75,7 @@ dialog(const char *prompt, struct interface *interf, int refresh)
                 case TB_KEY_ARROW_UP:
                 case TB_KEY_ARROW_DOWN:
                     strcpy(interf->current,
-                        (ev.key == TB_KEY_ARROW_UP) ? (interf->previous) : "");
+                        (ev.key == TB_KEY_ARROW_UP) ? interf->previous : "");
                     for (k = i = 0; interf->current[k]; i++)
                         k += utf8_char_length(interf->current[k]);
                     dx = n = i;
@@ -116,7 +116,7 @@ parse_assign(const char *assign)
     char c, s[INTERFACE_MEM_LENGTH];
     struct lang *old_lang;
 
-    if (strchr(assign, '=') == NULL) {
+    if (!strchr(assign, '=')) {
         return 0;
     } else if (sscanf(assign, "sh=%d", &b) == 1) {
         settings.syntax_highlight = b;
@@ -131,7 +131,7 @@ parse_assign(const char *assign)
     } else if (sscanf(assign, "l=%s", s) == 1) {
         old_lang = settings.syntax;
         parse_lang(s);
-        if (settings.syntax == NULL) {
+        if (!(settings.syntax)) {
             settings.syntax = old_lang;
             return 0;
         }
@@ -151,14 +151,14 @@ parse_range(const char *range)
     char *ptr;
 
     // split range in two strings: range and ptr
-    if ((ptr = strchr(range, ',')) == NULL)
+    if (!(ptr = strchr(range, ',')))
         return 0;
     *ptr++ = '\0';
 
     // parse range
-    if (strcmp(range, "") == 0) {
+    if (!strcmp(range, "")) {
         l1 = 1;
-    } else if (strcmp(range, ".") == 0) {
+    } else if (!strcmp(range, ".")) {
         l1 = first_line_nb + y;
     } else if (sscanf(range, "%d", &l1) == 1) {
         l1 = MAX(l1, 1);
@@ -167,9 +167,9 @@ parse_range(const char *range)
     }
 
     // parse ptr
-    if (strcmp(ptr, "") == 0) {
+    if (!strcmp(ptr, "")) {
         l2 = nb_lines;
-    } else if (strcmp(ptr, ".") == 0) {
+    } else if (!strcmp(ptr, ".")) {
         l2 = first_line_nb + y;
     } else if (sscanf(ptr, "%d", &l2) == 1) {
         l2 = MIN(l2, nb_lines);
@@ -196,7 +196,7 @@ parse_lang(const char *extension)
 
     // detect last point
     l = strlen(extension);
-    for (i = l - 1; i >= 0 && (extension[i] != '.'); i--)
+    for (i = l - 1; i >= 0 && extension[i] != '.'; i--)
         ;
     i++;
 

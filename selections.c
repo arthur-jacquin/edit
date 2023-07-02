@@ -23,7 +23,7 @@ nb_sel(struct selection *a)
 
     int res;
 
-    for (res = 0; a != NULL; res++)
+    for (res = 0; a; res++)
         a = a->next;
 
     return res;
@@ -36,7 +36,7 @@ forget_sel_list(struct selection *a)
 
     struct selection *next;
 
-    while (a != NULL) {
+    while (a) {
         next = a->next;
         free(a);
         a = next;
@@ -58,7 +58,7 @@ is_inf(struct pos p1, struct pos p2)
 {
     // return 1 if p1 < p2, else 0
 
-    return (p1.l < p2.l) || ((p1.l == p2.l) && (p1.x < p2.x));
+    return (p1.l < p2.l || (p1.l == p2.l && p1.x < p2.x));
 }
 
 struct pos
@@ -99,14 +99,14 @@ index_closest_after_cursor(struct selection *a)
     res = 0;
     cursor = pos_of_cursor();
 
-    while (1) {
-        if (a == NULL)
-            return -1;
+    while (a) {
         if (is_inf(cursor, pos_of_sel(a)))
             return res;
         a = a->next;
         res++;
     }
+
+    return -1;
 }
 
 struct pos
@@ -116,14 +116,10 @@ get_pos_of_sel(struct selection *a, int index)
 
     int count;
 
-    for (count = 0; count < index; count++) {
-        if (a == NULL)
-            return pos_of(0, 0);
-        else
-            a = a->next;
-    }
+    for (count = 0; a && count < index; count++)
+        a = a->next;
 
-    return pos_of(a->l, a->x);
+    return (a) ? pos_of(a->l, a->x) : pos_of(0, 0);
 }
 
 int
@@ -187,7 +183,7 @@ merge_sel(struct selection *a, struct selection *b)
 
     start = last = NULL;
     while (1) {
-        if (a != NULL && b != NULL) {
+        if (a && b) {
             if (is_inf(pos_of_sel(a), pos_of_sel(b))) {
                 to_add = a;
                 a = a->next;
@@ -195,10 +191,10 @@ merge_sel(struct selection *a, struct selection *b)
                 to_add = b;
                 b = b->next;
             }
-        } else if (a != NULL) {
+        } else if (a) {
             to_add = a;
             a = a->next;
-        } else if (b != NULL) {
+        } else if (b) {
             to_add = b;
             b = b->next;
         } else {
@@ -206,7 +202,7 @@ merge_sel(struct selection *a, struct selection *b)
         }
 
         new = create_sel(to_add->l, to_add->x, to_add->n, NULL);
-        if (last == NULL) {
+        if (!last) {
             start = last = new;
         } else if (new->l == last->l && last->x + last->n > new->x) {
             // covering detected: forget about this one
@@ -274,12 +270,12 @@ search(struct selection *a)
     int k, len;
 
     // check the existence of selections
-    if (a == NULL)
+    if (!a)
         return NULL;
 
     l = get_line(a->l - first_line_nb);
     res = last = NULL;
-    while (a != NULL) {
+    while (a) {
         // get correct line
         while (l->line_nb < a->l)
             l = l->next;
@@ -287,10 +283,10 @@ search(struct selection *a)
         // try to match pattern at any starting point
         k = 0;
         while (k < a->n) {
-            if (len = mark_subpatterns(search_pattern.current, l->chars, l->dl,
-                a->x, a->x + k, a->n - k)) {
+            if ((len = mark_subpatterns(search_pattern.current, l->chars, l->dl,
+                a->x, a->x + k, a->n - k))) {
                 new = create_sel(l->line_nb, a->x + k, len, NULL);
-                if (last == NULL) {
+                if (!last) {
                     res = last = new;
                 } else {
                     last->next = new;
@@ -359,9 +355,9 @@ shift_sel_line_nb(struct selection *a, int min, int max, int delta)
     // value is between min and max (included)
     // comparison with max is ignored if max == 0
 
-    while (a != NULL && a->l < min)
+    while (a && a->l < min)
         a = a->next;
-    while (a != NULL && (!max || a->l <= max)) {
+    while (a && (!max || a->l <= max)) {
         a->l += delta;
         a = a->next;
     }
@@ -381,9 +377,9 @@ move_sel_end_of_line(struct selection *a, int l, int i, int concatenate)
     int e;
 
     e = (concatenate) ? 1 : -1;
-    while (a != NULL && (a->l < l || (a->l == l && !concatenate && a->x < i)))
+    while (a && (a->l < l || (a->l == l && !concatenate && a->x < i)))
         a = a->next;
-    while (a != NULL && a->l == l) {
+    while (a && a->l == l) {
         a->l -= 1*e;
         a->x += i*e;
         a = a->next;
@@ -411,15 +407,15 @@ remove_sel_line_range(int min, int max)
 
     struct selection *old, *next, *a;
 
-    if (saved == NULL) {
+    if (!saved) {
         return;
     } else if (saved->l < min) {
         old = a = saved;
-        while (a != NULL && a->l < min) {
+        while (a && a->l < min) {
             old = a;
             a = a->next;
         }
-        while (a != NULL && a->l <= max) {
+        while (a && a->l <= max) {
             next = a->next;
             free(a);
             a = next;
@@ -427,7 +423,7 @@ remove_sel_line_range(int min, int max)
         old->next = a;
     } else {
         a = saved;
-        while (a != NULL && a->l <= max) {
+        while (a && a->l <= max) {
             next = a->next;
             free(a);
             a = next;
@@ -457,23 +453,23 @@ reorder_sel(int l, int nb, int new_l)
     // move anchor
     if (anchored) {
         if (first_start <= anchor.l && anchor.l <= first_end) {
-            anchor.l += ((l < new_l) ? (new_l - l) : nb);
+            anchor.l += (l < new_l) ? (new_l - l) : nb;
         } else if (first_end < anchor.l && anchor.l <= second_end) {
-            anchor.l -= ((l < new_l) ? nb : (l - new_l));
+            anchor.l -= (l < new_l) ? nb : (l - new_l);
         }
     }
 
     // skip selections before ranges, identify last_before
     s = last = saved;
-    if (s == NULL)
+    if (!s)
         return;
     if (s->l < first_start) {
-        while (s != NULL && s->l < first_start) {
+        while (s && s->l < first_start) {
             last = s;
             s = s->next;
         }
         last_before = last;
-        if (s == NULL)
+        if (!s)
             return;
     } else {
         last_before = NULL;
@@ -482,13 +478,13 @@ reorder_sel(int l, int nb, int new_l)
     // shift selections of the first range, identify first and last_first
     if (s->l <= first_end) {
         first = s;
-        while (s != NULL && s->l <= first_end) {
+        while (s && s->l <= first_end) {
             s->l += (l < new_l) ? (new_l - l) : nb;
             last = s;
             s = s->next;
         }
         last_first = last;
-        if (s == NULL)
+        if (!s)
             return;
     } else {
         first = last_first = NULL;
@@ -497,7 +493,7 @@ reorder_sel(int l, int nb, int new_l)
     // shift selections of the second range, identify second and last_second
     if (s->l <= second_end) {
         second = s;
-        while (s != NULL && s->l <= second_end) {
+        while (s && s->l <= second_end) {
             s->l -= (l < new_l) ? nb : (l - new_l);
             last = s;
             s = s->next;
@@ -508,7 +504,7 @@ reorder_sel(int l, int nb, int new_l)
     }
 
     // last_before->next = second
-    if (last_before == NULL) {
+    if (!last_before) {
         saved = second;
     } else {
         last_before->next = second;
@@ -516,7 +512,7 @@ reorder_sel(int l, int nb, int new_l)
 
     // last_second->next = first
     // last_first->next = s
-    if (first == NULL) {
+    if (!first) {
         last_second->next = s;
     } else {
         last_second->next = first;

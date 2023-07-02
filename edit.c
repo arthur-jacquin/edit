@@ -150,7 +150,7 @@ void remove_sel_line_range(int min, int max);
 void reorder_sel(int l, int nb, int new_l);
 
 // utils.c
-#define ABS(A)                      ((A < 0) ? -(A) : A)
+#define ABS(A)                      (((A) < 0) ? -(A) : (A))
 #define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
 #define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
 int is_word_char(char c);
@@ -258,10 +258,10 @@ main(int argc, char *argv[])
 
     // PARSE ARGUMENTS
 
-    if (argc < 2 || !(strcmp(argv[1], "--help") && strcmp(argv[1], "-h"))) {
+    if (argc < 2 || !strcmp(argv[1], "--help") || !strcmp(argv[1], "-h")) {
         printf("%s\n", HELP_MESSAGE);
         return 0;
-    } else if (!(strcmp(argv[1], "--version") && strcmp(argv[1], "-v"))) {
+    } else if (!strcmp(argv[1], "--version") || !strcmp(argv[1], "-v")) {
         printf("%s\n", VERSION);
         return 0;
     } else {
@@ -498,8 +498,7 @@ main(int argc, char *argv[])
                     act(indent, 1);
                     break;
                 case KB_ACT_COMMENT:
-                    if (settings.syntax != NULL &&
-                        settings.syntax->highlight_elements)
+                    if (settings.syntax && settings.syntax->highlight_elements)
                         act(comment, 1);
                     break;
                 case KB_ACT_REPLACE:

@@ -82,13 +82,13 @@ print_line(const struct line *l, struct selection *s, int screen_line)
     }
 
     // foreground
-    if (settings.syntax_highlight && syntax != NULL) {
+    if (settings.syntax_highlight && syntax) {
         // ignore blank characters at the beginning of the line
         i = k = find_first_non_blank(l);
 
         // detect a matching rule
         for (r = *(syntax->rules); r->mark[0]; r++)
-            if (!strncmp(&(l->chars[((r->start_of_line) ? 0 : k)]),
+            if (!strncmp(&(l->chars[(r->start_of_line) ? 0 : k]),
                 r->mark, strlen(r->mark)))
                 break;
 
@@ -177,9 +177,9 @@ print_line(const struct line *l, struct selection *s, int screen_line)
 
     // background
     if (settings.highlight_selections) {
-        while (s != NULL && s->l < l->line_nb)
+        while (s && s->l < l->line_nb)
             s = s->next;
-        while (s != NULL && s->l == l->line_nb) {
+        while (s && s->l == l->line_nb) {
             for (i = 0; i < s->n && s->x + i < l->dl; i++)
                 bg[s->x + i] = COLOR_BG_SELECTIONS;
             s = s->next;
@@ -227,7 +227,7 @@ print_dialog(void)
     char c;
 
     // decompress UTF-8 and print
-    for (i = k = 0; c = message[k]; i++, k += len)
+    for (i = k = 0; (c = message[k]); i++, k += len)
         tb_set_cell(i, screen_height - 1,
             unicode(message, k, len = utf8_char_length(c)),
             COLOR_DIALOG, COLOR_BG_DEFAULT);
@@ -266,15 +266,15 @@ print_all(void)
 #ifdef HIGHLIGHT_MATCHING_BRACKET
     l = get_line(y);
     c = l->chars[get_str_index(l->chars, x)];
-    if (is_bracket = (c == '{' || c == '}' || c == '[' || c == ']'
-        || c == '(' || c == ')' || c == '<' || c == '>'))
+    if ((is_bracket = (c == '{' || c == '}' || c == '[' || c == ']'
+                    || c == '(' || c == ')' || c == '<' || c == '>')))
         matching_bracket = find_matching_bracket();
 #endif // HIGHLIGT_MATCHING_BRACKET
 
     s = displayed;
     l = first_line_on_screen;
     tb_clear();
-    for (sc_line = 0; l != NULL && sc_line < screen_height - 1; sc_line++) {
+    for (sc_line = 0; l && sc_line < screen_height - 1; sc_line++) {
         s = print_line(l, s, sc_line);
         l = l->next;
     }

@@ -29,7 +29,7 @@ load_file(int first_line_on_screen_nb)
     first_line = first_line_on_screen = NULL;
 
     // open connection to src_file, create an empty buffer if can't be accessed
-    if ((src_file = fopen(file_name_int.current, "r")) == NULL) {
+    if (!(src_file = fopen(file_name_int.current, "r"))) {
         first_line = first_line_on_screen = create_line(1, 1, 0);
         nb_lines = 1;
         has_been_changes = 1;
@@ -93,7 +93,7 @@ load_file(int first_line_on_screen_nb)
 
         // store line
         line = create_line(line_nb, ml + 1, dl);
-        if (first_line == NULL) {
+        if (!first_line) {
             first_line = last_line = line;
         } else {
             link_lines(last_line, line);
@@ -106,7 +106,7 @@ load_file(int first_line_on_screen_nb)
     }
 
     // end doubly linked list of lines
-    if (first_line_on_screen == NULL)
+    if (!first_line_on_screen)
         first_line_on_screen = last_line;
     last_line->next = NULL;
     free(buf);
@@ -137,7 +137,7 @@ write_file(const char *file_name)
 
     // copy content of first_line list to dest_file
     l = first_line;
-    while (l != NULL) {
+    while (l) {
         chars = l->chars;
         nb_bytes = l->ml - 1;
 

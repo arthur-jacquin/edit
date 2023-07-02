@@ -10,11 +10,11 @@ act(void (*process)(struct line *, struct selection *), int line_op)
     struct line *l;
     int old_line_nb;
 
-    s = (saved != NULL) ? saved : running;
+    s = (saved) ? saved : running;
     l = get_line(s->l - first_line_nb);
     old_line_nb = 0;
     has_been_changes = 1;
-    while (s != NULL) {
+    while (s) {
         while (l->line_nb < s->l)
             l = l->next;
         if (!line_op || s->l > old_line_nb)
@@ -85,7 +85,7 @@ indent(struct line *l, struct selection *s)
     if (!in_insert_mode && l->dl == 0)
         return;
 
-    start = in_insert_mode ? s->x : find_first_non_blank(l);
+    start = (in_insert_mode) ? s->x : find_first_non_blank(l);
     if (asked_indent > 0) {
         n = asked_indent*(settings.tab_width) - start%(settings.tab_width);
         k = replace_chars(l, s, start, 0, n, n);
@@ -252,7 +252,7 @@ autocomplete(struct line *l, struct selection *s)
     sl = first_line;
     k = 0;
     match = NULL;
-    while (sl != NULL) {
+    while (sl) {
         // check if match
         if ((is_word_char(sl->chars[k]) && is_word_boundary(sl->chars, k)) &&
             ((k + k2 - k1) < sl->ml) &&
@@ -260,12 +260,12 @@ autocomplete(struct line *l, struct selection *s)
             (is_word_char(sl->chars[k + k2 - k1]))) {
             k += k2 - k1;
             ml = dl = 0;
-            while ((!match) ? (is_word_char(sl->chars[k + ml])) : (ml < max_ml
-                && !compare_chars(match, ms + ml, sl->chars, k + ml))) {
+            while ((!match) ? is_word_char(sl->chars[k + ml]) : (ml < max_ml &&
+                !compare_chars(match, ms + ml, sl->chars, k + ml))) {
                 dl++; ml += utf8_char_length(sl->chars[k + ml]);
             }
             max_ml = ml;
-            if (match == NULL) {
+            if (!match) {
                 match = sl->chars;
                 ms = k;
             }
@@ -281,7 +281,7 @@ autocomplete(struct line *l, struct selection *s)
     }
 
     // replacement with longest possible substring
-    if (match != NULL) {
+    if (match) {
         tmp = (char *) _malloc(ml);
         strncpy(tmp, &(match[ms]), ml);
         replace_chars(l, s, s->x + s->n, 0, dl, ml);

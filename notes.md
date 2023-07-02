@@ -6,7 +6,6 @@
 
 ## potential improvements
 
-* change way to test for NULL pointers
 * avoid malloc/free Unicode/attributes buffers at each line printing
 * move to sourcehut
 * change regex recognition

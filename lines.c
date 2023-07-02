@@ -15,10 +15,10 @@ get_line(int delta_from_first_line_on_screen)
 
     res = first_line_on_screen;
     if (delta_from_first_line_on_screen > 0) {
-        while (res->next != NULL && delta_from_first_line_on_screen--)
+        while (res->next && delta_from_first_line_on_screen--)
             res = res->next;
     } else {
-        while (res->prev != NULL && delta_from_first_line_on_screen++)
+        while (res->prev && delta_from_first_line_on_screen++)
             res = res->prev;
     }
 
@@ -51,9 +51,9 @@ link_lines(struct line *l1, struct line *l2)
     // ensure *l2 follows *l1 in the double linked list of lines
     // manage NULL pointers
 
-    if (l1 != NULL)
+    if (l1)
         l1->next = l2;
-    if (l2 != NULL)
+    if (l2)
         l2->prev = l1;
 }
 
@@ -67,9 +67,9 @@ shift_line_nb(struct line *start, int min, int max, int delta)
     struct line *l;
 
     l = start;
-    while (l != NULL && l->line_nb < min)
+    while (l && l->line_nb < min)
         l = l->next;
-    while (l != NULL && (!max || l->line_nb <= max)) {
+    while (l && (!max || l->line_nb <= max)) {
         l->line_nb += delta;
         l = l->next;
     }
@@ -83,7 +83,7 @@ forget_lines(struct line *start)
     struct line *l, *next;
 
     l = start;
-    while (l != NULL) {
+    while (l) {
         next = l->next;
         free(l->chars);
         free(l);
@@ -119,9 +119,9 @@ replace_chars(struct line *l, struct selection *a, int start, int n,
     free(old_chars);
 
     // move selections
-    while (a != NULL && a->l < l->line_nb)
+    while (a && a->l < l->line_nb)
         a = a->next;
-    while (a != NULL && a->l == l->line_nb) {
+    while (a && a->l == l->line_nb) {
         if (a->x < start) {
             if (a->x + a->n <= start) {
             } else if (a->x + a->n <= start + n) {
@@ -401,7 +401,7 @@ insert_clip(struct line *starting_line, int below)
     int i, first_inserted_line_nb;
 
     // check if clipboard is not empty
-    if (clipboard.start == NULL)
+    if (!(clipboard.start))
         return;
 
     // get correct line numbers, move clipboard to main buffer
@@ -416,7 +416,7 @@ insert_clip(struct line *starting_line, int below)
     after = (below) ? starting_line->next : starting_line;
     link_lines(before, clipboard.start);
     link_lines(l, after);
-    if (before == NULL)
+    if (!before)
         first_line = clipboard.start;
 
     // refresh metadata

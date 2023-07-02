@@ -42,7 +42,7 @@ eat_pattern_character(const char *sp, int *j, int *l)
     // move *j, *l indexes of sp after the character pattern
     // return 1 on success
 
-    if (sp[*l] == '\\' && strchr("\\^$|()*+?{[.dDwW", sp[*l+1])) {
+    if (sp[*l] == '\\' && strchr("\\^$|()*+?{[.dDwW", sp[*l + 1])) {
         (*j) += 2; (*l) += 2;
     } else if (sp[*l] == '[') {
         while (sp[*l] != '\0' && sp[*l] != ']') {
@@ -68,7 +68,7 @@ eat_pattern_atom(const char *sp, int *j, int *l)
 
     if (sp[*l] == '^' || sp[*l] == '$') {
         (*j)++; (*l)++;
-    } else if (sp[*l] == '\\' && strchr("AZbB", sp[*l+1])) {
+    } else if (sp[*l] == '\\' && strchr("AZbB", sp[*l + 1])) {
         (*j) += 2; (*l) += 2;
     } else {
         if (!eat_pattern_character(sp, j, l))
@@ -251,11 +251,11 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx,
         } else if (sp[l] == '^' || sp[l] == '$') { // assertions
             is_atom_ok = (sp[l] == '^') ? (i == 0) : (i == dl);
             j++; l++;
-        } else if (sp[l] == '\\' && (sp[l+1] == 'A' || sp[l+1] == 'Z')) {
-            is_atom_ok = (sp[l+1] == 'A') ? (i == ss) : (i == sx + n);
+        } else if (sp[l] == '\\' && (sp[l + 1] == 'A' || sp[l + 1] == 'Z')) {
+            is_atom_ok = (sp[l + 1] == 'A') ? (i == ss) : (i == sx + n);
             j += 2; l += 2;
-        } else if (sp[l] == '\\' && (sp[l+1] == 'b' || sp[l+1] == 'B')) {
-            is_atom_ok = (sp[l+1] == 'B') ^ is_word_boundary(chars, k);
+        } else if (sp[l] == '\\' && (sp[l + 1] == 'b' || sp[l + 1] == 'B')) {
+            is_atom_ok = (sp[l + 1] == 'B') ^ is_word_boundary(chars, k);
             j += 2; l += 2;
         } else { // character
             is_atom_ok = 1;
@@ -300,11 +300,11 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx,
             break;
         } if (sp[l] == '\\') {
             if (strchr("\\^$|()*+?{[.", sp[l+1])) { // escaped character
-                is_char_ok = (sp[l+1] == chars[k]);
-            } else if (sp[l+1] == 'd' || sp[l+1] == 'D') { // [non] digit
-                is_char_ok = (sp[l+1] == 'D') ^ isdigit(chars[k]);
-            } else if (sp[l+1] == 'w' || sp[l+1] == 'W') { // [non] word char.
-                is_char_ok = (sp[l+1] == 'W') ^ is_word_char(chars[k]);
+                is_char_ok = (sp[l + 1] == chars[k]);
+            } else if (sp[l + 1] == 'd' || sp[l + 1] == 'D') { // [non] digit
+                is_char_ok = (sp[l + 1] == 'D') ^ isdigit(chars[k]);
+            } else if (sp[l + 1] == 'w' || sp[l + 1] == 'W') { // [non] word
+                is_char_ok = (sp[l + 1] == 'W') ^ is_word_char(chars[k]);
             } else {
                 return 0; // invalid syntax
             }
@@ -318,11 +318,12 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx,
             }
             while (sp[l] != '\0' && sp[l] != ']') {
                 a = utf8_char_length(sp[l]);
-                if (l+a+1 < lsp && sp[l+a] == '-' && sp[l+a+1] != ']') { //range
+                if (l + a + 1 < lsp && sp[l + a] == '-' &&
+                    sp[l + a + 1] != ']') { // range
                     if (compare_chars(sp, l, chars, k) >= 0 &&
-                         compare_chars(sp, l+a+1, chars, k) <= 0)
+                         compare_chars(sp, l + a + 1, chars, k) <= 0)
                         found = 1;
-                    j += 3; l += a + 1 + utf8_char_length(sp[l+a+1]);
+                    j += 3; l += a + 1 + utf8_char_length(sp[l + a + 1]);
                 } else { // raw comparison
                     if (!compare_chars(sp, l, chars, k))
                         found = 1;
@@ -386,7 +387,7 @@ mark_fields(const char *chars, int sx, int n)
     f = 1;
     while (i < sx + n && f < 10) {
         if ((chars[k] == settings.field_separator) &&
-            (k == 0 || chars[k-1] != '\\')) {
+            (k == 0 || chars[k - 1] != '\\')) {
             fields[f].st = st;
             fields[f].mst = mst;
             fields[f].n = i - st;

@@ -1,20 +1,400 @@
+.\" https://man7.org/linux/man-pages/man7/man-pages.7.html
+.\" filenames in italics
+.\" in SS sections, Capitalise first word
+.\" no e.g., i.e., ... but full wording
+.\" many rules on hyphenation
+.\" manual page, unprivileged user, filename, lowercase, built-in, run-time sth
+.\" P
+.\" Two spaces between some sentences.
 .TH EDIT 1 edit\-VERSION
 .SH NAME
-edit \- A suckless, simple, featured text editor.
+.\" TODO: better name, must be lowercase
+edit \- simple text editor
 .SH SYNOPSIS
-.B edit 
-.IB file
+.B edit
+.I filename
 .SH DESCRIPTION
-edit aims to provide a simple and powerful editing model, in a suckless-style
-codebase.
-.SH USAGE
-For learning how to use edit, please do the tutorial distributed with the
-code:
-.BR make\ tutor
+.\" TODO
+edit is a modal, terminal-based text editor. It aims to provide a simple yet
+powerful edition model, in a suckless-style codebase.
 .P
-A
-.IR cheatsheet.md
-is also provided for quick reference.
+There are three modes. The normal mode is used to enter edition commands, and is
+the default mode entered at launch. The insert mode is used to insert characters
+in the file. Finally, the dialog mode is entered when the editor need
+additionnal user input. At any moment, pressing escape enforce the normal mode.
+.P
+The edition is selection centric: most commands act on a list of selections.
+A selection is a set of contiguous characters on a given line.
+.P
+The philosophy is to select first, then act upon. There are two selections lists.
+.P
+By default, the running selections list only contains the cursor. It is also
+possible to drop an anchor below the cursor, making the running selections
+contain all characters between the anchor and the cursor.
+.P
+For more elaborate editing, there are multiple ways of saving selections in the
+saved selections list. If this list is not empty, commands will act on saved
+selections instead of running selections.
+.P
+For some commands, it makes sense to execute them multiple times. Enter a
+multiplier
+.IR m
+before these commands to get the expected result. If no multiplier is specified,
+the default value of 1 is assumed.
+.SH OPTIONS
+.TP
+.B \-\-version,
+.B \-v
+prints version information to stderr, then exits.
+.TP
+.B \-\-help,
+.B \-h
+prints an help message to stdout, then exits.
+.SH USAGE
+Most of the keys are used as keybinds in normal mode.
+.SS Editor interaction
+.TP
+.B ?
+display the help message
+.TP
+.B q/Q
+quit/force quit
+.TP
+.B s
+change a run-time setting (see "Run-time settings" subsection)
+.TP
+.B e/E
+execute make/a shell command and get back to edit
+.\" TODO: make formatting
+.SS File management
+.TP
+.B w/W
+write/write as
+.TP
+.B R
+reload
+.SS Entering insert mode
+.TP
+.B i
+enter insert mode
+.P
+It is also possible to enter insert mode at a specific location:
+.TP
+.B I/A
+at the start/end of the cursor line
+.TP
+.B o/O
+on an empty line created below/above the cursor line
+.P
+However, these commands do not combine well when applied to one than one
+selection, therefore they empty the saved selections list and unanchor the
+anchor before entering insert mode.
+.SS Navigation
+.TP
+.B l/h
+move to {m} next/previous character
+.TP
+.B j/k
+move to {m} next/previous line
+.TP
+.B g/G
+move to line {m}/last line of the file
+.TP
+.B m
+move to matching bracket
+.TP
+.B 0/^/$
+move to start/first non-blank character/end of line
+.TP
+.B t/T
+move to {m} next/previous word
+.TP
+.B }/{
+move to {m} next/previous block
+.TP
+.B n/N
+move to {m} next/previous selection
+.TP
+.B J
+jump to next match for prompted pattern (useful to navigate quickly through the
+file without changing selections)
+.SS Selections management
+.TP
+.B Escape
+forget saved selections, unanchor, reset multiplier
+.TP
+.B c
+display number of saved selections
+.TP
+.B v
+anchor/unanchor
+.TP
+.B a
+add running selections to saved selections, unanchor
+.TP
+.B z
+duplicate the running selection on the next {m} lines (designed for easy
+block/column editing)
+.TP
+.B .
+select cursor line
+.TP
+.B %/b/:
+select all lines of file/{m} blocks/custom range
+.P
+When selecting a custom range, the user is prompted a range that must be
+formatted as "{min},{max}" where {min} and {max} are either empty, a dot or an
+integer. If needed, empty is converted in 1 (for {min}) or the line number of
+the last line (for {max}), and dots are converted in the cursor line number, in
+order to select any line whose number is between {min} and {max}.
+.TP
+.B f, /
+search for pattern
+.TP
+.B *
+search for the word that is currently under the cursor
+.P
+Searching will create a new saved selections list containing all substrings of
+previously saved selections matching the given pattern. Note that searching is
+incremental: the potential results will be displayed as you type your search
+pattern. See the regular expressions section for more details on searching. XXX
+.SS Edition commands
+.TP
+.B u/U
+switch to lowercase/uppercase
+.TP
+.B K
+comment/uncomment line
+.TP
+.B >/<, Tab/Shift\-Tab
+{m} increase/decrease line indent
+.TP
+.B x, Delete/Backspace
+suppress selection content if any, else {m} characters after/before
+.TP
+.B r
+replace (see Replace pattern syntax subsection)
+.TP
+.B Control\-A
+autocomplete at the end of each selection
+.P
+If enabled, autocompletion is a special action on selections, as it can be done
+in both normal and insert mode. This is what explains the need for a modifier.
+If the end of a selection does not follow the start of a word, the completion is
+aborted. Else the word is completed with the characters common to all words that
+start identically and are strictly longer.
+.SS Lines management
+edit has a line-centric clipboard. The following commands do not act on
+selections but directly on lines:
+.TP
+.B y/Y
+yank {m} lines/blocks, starting at cursor
+.TP
+.B d/D
+delete {m} lines/blocks, starting at cursor
+.TP
+.B p/P
+paste after/before cursor line {m} times
+.TP
+.B Shift\-Up/Down
+move lines of running selections {m} lines up/down
+.SS Insert mode
+In insert mode, most keys insert their character before the selections.
+.TP
+.B Escape
+get back to normal mode
+.SS Dialog mode
+When the editor need additionnal user input, it switches to dialog mode. In this
+mode, the user is prompted something on the bottom line of the screen.
+.TP
+.B Up
+recover the last input associated with the prompt
+.TP
+.B Down
+clear the input
+.TP
+.B Enter
+validate input, get back to normal mode
+.TP
+.B Escape
+cancel, get back to normal mode
+.SS Language support
+.\" TODO
+Or:
+* Multiline strings/comments highlighting is broken.
+* Syntax highlighting lacks support for language XXX.
+
+Designing a syntax highlighting system capable enough to perform exhaustive,
+semantically correct syntax highlighting for many languages is very challenging.
+
+In the context of a tiny codebase, this perfection goal is soon forgotten.
+
+edit syntax highlighting system tried to balance capability and simplicity.
+It is quite basic. Its semantic understanding is limited, and is designed to
+process lines individually.
+
+It works well for keywords, numbers, monoline strings/comments, and markup
+languages where a line break is significant (Markdown or Gemtext for example);
+but not so much for multilines strings/comments or some other markup languages
+(XML or LaTeX for example).
+
+Its simplicity makes it really easy to add language support, and easy to compute
+at runtime.
+
+The commenting command use single line comments: the user is encouraged to use
+it over ranges of lines instead of using multiline comments.
+
+TODO: hint to languages.h
+
+.SS Run-time settings
+Changing a setting prompts for an assignement. It must be formatted
+"{name}={value}", where name is in the following list and value of the
+according type. Any integer value is considered a boolean, 0 meaning FALSE and
+any other value meaning TRUE.
+.TP
+.B sh
+syntax highlight (boolean, default: TRUE)
+.TP
+.B h
+highlight selections (boolean, default: TRUE)
+.TP
+.B c
+case sensitive (boolean, default: TRUE)
+.TP
+.B fs
+field separator (character, default: ',')
+.TP
+.B tw
+tab width (integer, default: 4)
+.TP
+.B l
+language extension (string, default: deduced from filename)
+.SS Home-grown search and replace engine
+.\" TODO
+only one level of enclosing (because it works with subpatterns)
+if it's not enough, you might just close edit, run sed and get back to edit
+
+The search and replace engine is home-grown. While it has some caveats (see the
+ISSUES section), is not to be seen as a weaker, spare replacement. The search
+supports regular expressions, and the replace supports the reuse of subpatterns
+and fields from the to-be-replaced string. The engine is also better integrated
+in the editor that a sed call would have. \" XXX
+.P
+Using the engine should feel pretty straightforward as it can be used in a
+typical sed fashion:
+.P
+1. Choosing a line range with `%`, `:`, `.` or `b`
+2. Giving a search pattern with `/` or `f`
+3. Giving a replace pattern with `r`
+.P
+However, all these steps make sense individually. As normal mode is entered
+between two steps, you can see at any moment if the result differs from what you
+expected, for example if you entered a bad line number in the custom range
+prompt. You can then restart the process with no consequences.
+.P
+Moreover, it means that you can use any combination of these steps. For example,
+you can use replace without searching first, if you don't need subpatterns. This
+way it unifies the replace process, whether it's a small replace of a word you
+selected with the running selection or big search-and-replace operation across
+the whole file.
+.P
+Syntax of both search and replace patterns are described in a Backus-Naur form
+notation in the following subsections.
+.SS Search pattern syntax
+<character> ::= <regular_char>          # non escaped character
+              | "\\" <esc_char>          # escaped character
+              | "."                     # any character
+              | "\\d" | "\\D"             # any [non] digit
+              | "\\w" | "\\W"             # any [non] word character
+              | "[" <set> "]"           # any character in <set>
+              | "[^" <set> "]"          # any character not in <set>
+.P
+<esc_char> ::= "\\" | "^" | "$" | "|" | "(" | ")"
+             | "*" | "+" | "?" | "{" | "[" | "."
+.P
+<set> ::= <items>                       # <item> characters
+        | "-" <items>                   # "-" and <items> characters
+        | <items> "-"                   # "-" and <items> characters
+        | "-" <items> "-"               # "-" and <items> characters
+.P
+<items> ::= <non_minus>                 # character (not "-")
+          | <non_minus> "-" <non_minus> # range (inclusive)
+          | <items> <items>             # characters in either <items>
+.P
+<repeater> ::= ""                       # exactly 1
+             | "+"                      # 1 or more (at least once)
+             | "?"                      # 0 or 1 (at most once)
+             | "*" | "{}"               # 0 or more (any number)
+             | "{" <int> "}"            # exactly <int>
+             | "{" <int> ",}"           # at least <int>
+             | "{," <int> "}"           # at most <int>
+             | "{" <int> "," <int> "}"  # range (inclusive)
+.P
+<int> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+        | <int> <int>
+.P
+<assertion> ::= "^" | "$"               # start/end of line
+              | "\\A" | "\\Z"             # start/end of selection
+              | "\\b" | "\\B"             # [non] words boundary
+.P
+<atom> ::= <assertion> | <character> <repeater>
+.P
+<OR_atom> ::= <atom> | <OR_atom> "|" <atom>
+.P
+<group> ::= "" | <group> <OR_atom>
+.P
+<block> ::= <atom> | "(" <group> ")" <repeater>
+.P
+<OR_block> ::= <block> | <OR_block> "|" <block>
+.P
+<pattern> ::= "" | <pattern> <OR_block>
+.SS Replace pattern syntax
+<pattern> ::= <regular_char>            # character (not "\\" or "$")
+            | "\\\\" | "\\$"               # escaped "\\" and "$"
+            | "\\0" | "$0"               # whole initial selection
+            | "\\" <pos_digit>           # <pos_digit>-th subpattern
+            | "$" <pos_digit>           # <pos_digit>-th field
+            | <pattern> <pattern>       # concatenation
+.P
+<pos_digit> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+.SH NOTES
+.SS Encoding
+edit only works with UTF\-8 encoded text.
+.SS Tabulations
+edit is designed to work with spaces, not tabs. When opening a file, tabs are
+converted to spaces (according to the TAB_WIDTH value).
+.P
+Unfortunately, some languages recquire tabs (makefiles are an example). To
+accomodate these, a language-level flag can be set so that leading spaces are
+converted back to tabs when saving.
+.SS Trailing spaces
+By default, the SUPPRESS_TRAILING_SPACES option is set, which has the effect of
+ignoring trailing spaces when saving.
+.SS Multiples selections on a given line
+Indenting/commenting is performed at most once per line, no matter how much
+selections the line contains.
+.SS Undo/redo
+There is no undo/redo mechanism. Instead, the user is advised to save frequently
+and reload the file when a set of actions is to be reverted.
+.SS Arbitrary yanking
+It is not possible to yank only a part of a given line. The clipboard is
+designed to work with ranges of lines, not arbitrary text sequences.
+.SS Lines wrapping
+It is not possible to wrap lines.
 .SH CUSTOMIZATION
-edit is customized by creating a custom config.h and (re)compiling the
-source code. This keeps it fast, secure and simple.
+edit is customized by creating a custom config.h and (re)compiling the source
+code. This keeps it fast, secure and simple.
+.SH SEE ALSO
+.BR vi (1),
+.BR kakoune (1)
+.SH ISSUES
+.SS Repetition in regex recognition
+Repeaters always match as much as possible, potentially eating too much
+characters and invalidating a valid match.
+.P
+For example, ".*." never matches anything because the ".*" part eats all the
+selection, leaving no more characters to be matched by the trailing ".".
+.SS C99 compliance
+The terminal drawing library termbox2.h is not C99 compliant.
+.SH BUGS
+Send all bug reports with a patch to arthur@jacquin.xyz.

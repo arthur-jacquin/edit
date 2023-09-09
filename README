@@ -1,0 +1,27 @@
+edit - simple text editor
+=========================
+edit is a suckless, simple yet powerful terminal-based text editor.
+
+
+Installation
+------------
+Edit config.mk to match your local setup (edit is installed into
+the /usr/local namespace by default).
+
+Afterwards enter the following command to build and install edit (if
+necessary as root):
+
+    make clean install
+
+
+Running edit
+------------
+Simply invoke the 'edit' command with a file path:
+
+    edit filename
+
+
+Configuration
+-------------
+The configuration of edit is done by creating a custom config.h
+and (re)compiling the source code.

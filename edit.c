@@ -2409,7 +2409,7 @@ main(int argc, char *argv[])
                     act(indent, 1);
                     break;
 #ifdef ENABLE_AUTOCOMPLETE
-                case KB_ACT_AUTOCOMPLETE:
+                case KB_ACT_AUTOCOMPLETE_KEY:
                     act(autocomplete, 0);
                     break;
 #endif // ENABLE_AUTOCOMPLETE

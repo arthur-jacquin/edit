@@ -136,7 +136,7 @@
 #define KB_ACT_DECREASE_INDENT      '<'
 #define KB_ACT_SUPPRESS             'x'
 #define KB_ACT_REPLACE              'r'
-#define KB_ACT_AUTOCOMPLETE         TB_KEY_CTRL_A
+#define KB_ACT_AUTOCOMPLETE_KEY     TB_KEY_CTRL_A
 #define KB_CLIP_YANK_LINE           'y'
 #define KB_CLIP_YANK_BLOCK          'Y'
 #define KB_CLIP_DELETE_LINE         'd'

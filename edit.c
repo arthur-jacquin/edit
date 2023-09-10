@@ -21,8 +21,7 @@
 #define ERR_UTF8_ENCODING           "UTF-8 error occurred."
 
 #define ACC_LETTER                  ((char) 0xc3)
-#define DEFAULT_BUF_SIZE            (1 << 7)
-#define INTERFACE_WIDTH             (MIN_WIDTH - RULER_WIDTH)
+#define DEFAULT_BUF_SIZE            INTERFACE_WIDTH
 #define INTERFACE_MEM_LENGTH        (4*INTERFACE_WIDTH + 1)
 #if LINE_NUMBERS_WIDTH < 1
 #define LINE_NUMBERS_MODULUS        1
@@ -192,7 +191,7 @@ static struct {
     Line *start;
     int nb_lines;
 } clipboard;
-static struct lang *lang;
+static const struct lang *lang;
 static struct {
     int case_sensitive;
     char field_separator;
@@ -244,7 +243,7 @@ autocomplete(Line *l, Selection *s)
     if (k1 == k2)
         return;
     match = NULL;
-    max_ml = 0;
+    ms = dl = ml = max_ml = 0;
     for (sl = first_line, k = 0; sl;) {
         if (is_word_char(sl->chars[k]) && is_word_boundary(sl->chars, k) &&
             (k + k2 - k1) < sl->ml && !strncmp(l->chars + k1, sl->chars + k, k2 - k1) &&
@@ -504,7 +503,7 @@ dialog(const char *prompt, Interface *interf, int refresh_sel)
         tb_poll_event(&ev);
         switch (ev.type) {
         case TB_EVENT_KEY:
-            if (ev.ch && n < INTERFACE_WIDTH - dpl - 1) {
+            if (ev.ch && dpl + n + 1 < MIN(INTERFACE_WIDTH, screen_width - RULER_WIDTH)) {
                 k = get_str_index(interf->current, i = dx);
                 len = tb_utf8_unicode_to_char(unicode_buffer, ev.ch);
                 for (j = strlen(interf->current); j >= k; j--) // copy NULL
@@ -1365,11 +1364,12 @@ move_line(int delta)
 
     initial_first_line_nb = first_line_nb;
     start = end = first_line_nb + y;
-    if (anchored)
+    if (anchored) {
         if (anchor.l < start)
             start = anchor.l;
         else
             end = anchor.l;
+    }
     new_line_nb = CONSTRAIN(1, start + delta, nb_lines - (end - start));
     if (new_line_nb == start)
          return;
@@ -1804,11 +1804,12 @@ reorder_sel(int l, int nb, int new_l)
     first_start = MIN(l, new_l);
     first_end = l + ((l < new_l) ? nb : 0) - 1;
     second_end = MAX(l, new_l) + nb - 1;
-    if (anchored)
+    if (anchored) {
         if (first_start <= anchor.l && anchor.l <= first_end)
             anchor.l += (l < new_l) ? (new_l - l) : nb;
         else if (first_end < anchor.l && anchor.l <= second_end)
             anchor.l -= (l < new_l) ? nb : (l - new_l);
+    }
     if (!(s = last = saved))
         return;
 
@@ -1853,7 +1854,7 @@ reorder_sel(int l, int nb, int new_l)
 void
 replace(Line *l, Selection *s)
 {
-    Substring *class, to_add;
+    Substring to_add;
     char *rp, *replaced, *new_replaced, *src;
     int lrp, k, lr, ir, kr, k_chars;
 
@@ -1995,7 +1996,9 @@ search_word_under_cursor(void)
     for (k2 = k1; is_word_char(l->chars[k2]); k2 += tb_utf8_char_length(l->chars[k2]));
     if (k2 - k1 + 5 > INTERFACE_MEM_LENGTH)
         return EXIT_FAILURE;
-    sprintf(search_pattern.current, "\\b%*.*s\\b\0", k2 - k1, k2 - k1, l->chars +k1);
+    strcpy(search_pattern.current, "\\b");
+    strncpy(search_pattern.current + 2, l->chars + k1, k2 - k1);
+    strcpy(search_pattern.current + 2 + k2 - k1, "\\b");
     strcpy(search_pattern.previous, search_pattern.current);
     tmp = search(saved);
     SET_SEL_LIST(saved, tmp);
@@ -2121,10 +2124,10 @@ main(int argc, char *argv[])
     int m = 0, l1, l2, old_line_nb;
     struct tb_event ev;
 
-    if (argc != 2 || !strcmp(argv[1], "--help") || !strcmp(argv[1], "-h"))
-        die(EXIT_SUCCESS, HELP_MESSAGE);
-    else if (!strcmp(argv[1], "--version") || !strcmp(argv[1], "-v"))
+    if (argc == 2 && !strcmp("-v", argv[1]))
         die(EXIT_FAILURE, "edit-"VERSION);
+    else if (argc != 2)
+        die(EXIT_FAILURE, "usage: edit filename");
     else if (strlen(argv[1]) + 1 > INTERFACE_MEM_LENGTH)
         die(EXIT_FAILURE, ERR_BUFFER_TOO_SMALL);
     INIT_INTERFACE(file_name_int, argv[1])

@@ -1,34 +1,34 @@
 // See LICENSE file for copyright and license details.
 
 // messages and prompts
-#define HELP_MESSAGE                "Please refer to manual page: man edit"
-#define WELCOME_MESSAGE             "Welcome to edit!"
-#define RULER_PATTERN               "%d:%d"
-#define FILE_CONNECTION_MESSAGE     "The file can not be accessed."
-#define UNSAVED_CHANGES_MESSAGE     "There are unsaved changes."
-#define SAVE_AS_PROMPT              "Save as: "
-#define FILE_SAVED_MESSAGE          "File saved."
-#define NOTHING_TO_WRITE_MESSAGE    "No changes to write."
+#define CHANGE_SETTING_PROMPT       "Change setting: "
+#define COLUMN_SEL_ERROR_MESSAGE    "Not possible: multiline running selection."
+#define COMMAND_PROMPT              "Run: "
+#define HELP_MESSAGE                "Press Escape, Q, then read the manual: man edit"
 #define FILE_RELOADED_MESSAGE       "File reloaded."
-#define NOTHING_TO_REVERT_MESSAGE   "No changes to revert."
-#define SELECTIONS_MESSAGE_PATTERN  "%d saved selections."
+#define FILE_SAVED_MESSAGE          "File saved."
+#define INSERT_MODE_MESSAGE         "INSERT (ESC to exit)"
+#define INVALID_ASSIGNMENT_MESSAGE  "Invalid assignment."
+#define INVALID_RANGE_MESSAGE       "Invalid range."
 #define NO_SEL_DOWN_MESSAGE         "No more selections downwards."
 #define NO_SEL_UP_MESSAGE           "No more selections upwards."
-#define INSERT_MODE_MESSAGE         "INSERT (ESC to exit)"
-#define SEARCH_PATTERN_PROMPT       "Search pattern: "
-#define REPLACE_PATTERN_PROMPT      "Replace pattern: "
 #define NO_WORD_CURSOR_MESSAGE      "There is no word under the cursor."
+#define NOTHING_TO_REVERT_MESSAGE   "No changes to revert."
+#define NOTHING_TO_WRITE_MESSAGE    "No changes to write."
 #define MULTIPLIER_MESSAGE_PATTERN  "Multiplier: %d"
 #define RANGE_PROMPT                "Lines range: "
-#define INVALID_RANGE_MESSAGE       "Invalid range."
-#define COLUMN_SEL_ERROR_MESSAGE    "Not possible: multiline running selection."
-#define CHANGE_SETTING_PROMPT       "Change setting: "
-#define INVALID_ASSIGNMENT_MESSAGE  "Invalid assignment."
-#define COMMAND_PROMPT              "Run: "
+#define REPLACE_PATTERN_PROMPT      "Replace pattern: "
+#define RULER_PATTERN               "%d:%d"
+#define SAVE_AS_PROMPT              "Save as: "
+#define SEARCH_PATTERN_PROMPT       "Search pattern: "
+#define SELECTIONS_MESSAGE_PATTERN  "%d saved selections."
+#define UNSAVED_CHANGES_MESSAGE     "There are unsaved changes."
+#define WELCOME_MESSAGE             "Welcome to edit!"
 
 // compile-time parameters
 #define BACKUP_FILE_NAME            "edit_backup_file"
-#define MIN_WIDTH                   80
+#define INTERFACE_WIDTH             128
+#define MIN_WIDTH                   30
 #define RULER_WIDTH                 8
 #define LINE_NUMBERS_WIDTH          4
 #define SCROLL_OFFSET               3

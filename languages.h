@@ -6,9 +6,9 @@
 #define DEFINED                     (1 << 1)
 #define ONLY_RULES                  (1 << 2)
 #define LANG(L, F) \
-    {F | DEFINED, &L##_names, &L##_rules, &L##_kw, &L##_fc, &L##_bi, &L##_cm}
+    {F | DEFINED, L##_names, L##_rules, L##_kw, L##_fc, L##_bi, L##_cm}
 #define ONLY_RULES_LANG(L, F) \
-    {F | DEFINED | ONLY_RULES, &L##_names, &L##_rules}
+    {F | DEFINED | ONLY_RULES, L##_names, L##_rules}
 
 // types
 struct rule {
@@ -18,25 +18,25 @@ struct rule {
 };
 
 struct lang {
-    // char ** members: pointer to space-separated, space-ended ASCII words list
+    // const char * members: space-separated, space-ended ASCII words list
     unsigned int flags;
-    char **names;                   // file extensions/names
-    struct rule (*rules)[];         // must be ended with NULL_RULE
-    char **keywords, **flow_control, **built_ins;
-    char **comment;                 // commenting syntax (one element)
+    const char *names;              // file extensions/names
+    const struct rule *rules;       // must be ended with NULL_RULE
+    const char *keywords, *flow_control, *built_ins;
+    const char *comment;            // commenting syntax (one element)
 };
 
 // language definitions
 #ifdef C
-char *c_names = "c h ";
-char *c_kw = ""
+static const char c_names[] = "c h ";
+static const char c_kw[] = ""
     "int long short char void signed unsigned float double typedef struct "
     "union enum static register auto volatile extern const FILE DIR NULL "
     "size_t "
     "int8_t int16_t int32_t int64_t uint8_t uint16_t uint32_t uint64_t sizeof ";
-char *c_fc = ""
+static const char c_fc[] = ""
     "while for do if else switch case default goto break return continue ";
-char *c_bi = ""
+static const char c_bi[] = ""
     // stdio.h
     "stdin stdout stderr fopen freopen fflush fclose remove rename tmpfile "
     "tmpnam setvbuf setbuf fprintf printf sprintf vprintf vfprintf vsprintf "
@@ -66,16 +66,16 @@ char *c_bi = ""
     "signal raise "
     // time.h
     "clock time difftime mktime asctime ctime gmtime localtime strftime ";
-char *c_cm = "// ";
-static struct rule c_rules[] = {
+static const char c_cm[] = "// ";
+static const struct rule c_rules[] = {
     {"#",   0,  COLOR_KEYWORD,      COLOR_KEYWORD},
     NULL_RULE
 };
 #endif // C
 
 #ifdef DIFF
-char *diff_names = "diff patch ";
-static struct rule diff_rules[] = {
+static const char diff_names[] = "diff patch ";
+static const struct rule diff_rules[] = {
     {"@@",  1,  COLOR_FLOW_CONTROL, COLOR_FLOW_CONTROL},
     {"+",   1,  34,                 34},
     {"-",   1,  196,                196},
@@ -84,8 +84,8 @@ static struct rule diff_rules[] = {
 #endif // DIFF
 
 #ifdef GEMTEXT
-char *gemtext_names = "gmi gemini ";
-static struct rule gemtext_rules[] = {
+static const char gemtext_names[] = "gmi gemini ";
+static const struct rule gemtext_rules[] = {
     {"=>",  1,  COLOR_FLOW_CONTROL, COLOR_FLOW_CONTROL},
     {"# ",  1,  COLOR_KEYWORD,      COLOR_KEYWORD},
     {"## ", 1,  COLOR_KEYWORD,      COLOR_KEYWORD},
@@ -97,19 +97,19 @@ static struct rule gemtext_rules[] = {
 #endif // GEMTEXT
 
 #ifdef MAKEFILE
-char *mk_names = "Makefile makefile mk ";
-char *mk_kw = "all clean dist install uninstall ";
-char *mk_fc = "PHONY ";
-char *mk_bi = "";
-char *mk_cm = "# ";
-static struct rule mk_rules[] = {NULL_RULE};
+static const char mk_names[] = "Makefile makefile mk ";
+static const char mk_kw[] = "all clean dist install uninstall ";
+static const char mk_fc[] = "PHONY ";
+static const char mk_bi[] = "";
+static const char mk_cm[] = "# ";
+static const struct rule mk_rules[] = {NULL_RULE};
 #endif // MAKEFILE
 
 // TODO: MANPAGE
 
 #ifdef MARKDOWN
-char *md_names = "md README ";
-static struct rule md_rules[] = {
+static const char md_names[] = "md README ";
+static const struct rule md_rules[] = {
     {"###",  1,  COLOR_KEYWORD,      COLOR_KEYWORD},
     {"##",   1,  COLOR_KEYWORD,      COLOR_KEYWORD},
     {"#",    1,  COLOR_KEYWORD,      COLOR_KEYWORD},

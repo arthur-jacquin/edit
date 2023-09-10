@@ -59,7 +59,7 @@
 #define echo(MESSAGE)               strcpy(message, MESSAGE)
 #define echof(PATTERN, INTEGER)     sprintf(message, PATTERN, INTEGER)
 #define first_line_nb               (first_line_on_screen->line_nb)
-#define is_type(TYPE, L)            is_in(*(lang->TYPE), l->chars + k, L)
+#define is_type(TYPE, L)            is_in(lang->TYPE, l->chars + k, L)
 #define pos_of_cursor()             pos_of(first_line_nb + y, x)
 #define pos_of_sel(S)               pos_of((S).l, (S).x)
 #define way(DIRECT_CONDITION)       ((DIRECT_CONDITION) ? m : -m)
@@ -338,7 +338,7 @@ column_sel(int n)
 void
 comment(Line *l, Selection *s)
 {
-    int k, syntax_length = strlen(*(lang->comment));
+    int k, syntax_length = strlen(lang->comment);
 
     if (!(l->chars[k = find_first_non_blank(l)]))
         return;
@@ -346,7 +346,7 @@ comment(Line *l, Selection *s)
         replace_chars(l, s, k, syntax_length, 0, 0);
     else {
         k = replace_chars(l, s, k, 0, syntax_length, syntax_length);
-        strncpy(l->chars + k, *(lang->comment), syntax_length);
+        strncpy(l->chars + k, lang->comment, syntax_length);
     }
 }
 
@@ -1515,7 +1515,7 @@ parse_lang(const char *file_name)
 
     k = (p = strrchr(file_name, '.')) ? (p - file_name + 1) : 0;
     for (lang = languages; lang->flags & DEFINED; lang++)
-        if (is_in(*(lang->names), file_name + k, strlen(file_name) - k))
+        if (is_in(lang->names, file_name + k, strlen(file_name) - k))
             return EXIT_SUCCESS;
     lang = NULL;
     return EXIT_FAILURE;
@@ -1624,7 +1624,7 @@ print_line(const Line *l, Selection *s, int screen_line)
     char c, nc;
     int i, k;                       // indexes (characters, bytes) in l->chars
     int nb_displayed, j, dk, len, color, nb_to_color, underline;
-    struct rule *r;
+    const struct rule *r;
 
     nb_displayed = MIN(l->dl, screen_width - LINE_NUMBERS_WIDTH);
 #ifdef UNDERLINE_CURSOR_LINE
@@ -1646,7 +1646,7 @@ print_line(const Line *l, Selection *s, int screen_line)
         i = k = find_first_non_blank(l);
 
         // detect a matching rule
-        for (r = *(lang->rules); r->mark[0]; r++)
+        for (r = lang->rules; r->mark[0]; r++)
             if (!strncmp(l->chars + ((r->start_of_line) ? 0 : k), r->mark, strlen(r->mark)))
                 break;
 
@@ -1704,7 +1704,7 @@ print_line(const Line *l, Selection *s, int screen_line)
                     nb_to_color = j;
 
                 // comment
-                } else if (is_type(comment, strlen(*(lang->comment)) - 1)) {
+                } else if (is_type(comment, strlen(lang->comment) - 1)) {
                     color = COLOR_COMMENT;
                     nb_to_color = l->dl - i;
                     k = l->ml;

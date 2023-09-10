@@ -11,9 +11,7 @@
 #include "config.h"
 #include "languages.h"
 
-
-// MACROS
-
+// macros
 #define ERR_BUFFER_TOO_SMALL        "A buffer was too small."
 #define ERR_FILE_IO                 "File connection error occurred."
 #define ERR_MALLOC                  "Memory allocation error occurred."
@@ -64,9 +62,7 @@
 #define pos_of_sel(S)               pos_of((S).l, (S).x)
 #define way(DIRECT_CONDITION)       ((DIRECT_CONDITION) ? m : -m)
 
-
-// TYPES
-
+// types
 typedef struct {                    // interface for dialog mode
     char current[INTERFACE_MEM_LENGTH], previous[INTERFACE_MEM_LENGTH];
 } Interface;
@@ -93,9 +89,7 @@ typedef struct {                    // marks a substring in an original string
     int n, mn;                      // length (characters, bytes)
 } Substring;
 
-
-// FUNCTIONS DECLARATIONS
-
+// functions declarations
 static void act(void (*process)(Line *, Selection *), int line_op);
 static void autocomplete(Line *l, Selection *s);
 static void break_line(Line *l, Selection *s, int start);
@@ -171,9 +165,7 @@ static void upper(Line *l, Selection *s);
 static void write_file(const char *file_name);
 static void *emalloc(size_t size);
 
-
-// VARIABLES
-
+// variables
 static Interface file_name_int, replace_pattern, search_pattern;
 static Line *first_line, *first_line_on_screen;
 static Pos anchor, matching_bracket;
@@ -206,9 +198,7 @@ static struct {
     TAB_WIDTH,
 };
 
-
-// FUNCTION IMPLEMENTATIONS
-
+// function implementations
 void
 act(void (*process)(Line *, Selection *), int line_op)
 {
@@ -2096,13 +2086,12 @@ write_file(const char *file_name)
         for (k = l->ml - 2; k >= 0 && chars[k] == ' '; k--)
             nb_bytes--;
 #endif // IGNORE_TRAILING_SPACES
-// TODO: potentially translate more than one tab
-        if (lang && lang->flags & CONVERT_LEADING_SPACES
-            && !strncmp(chars, "        ", settings.tab_width)) {
-            FILE_IO(putc('\t', dest_file), EOF)
-            chars += settings.tab_width;
-            nb_bytes -= settings.tab_width;
-        }
+        if (lang && lang->flags & CONVERT_LEADING_SPACES)
+            while (!strncmp(chars, "        ", settings.tab_width)) {
+                FILE_IO(putc('\t', dest_file), EOF)
+                chars += settings.tab_width;
+                nb_bytes -= settings.tab_width;
+            }
         for (k = 0; k < nb_bytes; k++)
             FILE_IO(putc(*chars++, dest_file), EOF)
         FILE_IO(putc('\n', dest_file), EOF)

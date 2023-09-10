@@ -31,7 +31,7 @@ clean:
 dist: clean
 	mkdir -p edit-${VERSION}
 	cp -R LICENSE Makefile README config.def.h config.mk\
-	    edit.1 languages.h termbox2.h ${SRC} edit-${VERSION}
+		edit.1 languages.h termbox2.h ${SRC} edit-${VERSION}
 	tar -cf edit-${VERSION}.tar edit-${VERSION}
 	gzip edit-${VERSION}.tar
 	rm -rf edit-${VERSION}
@@ -46,6 +46,6 @@ install: all
 
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/edit\
-	    ${DESTDIR}${MANPREFIX}/man1/edit.1
+		${DESTDIR}${MANPREFIX}/man1/edit.1
 
 .PHONY: all options clean dist install uninstall

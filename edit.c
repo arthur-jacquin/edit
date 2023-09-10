@@ -811,13 +811,17 @@ void
 init_termbox(void)
 {
     tb_init();
-    tb_set_output_mode(OUTPUT_MODE);
     tb_set_clear_attrs(COLOR_DEFAULT, COLOR_BG_DEFAULT);
 #ifdef MOUSE_SUPPORT
     tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
 #else
     tb_set_input_mode(TB_INPUT_ESC);
 #endif // MOUSE_SUPPORT
+#ifdef TERM_256_COLORS_SUPPORT
+    tb_set_output_mode(TB_OUTPUT_256);
+#else
+    tb_set_output_mode(TB_OUTPUT_NORMAL);
+#endif // TERM_256_COLORS_SUPPORT
     has_been_invalid_resizing = resize(tb_width(), tb_height());
 }
 

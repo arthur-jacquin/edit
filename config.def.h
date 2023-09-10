@@ -1,13 +1,74 @@
 // See LICENSE file for copyright and license details.
 
+// compile-time parameters
+#define BACKUP_FILE_NAME            "edit_backup_file"
+#define INTERFACE_WIDTH             128
+#define LINE_NUMBERS_WIDTH          4
+#define MIN_WIDTH                   30
+#define RULER_WIDTH                 8
+#define SCROLL_LINE_NUMBER          3
+#define SCROLL_OFFSET               3
+
+#define ENABLE_AUTOCOMPLETE
+#define HIGHLIGHT_MATCHING_BRACKET
+#define IGNORE_TRAILING_SPACES
+#define MOUSE_SUPPORT
+#define REMEMBER_CURSOR_COLUMN
+#define TERM_256_COLORS_SUPPORT
+#define UNDERLINE_CURSOR_LINE
+#define VISUAL_COLUMN               79
+
+// default values for run-time settings
+#define CASE_SENSITIVE              1
+#define FIELD_SEPARATOR             ','
+#define HIGHLIGHT_SELECTIONS        1
+#define SYNTAX_HIGHLIGHT            1
+#define TAB_WIDTH                   4
+
+// colors
+#ifdef TERM_256_COLORS_SUPPORT
+// 256 colors mode: available colors are shown at https://jacquin.xyz/colors
+#define COLOR_BG_DEFAULT            0
+#define COLOR_BG_COLUMN             232
+#define COLOR_BG_MATCHING           213
+#define COLOR_BG_SELECTIONS         238
+#define COLOR_DEFAULT               15
+#define COLOR_BUILT_IN              28
+#define COLOR_COMMENT               172
+#define COLOR_DIALOG                COLOR_DEFAULT
+#define COLOR_FLOW_CONTROL          32
+#define COLOR_KEYWORD               99
+#define COLOR_LINE_NUMBERS          238
+#define COLOR_NUMBER                COLOR_KEYWORD
+#define COLOR_RULER                 COLOR_DEFAULT
+#define COLOR_STRING                COLOR_NUMBER
+#else
+// 8 colors mode: available colors are
+// TB_BLACK, TB_RED, TB_GREEN, TB_YELLOW, TB_BLUE, TB_MAGENTA, TB_CYAN, TB_WHITE
+#define COLOR_BG_DEFAULT            TB_BLACK
+#define COLOR_BG_COLUMN             COLOR_BG_DEFAULT
+#define COLOR_BG_MATCHING           COLOR_BG_DEFAULT
+#define COLOR_BG_SELECTIONS         TB_MAGENTA
+#define COLOR_DEFAULT               TB_WHITE
+#define COLOR_BUILT_IN              COLOR_DEFAULT
+#define COLOR_COMMENT               TB_YELLOW
+#define COLOR_DIALOG                COLOR_DEFAULT
+#define COLOR_FLOW_CONTROL          TB_CYAN
+#define COLOR_KEYWORD               TB_BLUE
+#define COLOR_LINE_NUMBERS          COLOR_DEFAULT
+#define COLOR_NUMBER                TB_GREEN
+#define COLOR_RULER                 COLOR_DEFAULT
+#define COLOR_STRING                COLOR_NUMBER
+#endif
+
 // messages and prompts
 #define CHANGE_SETTING_PROMPT       "Change setting: "
 #define COLUMN_SEL_ERROR_MESSAGE    "Not possible: multiline running selection."
 #define COMMAND_PROMPT              "Run: "
-#define HELP_MESSAGE                "Press Escape, Q, then read the manual: man edit"
+#define HELP_MESSAGE                "Press Q, then read the manual: man edit"
 #define FILE_RELOADED_MESSAGE       "File reloaded."
 #define FILE_SAVED_MESSAGE          "File saved."
-#define INSERT_MODE_MESSAGE         "INSERT (ESC to exit)"
+#define INSERT_MODE_MESSAGE         "INSERT MODE"
 #define INVALID_ASSIGNMENT_MESSAGE  "Invalid assignment."
 #define INVALID_RANGE_MESSAGE       "Invalid range."
 #define NO_SEL_DOWN_MESSAGE         "No more selections downwards."
@@ -24,70 +85,6 @@
 #define SELECTIONS_MESSAGE_PATTERN  "%d saved selections."
 #define UNSAVED_CHANGES_MESSAGE     "There are unsaved changes."
 #define WELCOME_MESSAGE             "Welcome to edit!"
-
-// compile-time parameters
-#define BACKUP_FILE_NAME            "edit_backup_file"
-#define INTERFACE_WIDTH             128
-#define MIN_WIDTH                   30
-#define RULER_WIDTH                 8
-#define LINE_NUMBERS_WIDTH          4
-#define SCROLL_OFFSET               3
-#define SCROLL_LINE_NUMBER          3
-
-#define REMEMBER_CURSOR_COLUMN
-#define IGNORE_TRAILING_SPACES
-#define ENABLE_AUTOCOMPLETE
-
-#define MOUSE_SUPPORT
-#define TERM_256_COLORS_SUPPORT
-#define UNDERLINE_CURSOR_LINE
-#define HIGHLIGHT_MATCHING_BRACKET
-#define VISUAL_COLUMN               79
-
-// default values for run-time settings
-#define CASE_SENSITIVE              1
-#define FIELD_SEPARATOR             ','
-#define HIGHLIGHT_SELECTIONS        1
-#define SYNTAX_HIGHLIGHT            1
-#define TAB_WIDTH                   4
-
-// colors
-#ifdef TERM_256_COLORS_SUPPORT
-#define OUTPUT_MODE                 TB_OUTPUT_256
-// 256 colors mode: available colors are listed at https://jacquin.xyz/colors
-#define COLOR_DEFAULT               15
-#define COLOR_RULER                 COLOR_DEFAULT
-#define COLOR_DIALOG                COLOR_DEFAULT
-#define COLOR_LINE_NUMBERS          238
-#define COLOR_KEYWORD               99
-#define COLOR_FLOW_CONTROL          32
-#define COLOR_BUILT_IN              28
-#define COLOR_NUMBER                COLOR_KEYWORD
-#define COLOR_STRING                COLOR_NUMBER
-#define COLOR_COMMENT               172
-#define COLOR_BG_DEFAULT            0
-#define COLOR_BG_SELECTIONS         238
-#define COLOR_BG_MATCHING           213
-#define COLOR_BG_COLUMN             232
-#else
-#define OUTPUT_MODE                 TB_OUTPUT_NORMAL
-// 8 colors mode: available colors are
-// TB_BLACK, TB_RED, TB_GREEN, TB_YELLOW, TB_BLUE, TB_MAGENTA, TB_CYAN, TB_WHITE
-#define COLOR_DEFAULT               TB_WHITE
-#define COLOR_RULER                 COLOR_DEFAULT
-#define COLOR_DIALOG                COLOR_DEFAULT
-#define COLOR_LINE_NUMBERS          COLOR_DEFAULT
-#define COLOR_KEYWORD               TB_BLUE
-#define COLOR_FLOW_CONTROL          TB_CYAN
-#define COLOR_BUILT_IN              COLOR_DEFAULT
-#define COLOR_NUMBER                TB_GREEN
-#define COLOR_STRING                COLOR_NUMBER
-#define COLOR_COMMENT               TB_YELLOW
-#define COLOR_BG_DEFAULT            TB_BLACK
-#define COLOR_BG_SELECTIONS         TB_MAGENTA
-#define COLOR_BG_MATCHING           COLOR_BG_DEFAULT
-#define COLOR_BG_COLUMN             COLOR_BG_DEFAULT
-#endif
 
 // keybinds
 #define KB_HELP                     '?'

@@ -105,7 +105,32 @@ static const char mk_cm[] = "# ";
 static const struct rule mk_rules[] = {NULL_RULE};
 #endif // MAKEFILE
 
-// TODO: MANPAGE
+#ifdef MANPAGE
+static const char mp_names[] = "1 2 3 4 5 6 7 8 9 ";
+static const char mp_kw[] = "";
+static const char mp_fc[] = "";
+static const char mp_bi[] = ""
+    "NAME SYNOPSIS DESCRIPTION OPTIONS USAGE NOTES BUGS ";
+static const char mp_cm[] = "\\\" ";
+static const struct rule mp_rules[] = {
+    {".TH ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".SH ",0,  COLOR_FLOW_CONTROL, COLOR_BUILT_IN},
+    {".SS ",0,  COLOR_FLOW_CONTROL, COLOR_KEYWORD},
+    {".B ", 0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".BI ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".BR ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".I ", 0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".IB ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".IR ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".RB ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".RI ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".SB ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".SM ",0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".P",  0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    {".TP", 0,  COLOR_FLOW_CONTROL, COLOR_DEFAULT},
+    NULL_RULE
+};
+#endif // MANPAGE
 
 #ifdef MARKDOWN
 static const char md_names[] = "md README ";
@@ -134,6 +159,9 @@ static const struct lang languages[] = {
 #endif
 #ifdef MAKEFILE
     LANG(mk, CONVERT_LEADING_SPACES),
+#endif
+#ifdef MANPAGE
+    LANG(mp, 0),
 #endif
 #ifdef MARKDOWN
     ONLY_RULES_LANG(md, 0),

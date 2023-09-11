@@ -44,6 +44,71 @@ static const char c_bi[] = ""
     // assert.h
     "NDEBUG "
     "assert "
+    // ctype.h
+    "isalnum isalpha isblank iscntrl isdigit isgraph islower isprint ispunct "
+    "isspace isupper isxdigit tolower toupper "
+    // errno.h
+    "EDOM EILSEQ ERANGE errno "
+    // signal.h
+    "sig_atomic_t SIG_DFL SIG_ERR SIG_IGN SIGABRT SIGFPE SIGILL SIGINT SIGSEGV "
+    "SIGTERM "
+    "signal raise "
+    // stdarg.h
+    "va_list "
+    "va_arg va_copy va_end va_start "
+    // stddef.h
+    "ptrdiff_t size_t wchar_t NULL offsetof "
+    // stdint.h
+    "int8_t int16t int32_t int64_t uint8_t uint16_t uint32_t uint64_t "
+    "intptr_t uintptr_t intmax_t uintmax_t "
+    // stdio.h
+    "size_t FILE fpos_t NULL _IOFBF _IOLBF _IONBF BUFSIZ EOF FOPEN_MAX "
+    "FILENAME_MAX L_tmpnam SEEK_CUR SEEK_END SEEK_SET TMP_MAX stderr stdin "
+    "stdout "
+    "remove rename tmpfile tmpnam fclose fflush fopen freopen setbuf setvbuf "
+    "fprintf fscanf printf scanf snprintf sprintf sscanf vfprintf vfscanf "
+    "vprintf vscanf vsnprintf vsprintf vsscanf fgetc fgets fputc fputs getc "
+    "getchar gets putc putchar puts ungetc fread fwrite fgetpos fseek fsetpos "
+    "ftell rewind clearerr feof ferror perror "
+    // stdlib.h
+    "size_t wchar_t div_t ldiv_t lldiv_t NULL EXIT_FAILURE EXIT_SUCCESS "
+    "RAND_MAX MB_CUR_MAX "
+    "atof atoi atol atoll strtod strtof strtold strtol strtoll strtoul "
+    "strtoull rand srand calloc free malloc realloc abort atexit exit _Exit "
+    "getenv system bsearch qsort abs labs llabs div ldiv lldiv mblen mbtowc "
+    "wctomb mbstowcs wcstombs "
+    // string.h
+    "memcpy memmove strcpy strncpy strcat strncat memcmp strcmp strcoll "
+    "strncmp strxfrm memchr strchr strcspn strpbrk strrchr strspn strstr "
+    "strtok memset strerror strlen ";
+    // tgmath.h
+    "acos asin atan acosh asinh atanh cos sin tan cosh sinh tanh exp log pow "
+    "sqrt fabs atan2 cbrt ceil copysign erf erfc exp2 expm1 fdim floor fma "
+    "fmax fmin fmod frexp hypot ilogb ldexp lgamma llrint llround log10 log1p "
+    "log2 logb lrint lround nearbyint nextafter nexttoward remainder remquo "
+    "rint round scalbn scalbln tgamma trunc carg cimag conj cproj creal "
+    // time.h
+    "NULL CLOCKS_PER_SEC size_t clock_t time_t tm "
+    "clock difftime mktime time asctime ctime gmtime localtime strftime "
+#endif // C
+
+#ifdef C99_FULL
+static const char c99_full_names[] = "c h ";
+static const struct rule c99_full_rules[] = {
+    {"#",   0,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    NULL_RULE
+};
+static const char c99_full_cm[] = "// ";
+static const char c99_full_kw[] = ""
+    "auto char const double enum extern float inline int long register "
+    "restrict short signed sizeof static struct typedef union unsigned void "
+    "volatile _Bool _Complex _Imaginary ";
+static const char c99_full_fc[] = ""
+    "break case continue default do else for goto if return switch while ";
+static const char c99_full_bi[] = ""
+    // assert.h
+    "NDEBUG "
+    "assert "
     // complex.h
     "complex imaginary I _Complex_I _Imaginary_I "
     "cacos cacosf cacosl casin casinf casinl catan catanf catanl ccos ccosf "
@@ -179,9 +244,9 @@ static const char c_bi[] = ""
     "stdout "
     "remove rename tmpfile tmpnam fclose fflush fopen freopen setbuf setvbuf "
     "fprintf fscanf printf scanf snprintf sprintf sscanf vfprintf vfscanf "
-    "vprintf vscanf vsnprintf vsprintf vsscanf fgetc *fgets fputc fputs getc "
-    "getchar *gets putc putchar puts ungetc fread fwrite fgetpos "
-    "fseek fsetpos ftell rewind clearerr feof ferror perror "
+    "vprintf vscanf vsnprintf vsprintf vsscanf fgetc fgets fputc fputs getc "
+    "getchar gets putc putchar puts ungetc fread fwrite fgetpos fseek fsetpos "
+    "ftell rewind clearerr feof ferror perror "
     // stdlib.h
     "size_t wchar_t div_t ldiv_t lldiv_t NULL EXIT_FAILURE EXIT_SUCCESS "
     "RAND_MAX MB_CUR_MAX "
@@ -217,7 +282,7 @@ static const char c_bi[] = ""
     "iswalnum iswalpha iswblank iswcntrl iswdigit iswgraph iswlower iswprint "
     "iswpunct iswspace iswupper iswxdigit iswctype wctype towlower towupper "
     "towctrans wctrans ";
-#endif // C
+#endif // C99_FULL
 
 #ifdef DIFF
 static const char diff_names[] = "diff patch ";
@@ -309,6 +374,9 @@ static const struct rule md_rules[] = {
 static const struct lang languages[] = {
 #ifdef C
     LANG(c, 0),
+#endif
+#ifdef C99_FULL
+    LANG(c99_full, 0),
 #endif
 #ifdef DIFF
     ONLY_RULES_LANG(diff, 0),

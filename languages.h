@@ -80,7 +80,7 @@ static const char c_bi[] = ""
     // string.h
     "memcpy memmove strcpy strncpy strcat strncat memcmp strcmp strcoll "
     "strncmp strxfrm memchr strchr strcspn strpbrk strrchr strspn strstr "
-    "strtok memset strerror strlen ";
+    "strtok memset strerror strlen "
     // tgmath.h
     "acos asin atan acosh asinh atanh cos sin tan cosh sinh tanh exp log pow "
     "sqrt fabs atan2 cbrt ceil copysign erf erfc exp2 expm1 fdim floor fma "
@@ -89,7 +89,7 @@ static const char c_bi[] = ""
     "rint round scalbn scalbln tgamma trunc carg cimag conj cproj creal "
     // time.h
     "NULL CLOCKS_PER_SEC size_t clock_t time_t tm "
-    "clock difftime mktime time asctime ctime gmtime localtime strftime "
+    "clock difftime mktime time asctime ctime gmtime localtime strftime ";
 #endif // C
 
 #ifdef C99_FULL

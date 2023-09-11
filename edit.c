@@ -40,7 +40,7 @@
     case (B): associated_bracket = (A); e = -1; break;
 #define DECLARE_PARAMETER(PARAMETER, NAME, TYPE, VAR) \
     else if (sscanf(assign, NAME"=%"TYPE, &VAR) == 1) settings.PARAMETER = VAR;
-#define INIT_INTERFACE(I, S)        strcpy(I.current, S); strcpy(I.previous, S);
+#define INIT_INTERFACE(I, S)        {strcpy(I.current, S); strcpy(I.previous, S);}
 #define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
 #define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
 #define MOVE_SEL_LIST(A, B)         {forget_sel_list(B); B = A; A = NULL;}
@@ -154,7 +154,7 @@ static void replace(Line *l, Selection *s);
 static int replace_chars(Line *l, Selection *a, int start, int n, int new_n, int nb_bytes);
 static void reset_selections(void);
 static int resize(int width, int height);
-static Selection *search(Selection *a);
+static Selection *search(Selection *a, const char *pattern);
 static int search_word_under_cursor(void);
 static void shift_line_nb(Line *l, int min, int max, int delta);
 static void shift_sel_line_nb(Selection *a, int min, int max, int delta);
@@ -482,7 +482,7 @@ dialog(const char *prompt, Interface *interf, int refresh_sel)
     dx = n = 0;
     while (1) {
         if (refresh_sel) {
-            SET_SEL_LIST(displayed, search(saved))
+            SET_SEL_LIST(displayed, search(saved, search_pattern.current))
             print_all();
         }
         strcpy(message, prompt);
@@ -1946,7 +1946,7 @@ resize(int width, int height)
 }
 
 Selection *
-search(Selection *a)
+search(Selection *a, const char *pattern)
 {
     Line *l;
     Selection *res, *last, *new;
@@ -1959,8 +1959,7 @@ search(Selection *a)
     for (; a; a = a->next) {
         for (; l->line_nb < a->l; l = l->next);
         for (k = 0; k < a->n; k += len)
-            if ((len = mark_subpatterns(search_pattern.current, l->chars, l->dl,
-                a->x, a->x + k, a->n - k))) {
+            if ((len = mark_subpatterns(pattern, l->chars, l->dl, a->x, a->x + k, a->n - k))) {
                 new = create_sel(l->line_nb, a->x + k, len, NULL);
                 if (!last)
                     res = last = new;
@@ -1979,6 +1978,7 @@ search_word_under_cursor(void)
 {
     Line *l;
     Selection *tmp;
+    char *pattern;
     int i, k, k1, k2;
 
     l = get_line(y);
@@ -1988,13 +1988,13 @@ search_word_under_cursor(void)
     for (; is_word_char(l->chars[k]) && k > 0; decrement(l->chars, &i, &k, i - 1));
     k1 = is_word_char(l->chars[k]) ? 0 : (k + tb_utf8_char_length(l->chars[k]));
     for (k2 = k1; is_word_char(l->chars[k2]); k2 += tb_utf8_char_length(l->chars[k2]));
-    if (k2 - k1 + 5 > INTERFACE_MEM_LENGTH)
-        return EXIT_FAILURE;
-    strcpy(search_pattern.current, "\\b");
-    strncpy(search_pattern.current + 2, l->chars + k1, k2 - k1);
-    strcpy(search_pattern.current + 2 + k2 - k1, "\\b");
-    strcpy(search_pattern.previous, search_pattern.current);
-    tmp = search(saved);
+    pattern = emalloc(k2 - k1 + 5);
+    strcpy(pattern, "\\b");
+    strncpy(pattern + 2, l->chars + k1, k2 - k1);
+    strcpy(pattern + 2 + k2 - k1, "\\b");
+    if (k2 - k1 + 5 <= INTERFACE_MEM_LENGTH)
+        INIT_INTERFACE(search_pattern, pattern);
+    tmp = search(saved, pattern);
     SET_SEL_LIST(saved, tmp);
     return EXIT_SUCCESS;
 }

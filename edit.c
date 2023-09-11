@@ -102,11 +102,12 @@ static void copy_to_clip(int starting_line_nb, int nb);
 static Line *create_line(int line_nb, int ml, int dl);
 static Selection *create_sel(int l, int x, int n, Selection *next);
 static void decrement(const char *chars, int *i, int *k, int goal);
-static void die(int exit_status, const char *msg);
 static int dialog(const char *prompt, Interface *interf, int refresh_sel);
+static void die(int exit_status, const char *msg);
 static int eat_pattern_atom(const char *sp, int *j, int *l);
 static int eat_pattern_block(const char *sp, int *j, int *l);
 static int eat_pattern_character(const char *sp, int *j, int *l);
+static void *emalloc(size_t size);
 static int find_block_delim(int starting_line_nb, int nb);
 static int find_first_non_blank(const Line *l);
 static Pos find_matching_bracket(void);
@@ -130,8 +131,8 @@ static int is_word_char(char c);
 static void link_lines(Line *l1, Line *l2);
 static void load_file(int first_line_on_screen_nb);
 static void lower(Line *l, Selection *s);
-static int mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int n);
 static int mark_fields(const char *chars, int sx, int n);
+static int mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int n);
 static Selection *merge_sel(Selection *a, Selection *b);
 static int move(Line **l, int *dx, int e);
 static void move_line(int delta);
@@ -163,7 +164,6 @@ static void suppress(Line *l, Selection *s);
 static void unwrap_pos(Pos p);
 static void upper(Line *l, Selection *s);
 static void write_file(const char *file_name);
-static void *emalloc(size_t size);
 
 // variables
 static Interface file_name_int, replace_pattern, search_pattern;
@@ -460,15 +460,6 @@ decrement(const char *chars, int *i, int *k, int goal)
         for ((*i)--, (*k)--; (chars[*k] & 0xc0) == 0x80; (*k)--);
 }
 
-void
-die(int exit_status, const char *msg)
-{
-    tb_shutdown();
-    if (msg)
-        fprintf((exit_status == EXIT_SUCCESS) ? stdout : stderr, "%s\n", msg);
-    exit(exit_status);
-}
-
 int
 dialog(const char *prompt, Interface *interf, int refresh_sel)
 {
@@ -556,6 +547,15 @@ dialog(const char *prompt, Interface *interf, int refresh_sel)
     }
 }
 
+void
+die(int exit_status, const char *msg)
+{
+    tb_shutdown();
+    if (msg)
+        fprintf((exit_status == EXIT_SUCCESS) ? stdout : stderr, "%s\n", msg);
+    exit(exit_status);
+}
+
 int
 eat_pattern_atom(const char *sp, int *j, int *l)
 {
@@ -609,6 +609,16 @@ eat_pattern_character(const char *sp, int *j, int *l)
         (*j)++; (*l) += tb_utf8_char_length(sp[*l]);
     }
     return EXIT_SUCCESS;
+}
+
+void *
+emalloc(size_t size)
+{
+    void *p;
+
+    if (!(p = malloc(size)))
+        die(EXIT_FAILURE, ERR_MALLOC);
+    return p;
 }
 
 int
@@ -1018,6 +1028,31 @@ lower(Line *l, Selection *s)
 }
 
 int
+mark_fields(const char *chars, int sx, int n)
+{
+    int f, a, st, mst, i, k;
+
+    k = get_str_index(chars, i = sx);
+    SET_SUBSTRING(fields[0], st = i, mst = k, n, get_str_index(chars + k, n));
+    for (a = 1; a < 10; a++)
+        SET_SUBSTRING(fields[a], 0, 0, 0, 0);
+    for (f = 1; f < 10 && i < sx + n; i++, k += tb_utf8_char_length(chars[k]))
+        if ((chars[k] == settings.field_separator) && (k == 0 || chars[k - 1] != '\\')) {
+            SET_SUBSTRING(fields[f], st, mst, i - st, k - mst);
+            f++;
+            st = i + 1;
+            mst = k + 1;
+        } else if (chars[k] == '\\') {
+            i++; k++;
+        }
+    if (f < 10) {
+        SET_SUBSTRING(fields[f], st, mst, i - st, k - mst);
+        f++;
+    }
+    return f - 1;
+}
+
+int
 mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int n)
 {
     // try to read searched pattern sp in chars, store identified subpatterns
@@ -1265,31 +1300,6 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
         state = ATOM_READ;
         break;
     }
-}
-
-int
-mark_fields(const char *chars, int sx, int n)
-{
-    int f, a, st, mst, i, k;
-
-    k = get_str_index(chars, i = sx);
-    SET_SUBSTRING(fields[0], st = i, mst = k, n, get_str_index(chars + k, n));
-    for (a = 1; a < 10; a++)
-        SET_SUBSTRING(fields[a], 0, 0, 0, 0);
-    for (f = 1; f < 10 && i < sx + n; i++, k += tb_utf8_char_length(chars[k]))
-        if ((chars[k] == settings.field_separator) && (k == 0 || chars[k - 1] != '\\')) {
-            SET_SUBSTRING(fields[f], st, mst, i - st, k - mst);
-            f++;
-            st = i + 1;
-            mst = k + 1;
-        } else if (chars[k] == '\\') {
-            i++; k++;
-        }
-    if (f < 10) {
-        SET_SUBSTRING(fields[f], st, mst, i - st, k - mst);
-        f++;
-    }
-    return f - 1;
 }
 
 Selection *
@@ -2006,7 +2016,8 @@ shift_line_nb(Line *l, int min, int max, int delta)
         l->line_nb += delta;
 }
 
-void shift_sel_line_nb(Selection *a, int min, int max, int delta)
+void
+shift_sel_line_nb(Selection *a, int min, int max, int delta)
 {
     for (; a && a->l < min; a = a->next);
     for (; a && (!max || a->l <= max); a = a->next)
@@ -2096,16 +2107,6 @@ write_file(const char *file_name)
         FILE_IO(putc('\n', dest_file), EOF)
     }
     FILE_IO(fclose(dest_file), EOF)
-}
-
-void *
-emalloc(size_t size)
-{
-    void *p;
-
-    if (!(p = malloc(size)))
-        die(EXIT_FAILURE, ERR_MALLOC);
-    return p;
 }
 
 int

@@ -1066,8 +1066,8 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
     s = 0;
 
     // init subpatterns
-    SET_SUBSTRING(subpatterns[0], i = sx, k = get_str_index(chars, i), n,
-        get_str_index(chars + k, n) - k);
+    k = get_str_index(chars, i = sx);
+    SET_SUBSTRING(subpatterns[0], i, k, n, get_str_index(chars + k, n));
     for (a = 1; a < 10; a++)
         SET_SUBSTRING(subpatterns[a], 0, 0, 0, 0);
 
@@ -1273,7 +1273,7 @@ mark_fields(const char *chars, int sx, int n)
     int f, a, st, mst, i, k;
 
     k = get_str_index(chars, i = sx);
-    SET_SUBSTRING(fields[0], st = i, mst = k, n, get_str_index(chars + k, n) - k);
+    SET_SUBSTRING(fields[0], st = i, mst = k, n, get_str_index(chars + k, n));
     for (a = 1; a < 10; a++)
         SET_SUBSTRING(fields[a], 0, 0, 0, 0);
     for (f = 1; f < 10 && i < sx + n; i++, k += tb_utf8_char_length(chars[k]))
@@ -1849,40 +1849,39 @@ void
 replace(Line *l, Selection *s)
 {
     Substring to_add;
-    char *rp, *replaced, *new_replaced, *src;
-    int lrp, k, lr, ir, kr, k_chars;
+    char *rp, *src, *replaced, *new_replaced;
+    int lr, i, k, k_chars;
 
     mark_fields(l->chars, s->x, s->n);
     mark_subpatterns(search_pattern.current, l->chars, l->dl, s->x, s->x, s->n);
-    lrp = strlen(rp = replace_pattern.current);
     replaced = (char *) emalloc(lr = DEFAULT_BUF_SIZE);
-    ir = kr = 0;
-    for (k = 0; k < lrp;) {
-        if (k < lrp - 1 && (rp[k] == '\\' || rp[k] == '$') && isdigit(rp[k + 1])) {
+    i = k = 0;
+    for (rp = replace_pattern.current; *rp;) {
+        if ((rp[0] == '\\' || rp[0] == '$') && isdigit(rp[1])) {
             src = l->chars;
-            to_add = ((rp[k] == '$') ? fields : subpatterns)[rp[k + 1] - '0'];
-            k += 2;
+            to_add = ((rp[0] == '$') ? fields : subpatterns)[rp[1] - '0'];
+            rp += 2;
         } else {
-            if (k < lrp - 1 && rp[k] == '\\')
-                k++;
+            if (rp[0] == '\\' && rp[1])
+                rp++;
             src = rp;
-            SET_SUBSTRING(to_add, 0, k, 1, tb_utf8_char_length(rp[k]));
-            k += to_add.mn;
+            SET_SUBSTRING(to_add, 0, 0, 1, tb_utf8_char_length(rp[0]));
+            rp += to_add.mn;
         }
-        if (kr + to_add.mn >= lr) {
-            while (kr + to_add.mn >= lr)
+        if (k + to_add.mn >= lr) {
+            while (k + to_add.mn >= lr)
                 lr <<= 1;
             new_replaced = (char *) emalloc(lr);
-            strncpy(new_replaced, replaced, kr);
+            strncpy(new_replaced, replaced, k);
             free(replaced);
             replaced = new_replaced;
         }
-        strncpy(replaced + kr, src + to_add.mst, to_add.mn);
-        kr += to_add.mn;
-        ir += to_add.n;
+        strncpy(replaced + k, src + to_add.mst, to_add.mn);
+        i += to_add.n;
+        k += to_add.mn;
     }
-    k_chars = replace_chars(l, s, s->x, s->n, ir, kr);
-    strncpy(l->chars + k_chars, replaced, kr);
+    k_chars = replace_chars(l, s, s->x, s->n, i, k);
+    strncpy(l->chars + k_chars, replaced, k);
     free(replaced);
 }
 

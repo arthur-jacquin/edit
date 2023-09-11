@@ -148,4 +148,4 @@
 #define C
 #define MAKEFILE
 #define MANPAGE
-#define MARKDOWN
+#define GEMTEXT

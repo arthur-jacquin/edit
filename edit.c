@@ -21,7 +21,7 @@
 #define ACC_LETTER                  ((char) 0xc3)
 #define DEFAULT_BUF_SIZE            INTERFACE_WIDTH
 #define INTERFACE_MEM_LENGTH        (4*INTERFACE_WIDTH + 1)
-#if LINE_NUMBERS_WIDTH < 1
+#if LINE_NUMBERS_WIDTH < 2
 #define LINE_NUMBERS_MODULUS        1
 #elif LINE_NUMBERS_WIDTH == 2
 #define LINE_NUMBERS_MODULUS        10
@@ -40,7 +40,6 @@
     case (B): associated_bracket = (A); e = -1; break;
 #define DECLARE_PARAMETER(PARAMETER, NAME, TYPE, VAR) \
     else if (sscanf(assign, NAME"=%"TYPE, &VAR) == 1) settings.PARAMETER = VAR;
-#define INIT_INTERFACE(I, S)        {strcpy(I.current, S); strcpy(I.previous, S);}
 #define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
 #define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
 #define MOVE_SEL_LIST(A, B)         {forget_sel_list(B); B = A; A = NULL;}
@@ -63,13 +62,10 @@
 #define way(DIRECT_CONDITION)       ((DIRECT_CONDITION) ? m : -m)
 
 // types
-typedef struct {                    // interface for dialog mode
-    char current[INTERFACE_MEM_LENGTH], previous[INTERFACE_MEM_LENGTH];
-} Interface;
+typedef char Interface[INTERFACE_MEM_LENGTH]; // interface for dialog mode
 
 typedef struct Line {               // doubly linked list of lines
-    struct Line *prev;
-    struct Line *next;
+    struct Line *prev, *next;
     int line_nb;                    // between 1 and nb_lines
     int ml, dl;                     // length in memory, on screen
     char *chars;                    // content (UTF-8, NULL-ended string)
@@ -80,8 +76,8 @@ typedef struct {                    // position in file
 } Pos;
 
 typedef struct Selection {          // sorted list of non-overlapping selections
-    int l, x, n;                    // line number, column, number of characters
     struct Selection *next;
+    int l, x, n;                    // line number, column, number of characters
 } Selection;
 
 typedef struct {                    // marks a substring in an original string
@@ -102,7 +98,7 @@ static void copy_to_clip(int starting_line_nb, int nb);
 static Line *create_line(int line_nb, int ml, int dl);
 static Selection *create_sel(int l, int x, int n, Selection *next);
 static void decrement(const char *chars, int *i, int *k, int goal);
-static int dialog(const char *prompt, Interface *interf, int refresh_sel);
+static int dialog(const char *prompt, Interface interf, int refresh_sel);
 static void die(int exit_status, const char *msg);
 static int eat_pattern_atom(const char *sp, int *j, int *l);
 static int eat_pattern_block(const char *sp, int *j, int *l);
@@ -166,12 +162,11 @@ static void upper(Line *l, Selection *s);
 static void write_file(const char *file_name);
 
 // variables
-static Interface file_name_int, replace_pattern, search_pattern;
+static Interface message, file_name_int, replace_pattern, search_pattern;
 static Line *first_line, *first_line_on_screen;
 static Pos anchor, matching_bracket;
 static Selection *saved, *running, *displayed;
 static Substring fields[10], subpatterns[10];
-static char message[INTERFACE_MEM_LENGTH];
 static int nb_lines, y, x;
 static int anchored, in_insert_mode, attribute_x, is_bracket;
 static int has_been_changes, has_been_invalid_resizing;
@@ -350,8 +345,7 @@ compare_chars(const char *s1, int k1, const char *s2, int k2)
     else
         for (k = 0; k < l1; k++)
             if ((delta = s2[k2 + k] - s1[k1 + k])) {
-                if (!settings.case_sensitive && k == l1 - 1 &&
-                    (delta == (1 << 5) || delta == - (1 << 5)))
+                if (!(settings.case_sensitive) && k == l1 - 1 && ABS(delta) == (1 << 5))
                     return 0;
                 else
                     return delta;
@@ -461,23 +455,25 @@ decrement(const char *chars, int *i, int *k, int goal)
 }
 
 int
-dialog(const char *prompt, Interface *interf, int refresh_sel)
+dialog(const char *prompt, Interface interf, int refresh_sel)
 {
+    Interface previous;
     char unicode_buffer[6];
-    int dpl, dx, i, k, n, len, j;
+    int dpl, dx, i, k, n, len;
     struct tb_event ev;
 
-    strcpy(interf->current, "");
+    strcpy(previous, interf);
+    strcpy(interf, "");
     for (k = i = 0; prompt[k]; i++, k += tb_utf8_char_length(prompt[k]));
     dpl = i;
     dx = n = 0;
     while (1) {
         if (refresh_sel) {
-            SET_SEL_LIST(displayed, search(saved, search_pattern.current))
+            SET_SEL_LIST(displayed, search(saved, search_pattern))
             print_all();
         }
         strcpy(message, prompt);
-        strcat(message, interf->current);
+        strcat(message, interf);
         print_dialog_ruler();
         tb_set_cursor(dx + dpl, screen_height - 1);
         tb_present();
@@ -485,28 +481,26 @@ dialog(const char *prompt, Interface *interf, int refresh_sel)
         switch (ev.type) {
         case TB_EVENT_KEY:
             if (ev.ch && dpl + n + 1 < MIN(INTERFACE_WIDTH, screen_width - RULER_WIDTH)) {
-                k = get_str_index(interf->current, i = dx);
+                k = get_str_index(interf, i = dx);
                 len = tb_utf8_unicode_to_char(unicode_buffer, ev.ch);
-                for (j = strlen(interf->current); j >= k; j--) // copy NULL
-                    interf->current[j + len] = interf->current[j];
-                strncpy(interf->current + k, unicode_buffer, len);
+                memmove(interf + k + len, interf + k, strlen(interf + k) + 1);
+                strncpy(interf + k, unicode_buffer, len);
                 dx++;
                 n++;
             } else {
                 switch (ev.key) {
                 case TB_KEY_ESC:
-                    strcpy(interf->current, interf->previous);
-                    strcpy(message, "");
+                    strcpy(interf, previous);
+                    echo("");
                     return 0;
                 case TB_KEY_ENTER:
-                    strcpy(interf->previous, interf->current);
                     return 1;
                 case TB_KEY_BACKSPACE:
                 case TB_KEY_BACKSPACE2:
                     if (dx > 0) {
-                        k = get_str_index(interf->current, dx - 1);
-                        len = tb_utf8_char_length(interf->current[k]);
-                        for (; (interf->current[k] = interf->current[k + len]); k++);
+                        k = get_str_index(interf, dx - 1);
+                        len = tb_utf8_char_length(interf[k]);
+                        memmove(interf + k, interf + k + len, strlen(interf + k + len) + 1);
                         dx--;
                         n--;
                     }
@@ -521,9 +515,8 @@ dialog(const char *prompt, Interface *interf, int refresh_sel)
                     break;
                 case TB_KEY_ARROW_UP:
                 case TB_KEY_ARROW_DOWN:
-                    strcpy(interf->current, (ev.key == TB_KEY_ARROW_UP) ? interf->previous : "");
-                    for (k = i = 0; interf->current[k]; i++,
-                        k += tb_utf8_char_length(interf->current[k]));
+                    strcpy(interf, (ev.key == TB_KEY_ARROW_UP) ? previous : "");
+                    for (k = i = 0; interf[k]; i++, k += tb_utf8_char_length(interf[k]));
                     dx = n = i;
                     break;
                 }
@@ -552,7 +545,7 @@ die(int exit_status, const char *msg)
 {
     tb_shutdown();
     if (msg)
-        fprintf((exit_status == EXIT_SUCCESS) ? stdout : stderr, "%s\n", msg);
+        fprintf((exit_status) ? stderr : stdout, "%s\n", msg);
     exit(exit_status);
 }
 
@@ -950,11 +943,11 @@ load_file(int first_line_on_screen_nb)
 
     forget_lines(first_line);
     reset_selections();
-    if (!(src_file = fopen(file_name_int.current, "r"))) {
+    if (!(src_file = fopen(file_name_int, "r"))) {
         first_line = first_line_on_screen = create_line(1, 1, 0);
         nb_lines = 1;
         has_been_changes = 1;
-        parse_lang(file_name_int.current);
+        parse_lang(file_name_int);
         return;
     }
     line_nb = 1;
@@ -1013,7 +1006,7 @@ load_file(int first_line_on_screen_nb)
     last_line->next = NULL;
     nb_lines = line_nb - 1;
     has_been_changes = 0;
-    parse_lang(file_name_int.current);
+    parse_lang(file_name_int);
 }
 
 void
@@ -1059,10 +1052,6 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
     // dl must be the visual length of chars, and ss the real selection start
     // return length of read pattern if found at sx, of length < n, else 0
 
-    int j, l, lsp;      // indexes (characters, bytes), memory length of sp
-    int i, k;           // indexes (characters, bytes) of chars
-    int s, a;           // number of subpatterns, generic
-
     //         AUTOMATON            RELEVANT VARIABLES AT THIS LEVEL OR LOWER
     // IN -> READ_PATTERN -> OUT    (j, l), (i, k), state
     //         |       ^
@@ -1083,7 +1072,11 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
 
     enum states { READ_PATTERN, READ_BLOCK, BLOCK_READ, READ_GROUP, GROUP_READ,
         READ_ATOM, ATOM_READ, READ_CHAR, CHAR_READ };
-    int state;
+    int state, s, a;    // state, number of subpatterns, generic
+
+    // indexes (characters, bytes), length
+    int j, l, lsp;      // sp
+    int i, k;           // chars
 
     // ORed elements
     int is_block_ok, start_block_i;
@@ -1094,19 +1087,15 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
     int is_char_ok, nb_char, start_char_j, start_char_i, found, is_neg_class;
     int min, max;
 
-    // init variables
-    state = READ_PATTERN;
-    lsp = strlen(sp);
-    l = j = 0;
-    s = 0;
-
-    // init subpatterns
     k = get_str_index(chars, i = sx);
     SET_SUBSTRING(subpatterns[0], i, k, n, get_str_index(chars + k, n));
     for (a = 1; a < 10; a++)
         SET_SUBSTRING(subpatterns[a], 0, 0, 0, 0);
+    l = j = 0;
+    lsp = strlen(sp);
+    state = READ_PATTERN;
+    s = 0;
 
-    // try to read the pattern
     while (1)
     switch (state) {
     case READ_PATTERN:
@@ -1220,9 +1209,8 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
             } else if (sp[l] == '|') { // another try
                 j++; l++;
                 decrement(chars, &i, &k, start_atom_i);
-            } else {
+            } else
                 is_group_ok = 0;
-            }
             state = READ_GROUP;
         } else {
             is_block_ok = is_atom_ok;
@@ -1240,15 +1228,14 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
             state = CHAR_READ;
             break;
         } if (sp[l] == '\\') {
-            if (strchr("\\^$|()*+?{[.", sp[l+1])) { // escaped character
+            if (strchr("\\^$|()*+?{[.", sp[l+1])) // escaped character
                 is_char_ok = (sp[l + 1] == chars[k]);
-            } else if (sp[l + 1] == 'd' || sp[l + 1] == 'D') { // [non] digit
+            else if (sp[l + 1] == 'd' || sp[l + 1] == 'D') // [non] digit
                 is_char_ok = (sp[l + 1] == 'D') ^ isdigit(chars[k]);
-            } else if (sp[l + 1] == 'w' || sp[l + 1] == 'W') { // [non] word
+            else if (sp[l + 1] == 'w' || sp[l + 1] == 'W') // [non] word
                 is_char_ok = (sp[l + 1] == 'W') ^ is_word_char(chars[k]);
-            } else {
+            else
                 return 0; // invalid syntax
-            }
             j += 2; l += 2;
         } else if (sp[l] == '[') { // custom class
             found = is_neg_class = 0;
@@ -1630,32 +1617,30 @@ print_line(const Line *l, Selection *s, int screen_line)
     int nb_displayed, j, dk, len, color, nb_to_color, underline;
     const struct rule *r;
 
+    // characters, attributes initialisation
     nb_displayed = MIN(l->dl, screen_width - LINE_NUMBERS_WIDTH);
+    for (i = k = 0; i < nb_displayed; i++, k += len) {
+        len = tb_utf8_char_to_unicode(ch + i, l->chars + k);
+        fg[i] = COLOR_DEFAULT;
+        bg[i] = COLOR_BG_DEFAULT;
+    }
 #ifdef UNDERLINE_CURSOR_LINE
     underline = (screen_line == y) ? TB_UNDERLINE : 0;
 #else
     underline = 0;
 #endif // UNDERLINE_CURSOR_LINE
 
-    // decompress UTF-8, initialise foreground and background
-    for (i = k = 0; i < nb_displayed; i++, k += len) {
-        len = tb_utf8_char_to_unicode(ch + i, l->chars + k);
-        fg[i] = COLOR_DEFAULT;
-        bg[i] = COLOR_BG_DEFAULT;
-    }
-
     // foreground
     if (settings.syntax_highlight && lang) {
-        // ignore blank characters at the beginning of the line
         i = k = find_first_non_blank(l);
 
         // detect a matching rule
-        for (r = lang->rules; r->mark[0]; r++)
+        for (r = lang->rules; *(r->mark); r++)
             if (!strncmp(l->chars + ((r->start_of_line) ? 0 : k), r->mark, strlen(r->mark)))
                 break;
 
-        // potential rule mark
-        if (r->mark[0]) {
+        // rule mark
+        if (*(r->mark)) {
             if (r->start_of_line)
                 i = 0;
             for (j = 0; j < strlen(r->mark); j++, i++)
@@ -1663,13 +1648,13 @@ print_line(const Line *l, Selection *s, int screen_line)
             k = i;
         }
 
+        // rest of the line
         if (!(lang->flags & ONLY_RULES)) {
             while (i < nb_displayed) {
                 // word
                 if (is_word_char(c = l->chars[k])) {
                     for (j = dk = 0; is_word_char(nc = l->chars[k + dk]) ||
-                        isdigit(nc); j++, dk += tb_utf8_char_length(nc))
-                        ;
+                        isdigit(nc); j++, dk += tb_utf8_char_length(nc));
                     color = COLOR_DEFAULT;
                     if (j != dk) {
                         // non-ASCII character, do not look for match
@@ -1721,15 +1706,13 @@ print_line(const Line *l, Selection *s, int screen_line)
                 }
 
                 // color override if a rule matched
-                if (r->mark[0] && color != COLOR_COMMENT)
+                if (*(r->mark) && color != COLOR_COMMENT)
                     color = r->color_end_of_line;
 
                 for (j = 0; j < nb_to_color; j++, i++)
                     STORE_BUFFER(fg, i, color)
             }
-
-        // potential rule end of line (in case of only rules language)
-        } else if (r->mark[0])
+        } else if (*(r->mark))
             while (i < nb_displayed)
                 fg[i++] = r->color_end_of_line;
     }
@@ -1801,58 +1784,36 @@ remove_sel_line_range(int min, int max)
 void
 reorder_sel(int l, int nb, int new_l)
 {
-    // TODO: better with array of Line *
-    Selection *s, *last, *last_before, *first, *last_first, *second, *last_second;
-    int first_start, first_end, second_end;
+    Selection *s, *prev, *first[3], *last[3];
+    int delim[3], incr[3], i;
 
-    first_start = MIN(l, new_l);
-    first_end = l + ((l < new_l) ? nb : 0) - 1;
-    second_end = MAX(l, new_l) + nb - 1;
-    if (anchored) {
-        if (first_start <= anchor.l && anchor.l <= first_end)
-            anchor.l += (l < new_l) ? (new_l - l) : nb;
-        else if (first_end < anchor.l && anchor.l <= second_end)
-            anchor.l -= (l < new_l) ? nb : (l - new_l);
-    }
-    if (!(s = last = saved))
+    delim[0] = MIN(l, new_l);
+    delim[1] = l + ((l < new_l) ? nb : 0);
+    delim[2] = MAX(l, new_l) + nb;
+    incr[0] = 0;
+    incr[1] = (l < new_l) ? (new_l - l) : nb;
+    incr[2] = (l < new_l) ? (-nb) : (new_l - l);
+    if (anchored)
+        for (i = 1; i < 3; i++)
+            if (delim[i - 1] <= anchor.l && anchor.l < delim[i])
+                anchor.l += incr[i];
+    for (i = 0; i < 3; i++)
+        first[i] = last[i] = NULL;
+    for (i = 0, s = prev = saved; i < 3 && s; i++)
+        if (s->l < delim[i]) {
+            first[i] = s;
+            for (; s && s->l < delim[i]; prev = s, s = s->next)
+                s->l += incr[i];
+            last[i] = prev;
+        }
+    if (!(first[1] && first[2]))
         return;
-
-    if (s->l < first_start) {
-        for (; s && s->l < first_start; last = s, s = s->next);
-        last_before = last;
-    } else
-        last_before = NULL;
-    if (!s)
-        return;
-
-    if (s->l <= first_end) {
-        first = s;
-        for (; s && s->l <= first_end; last = s, s = s->next)
-            s->l += (l < new_l) ? (new_l - l) : nb;
-        last_first = last;
-    } else
-        first = last_first = NULL;
-    if (!s)
-        return;
-
-    if (s->l <= second_end) {
-        second = s;
-        for (; s && s->l <= second_end; last = s, s = s->next)
-            s->l -= (l < new_l) ? nb : (l - new_l);
-        last_second = last;
-    } else
-        return;
-
-    if (!last_before)
-        saved = second;
+    if (last[0])
+        (last[0])->next = first[2];
     else
-        last_before->next = second;
-    if (!first)
-        last_second->next = s;
-    else {
-        last_second->next = first;
-        last_first->next = s;
-    }
+        saved = first[2];
+    (last[2])->next = first[1];
+    (last[1])->next = s;
 }
 
 void
@@ -1863,10 +1824,10 @@ replace(Line *l, Selection *s)
     int lr, i, k, k_chars;
 
     mark_fields(l->chars, s->x, s->n);
-    mark_subpatterns(search_pattern.current, l->chars, l->dl, s->x, s->x, s->n);
+    mark_subpatterns(search_pattern, l->chars, l->dl, s->x, s->x, s->n);
     replaced = (char *) emalloc(lr = DEFAULT_BUF_SIZE);
     i = k = 0;
-    for (rp = replace_pattern.current; *rp;) {
+    for (rp = replace_pattern; *rp;) {
         if ((rp[0] == '\\' || rp[0] == '$') && isdigit(rp[1])) {
             src = l->chars;
             to_add = ((rp[0] == '$') ? fields : subpatterns)[rp[1] - '0'];
@@ -1970,12 +1931,11 @@ search(Selection *a, const char *pattern)
         for (k = 0; k < a->n; k += len)
             if ((len = mark_subpatterns(pattern, l->chars, l->dl, a->x, a->x + k, a->n - k))) {
                 new = create_sel(l->line_nb, a->x + k, len, NULL);
-                if (!last)
-                    res = last = new;
-                else {
+                if (last) {
                     last->next = new;
                     last = new;
-                }
+                } else
+                    res = last = new;
             } else
                 len = 1;
     }
@@ -2002,7 +1962,7 @@ search_word_under_cursor(void)
     strncpy(pattern + 2, l->chars + k1, k2 - k1);
     strcpy(pattern + 2 + k2 - k1, "\\b");
     if (k2 - k1 + 5 <= INTERFACE_MEM_LENGTH)
-        INIT_INTERFACE(search_pattern, pattern);
+        strcpy(search_pattern, pattern);
     tmp = search(saved, pattern);
     SET_SEL_LIST(saved, tmp);
     return EXIT_SUCCESS;
@@ -2123,12 +2083,7 @@ main(int argc, char *argv[])
         die(EXIT_FAILURE, "usage: edit filename");
     else if (strlen(argv[1]) + 1 > INTERFACE_MEM_LENGTH)
         die(EXIT_FAILURE, ERR_BUFFER_TOO_SMALL);
-    INIT_INTERFACE(file_name_int, argv[1])
-    INIT_INTERFACE(search_pattern, "")
-    INIT_INTERFACE(replace_pattern, "")
-    INIT_INTERFACE(command_int, "")
-    INIT_INTERFACE(range_int, "")
-    INIT_INTERFACE(settings_int, "")
+    strcpy(file_name_int, argv[1]);
     load_file(1);
     init_termbox();
     echo(WELCOME_MESSAGE);
@@ -2176,11 +2131,10 @@ main(int argc, char *argv[])
                 case KB_WRITE_AS:
                     if (ev.ch == KB_WRITE && !has_been_changes)
                         echo(NOTHING_TO_WRITE_MESSAGE);
-                    else if (ev.ch == KB_WRITE ||
-                        dialog(SAVE_AS_PROMPT, &file_name_int, 0)) {
-                        write_file(file_name_int.current);
+                    else if (ev.ch == KB_WRITE || dialog(SAVE_AS_PROMPT, file_name_int, 0)) {
+                        write_file(file_name_int);
                         if (ev.ch == KB_WRITE_AS)
-                            parse_lang(file_name_int.current);
+                            parse_lang(file_name_int);
                         has_been_changes = 0;
                         echo(FILE_SAVED_MESSAGE);
                     }
@@ -2195,17 +2149,15 @@ main(int argc, char *argv[])
                         echo(NOTHING_TO_REVERT_MESSAGE);
                     break;
                 case KB_CHANGE_SETTING:
-                    if (dialog(CHANGE_SETTING_PROMPT, &settings_int, 0))
-                        if (parse_assign(settings_int.current))
+                    if (dialog(CHANGE_SETTING_PROMPT, settings_int, 0))
+                        if (parse_assign(settings_int))
                             echo(INVALID_ASSIGNMENT_MESSAGE);
                     break;
                 case KB_RUN_MAKE:
                 case KB_RUN_SHELL_COMMAND:
-                    if (ev.ch == KB_RUN_MAKE
-                        || dialog(COMMAND_PROMPT, &command_int, 0)) {
+                    if (ev.ch == KB_RUN_MAKE || dialog(COMMAND_PROMPT, command_int, 0)) {
                         tb_shutdown();
-                        system((ev.ch == KB_RUN_MAKE) ? "make" :
-                            command_int.current);
+                        system((ev.ch == KB_RUN_MAKE) ? "make" : command_int);
                         getchar();
                         init_termbox();
                     }
@@ -2261,17 +2213,15 @@ main(int argc, char *argv[])
                     break;
                 case KB_MOVE_NEXT_SEL:
                 case KB_MOVE_PREV_SEL:
-                    p = find_next_selection(way(ev.ch == KB_MOVE_NEXT_SEL));
-                    if (p.l)
+                    if ((p = find_next_selection(way(ev.ch == KB_MOVE_NEXT_SEL))).l)
                         unwrap_pos(p);
                     else
-                        echo((ev.ch == KB_MOVE_NEXT_SEL) ?
-                            NO_SEL_DOWN_MESSAGE : NO_SEL_UP_MESSAGE);
+                        echo((ev.ch == KB_MOVE_NEXT_SEL) ? NO_SEL_DOWN_MESSAGE : NO_SEL_UP_MESSAGE);
                     break;
                 case KB_MOVE_JUMP_TO_NEXT:
                     MOVE_SEL_LIST(saved, running)
                     saved = range_lines_sel(first_line_nb + y, nb_lines, NULL);
-                    if (dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
+                    if (dialog(SEARCH_PATTERN_PROMPT, search_pattern, 1)) {
                         MOVE_SEL_LIST(displayed, saved);
                         if ((p = find_next_selection(m)).l)
                             unwrap_pos(p);
@@ -2309,8 +2259,8 @@ main(int argc, char *argv[])
                     SET_SEL_LIST(saved, range_lines_sel(l1, l2, NULL))
                     break;
                 case KB_SEL_CUSTOM_RANGE:
-                    if (dialog(RANGE_PROMPT, &range_int, 0))
-                        if (parse_range(range_int.current))
+                    if (dialog(RANGE_PROMPT, range_int, 0))
+                        if (parse_range(range_int))
                             echo(INVALID_RANGE_MESSAGE);
                     break;
                 case KB_SEL_FIND:
@@ -2318,10 +2268,8 @@ main(int argc, char *argv[])
                 case KB_SEL_APPEND:
                     if (ev.ch == KB_SEL_APPEND)
                         anchored = 0;
-                    if (ev.ch == KB_SEL_APPEND ||
-                        dialog(SEARCH_PATTERN_PROMPT, &search_pattern, 1)) {
-                        MOVE_SEL_LIST(displayed, saved)
-                    }
+                    if (ev.ch == KB_SEL_APPEND || dialog(SEARCH_PATTERN_PROMPT, search_pattern, 1))
+                        MOVE_SEL_LIST(displayed, saved);
                     break;
                 case KB_SEL_CURSOR_WORD:
                     if (search_word_under_cursor())
@@ -2347,7 +2295,7 @@ main(int argc, char *argv[])
                         act(comment, 1);
                     break;
                 case KB_ACT_REPLACE:
-                    if (dialog(REPLACE_PATTERN_PROMPT, &replace_pattern, 0))
+                    if (dialog(REPLACE_PATTERN_PROMPT, replace_pattern, 0))
                         act(replace, 0);
                     break;
                 case KB_CLIP_YANK_LINE:

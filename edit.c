@@ -1793,10 +1793,12 @@ reorder_sel(int l, int nb, int new_l)
     incr[0] = 0;
     incr[1] = (l < new_l) ? (new_l - l) : nb;
     incr[2] = (l < new_l) ? (-nb) : (new_l - l);
-    if (anchored)
-        for (i = 1; i < 3; i++)
-            if (delim[i - 1] <= anchor.l && anchor.l < delim[i])
-                anchor.l += incr[i];
+    if (anchored) { // anchor.l += incr[(l < new_l) ? 1 : 2] is sufficient if used by move_line
+        if (delim[0] <= anchor.l && anchor.l < delim[1])
+            anchor.l += incr[1];
+        else if (delim[1] <= anchor.l && anchor.l < delim[2])
+            anchor.l += incr[2];
+    }
     for (i = 0; i < 3; i++)
         first[i] = last[i] = NULL;
     for (i = 0, s = prev = saved; i < 3 && s; i++)

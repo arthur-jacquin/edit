@@ -257,19 +257,19 @@ tab width (integer, default: 4)
               | "\\w" | "\\W"             # any [non] word character
               | "[" <set> "]"           # any character in <set>
               | "[^" <set> "]"          # any character not in <set>
-
+.P
 <esc_char> ::= "\\" | "^" | "$" | "|" | "(" | ")"
              | "*" | "+" | "?" | "{" | "[" | "."
-
+.P
 <set> ::= <items>                       # <item> characters
         | "\-" <items>                   # "\-" and <items> characters
         | <items> "\-"                   # "\-" and <items> characters
         | "\-" <items> "\-"               # "\-" and <items> characters
-
+.P
 <items> ::= <non_minus>                 # character (not "\-")
           | <non_minus> "\-" <non_minus> # range (inclusive)
           | <items> <items>             # characters in either <items>
-
+.P
 <repeater> ::= ""                       # exactly 1
              | "+"                      # 1 or more (at least once)
              | "?"                      # 0 or 1 (at most once)
@@ -278,24 +278,24 @@ tab width (integer, default: 4)
              | "{" <int> ",}"           # at least <int>
              | "{," <int> "}"           # at most <int>
              | "{" <int> "," <int> "}"  # range (inclusive)
-
+.P
 <int> ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
         | <int> <int>
-
+.P
 <assertion> ::= "^" | "$"               # start/end of line
               | "\\A" | "\\Z"             # start/end of selection
               | "\\b" | "\\B"             # [non] words boundary
-
+.P
 <atom> ::= <assertion> | <character> <repeater>
-
+.P
 <OR_atom> ::= <atom> | <OR_atom> "|" <atom>
-
+.P
 <group> ::= "" | <group> <OR_atom>
-
+.P
 <block> ::= <atom> | "(" <group> ")" <repeater>
-
+.P
 <OR_block> ::= <block> | <OR_block> "|" <block>
-
+.P
 <pattern> ::= "" | <pattern> <OR_block>
 .EE
 .SS Replace pattern syntax
@@ -307,6 +307,7 @@ tab width (integer, default: 4)
             | "$" <pos_digit>           # <pos_digit>\-th field
             | <pattern> <pattern>       # concatenation
 
+.P
 <pos_digit> ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 .EE
 .SH NOTES

@@ -201,6 +201,9 @@ lines up/down
 .SS Insert mode
 In insert mode, most keys insert their character before the selections.
 .TP
+.B Delete/Backspace
+suppress selection content if any, else character after/before
+.TP
 .B Control\-A
 autocomplete with longest common prefix
 .TP
@@ -210,11 +213,17 @@ get back to normal mode
 When the editor need additionnal user input, it switches to dialog mode. In this
 mode, the user is prompted something on the bottom line of the screen.
 .TP
+.B Delete/Backspace
+suppress character after/before the cursor
+.TP
 .B Up
 recover the last input associated with the prompt
 .TP
 .B Down
 clear the input
+.TP
+.B Left, Right, Control\-A, Control\-E
+navigate the input
 .TP
 .B Enter
 validate input, get back to normal mode

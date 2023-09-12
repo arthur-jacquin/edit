@@ -487,14 +487,13 @@ dialog(const char *prompt, Interface interf, int refresh_sel)
                 strncpy(interf + k, unicode_buffer, len);
                 dx++;
                 n++;
-            } else {
+            } else
                 switch (ev.key) {
-                case TB_KEY_ESC:
-                    strcpy(interf, previous);
-                    echo("");
-                    return 0;
-                case TB_KEY_ENTER:
-                    return 1;
+                case TB_KEY_DELETE:
+                    if (dx == n)
+                        break;
+                    dx++;
+                    // fall-through
                 case TB_KEY_BACKSPACE:
                 case TB_KEY_BACKSPACE2:
                     if (dx > 0) {
@@ -505,22 +504,27 @@ dialog(const char *prompt, Interface interf, int refresh_sel)
                         n--;
                     }
                     break;
-                case TB_KEY_ARROW_RIGHT:
-                    if (dx < n)
-                        dx++;
-                    break;
-                case TB_KEY_ARROW_LEFT:
-                    if (dx > 0)
-                        dx--;
-                    break;
                 case TB_KEY_ARROW_UP:
                 case TB_KEY_ARROW_DOWN:
                     strcpy(interf, (ev.key == TB_KEY_ARROW_UP) ? previous : "");
                     for (k = i = 0; interf[k]; i++, k += tb_utf8_char_length(interf[k]));
                     dx = n = i;
                     break;
+                case TB_KEY_ARROW_LEFT:
+                case TB_KEY_ARROW_RIGHT:
+                    dx = CONSTRAIN(0, dx + ((ev.key == TB_KEY_ARROW_LEFT) ? (-1) : 1), n);
+                    break;
+                case TB_KEY_CTRL_A:
+                case TB_KEY_CTRL_E:
+                    dx = (ev.key == TB_KEY_CTRL_A) ? 0 : n;
+                    break;
+                case TB_KEY_ENTER:
+                    return 1;
+                case TB_KEY_ESC:
+                    strcpy(interf, previous);
+                    echo("");
+                    return 0;
                 }
-            }
             break;
 #ifdef MOUSE_SUPPORT
         case TB_EVENT_MOUSE:

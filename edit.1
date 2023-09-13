@@ -6,9 +6,9 @@ edit \- simple text editor
 .IB filename
 .SH DESCRIPTION
 edit is a modal, terminal\-based text editor. It aims to provide a simple yet
-powerful edition model, in a suckless\-style codebase.
+powerful editing model, in a suckless\-style codebase.
 .P
-edit uses a selection\-centric, selection\-then\-action paradigm inspired by
+edit uses a selection\-centric, selection\-then\-action model inspired by
 kakoune, where a selection is a set of contiguous characters on a given line.
 Indeed, most commands act on a list of selections: on saved selections if any,
 otherwise on running selections.
@@ -71,12 +71,12 @@ on an empty line created below/above the cursor line
 .B l/h
 move to
 .IR m
-next/previous character
+\-th next/previous character
 .TP
 .B j/k
 move to
 .IR m
-next/previous line
+\-th next/previous line
 .TP
 .B g/G
 move to
@@ -92,22 +92,22 @@ move to start/first non\-blank character/end of line
 .B t/T
 move to
 .IR m
-next/previous word
+\-th next/previous word
 .TP
 .B }/{
 move to
 .IR m
-next/previous block
+\-th next/previous block
 .TP
 .B n/N
 move to
 .IR m
-next/previous selection
+\-th next/previous selection
 .TP
 .B J
 jump to
 .IR m
-next match for prompted pattern (useful to navigate quickly through the file
+\-th next match for prompted pattern (useful to navigate quickly through the file
 without changing selections)
 .SS Selections management
 .TP
@@ -128,13 +128,13 @@ duplicate the running selection on the next
 .IR m
 lines (designed for easy block/column editing)
 .TP
-.B .
-select cursor line
-.TP
-.B %/b/:
-select all lines/
+.B ./%/b
+select cursor line/all lines/
 .IR m
-blocks/custom range
+blocks
+.TP
+.B :
+select custom range of lines
 .P
 Custom ranges must be formatted
 .IR min,max
@@ -194,18 +194,15 @@ paste after/before cursor line
 .IR m
 times
 .TP
-.B Shift\-Up/Down
+.B Shift\-Up/Shift\-Down
 move lines of running selections
 .IR m
 lines up/down
 .SS Insert mode
 In insert mode, most keys insert their character before the selections.
 .TP
-.B Delete/Backspace
-suppress selection content if any, else character after/before
-.TP
-.B Control\-A
-autocomplete with longest common prefix
+.B Left, Right, Up, Down, Delete, Backspace, Control\-A, Shift\-Up, Shift\-Down
+like in normal mode
 .TP
 .B Escape
 get back to normal mode
@@ -213,8 +210,8 @@ get back to normal mode
 When the editor need additionnal user input, it switches to dialog mode. In this
 mode, the user is prompted something on the bottom line of the screen.
 .TP
-.B Delete/Backspace
-suppress character after/before the cursor
+.B Left, Right, Control\-A, Control\-E
+navigate the input
 .TP
 .B Up
 recover the last input associated with the prompt
@@ -222,8 +219,8 @@ recover the last input associated with the prompt
 .B Down
 clear the input
 .TP
-.B Left, Right, Control\-A, Control\-E
-navigate the input
+.B Delete/Backspace
+suppress character after/before the cursor
 .TP
 .B Enter
 validate input, get back to normal mode

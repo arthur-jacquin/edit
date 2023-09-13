@@ -33,26 +33,27 @@
 #define MIN_HEIGHT                  2
 
 #define ABS(A)                      (((A) < 0) ? -(A) : (A))
-#define ATTRIBUTE_X(X)              {x = (X); attribute_x = 1;}
 #define CONSTRAIN(A, X, B)          (((X) < (A)) ? (A) : (((X) > (B)) ? (B) : (X)))
 #define DECLARE_BRACKETS(A, B) \
-    case (A): associated_bracket = (B); e = 1; break; \
-    case (B): associated_bracket = (A); e = -1; break;
+    case A: associated_bracket = B; e = 1; break; \
+    case B: associated_bracket = A; e = -1; break;
 #define DECLARE_PARAMETER(PARAMETER, NAME, TYPE, VAR) \
     else if (sscanf(assign, NAME"=%"TYPE, &VAR) == 1) settings.PARAMETER = VAR;
 #define MAX(A, B)                   (((A) > (B)) ? (A) : (B))
 #define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
-#define MOVE_SEL_LIST(A, B)         {forget_sel_list(B); B = A; A = NULL;}
+#define MOVE_SEL_LIST(A, B)         {forget_sel_list(B); (B) = (A); (A) = NULL;}
 #define PARSE_LINE_IDENTIFIER(S, DEFAULT, OPERATOR, VAR) \
     if (!strcmp(S, "")) VAR = DEFAULT; \
     else if (!strcmp(S, ".")) VAR = first_line_nb + y; \
     else if (sscanf(S, "%d", &VAR) == 1) VAR = OPERATOR(VAR, DEFAULT); \
     else return EXIT_FAILURE;
-#define FILE_IO(A, E)               if ((A) == E) die(EXIT_FAILURE, ERR_FILE_IO);
-#define SET_SEL_LIST(A, B)          {forget_sel_list(A); A = B;}
+#define FILE_IO(A, E)               if ((A) == (E)) die(EXIT_FAILURE, ERR_FILE_IO);
+#define SET_SEL_LIST(A, B)          {forget_sel_list(A); (A) = (B);}
 #define SET_SUBSTRING(S, ST, MST, N, MN) \
     {(S).st = (ST); (S).mst = (MST); (S).n = (N); (S).mn = (MN);}
-#define STORE_BUFFER(B, I, V)       if ((I) < nb_displayed) (B)[I] = V;
+#define SET_TO_ADD(S)               {to_add = (S); (S) = (S)->next;}
+#define SET_X(X)                    {x = (X); attribute_x = 1;}
+#define STORE_BUFFER(B, I, V)       if ((I) < nb_displayed) (B)[I] = (V);
 #define echo(MESSAGE)               strcpy(message, MESSAGE)
 #define echof(PATTERN, INTEGER)     sprintf(message, PATTERN, INTEGER)
 #define first_line_nb               (first_line_on_screen->line_nb)
@@ -243,9 +244,9 @@ autocomplete(Line *l, Selection *s)
                 ms = k;
             }
         }
-        if (sl->chars[k])
+        if (sl->chars[k]) {
             k += tb_utf8_char_length(sl->chars[k]);
-        else {
+        } else {
             sl = sl->next;
             k = 0;
         }
@@ -310,7 +311,7 @@ column_sel(int n)
         if (l->dl >= wx)
             last = create_sel(l->line_nb, wx, MIN(wn, l->dl - wx), last);
     tmp = merge_sel(saved, last);
-    SET_SEL_LIST(saved, tmp)
+    SET_SEL_LIST(saved, tmp);
     if (anchored) {
         if (cursor.l + n > nb_lines || anchor.x > get_line(y + n)->dl)
             anchored = 0;
@@ -327,9 +328,9 @@ comment(Line *l, Selection *s)
 
     if (!(l->chars[k = find_first_non_blank(l)]))
         return;
-    if (is_type(comment, syntax_length - 1))
+    if (is_type(comment, syntax_length - 1)) {
         replace_chars(l, s, k, syntax_length, 0, 0);
-    else {
+    } else {
         k = replace_chars(l, s, k, 0, syntax_length, syntax_length);
         strncpy(l->chars + k, lang->comment, syntax_length);
     }
@@ -469,7 +470,7 @@ dialog(const char *prompt, Interface interf, int refresh_sel)
     dx = n = 0;
     while (1) {
         if (refresh_sel) {
-            SET_SEL_LIST(displayed, search(saved, search_pattern))
+            SET_SEL_LIST(displayed, search(saved, search_pattern));
             print_all();
         }
         strcpy(message, prompt);
@@ -489,6 +490,20 @@ dialog(const char *prompt, Interface interf, int refresh_sel)
                 n++;
             } else
                 switch (ev.key) {
+                case TB_KEY_ARROW_LEFT:
+                case TB_KEY_ARROW_RIGHT:
+                    dx = CONSTRAIN(0, dx + ((ev.key == TB_KEY_ARROW_LEFT) ? (-1) : 1), n);
+                    break;
+                case TB_KEY_CTRL_A:
+                case TB_KEY_CTRL_E:
+                    dx = (ev.key == TB_KEY_CTRL_A) ? 0 : n;
+                    break;
+                case TB_KEY_ARROW_UP:
+                case TB_KEY_ARROW_DOWN:
+                    strcpy(interf, (ev.key == TB_KEY_ARROW_UP) ? previous : "");
+                    for (k = i = 0; interf[k]; i++, k += tb_utf8_char_length(interf[k]));
+                    dx = n = i;
+                    break;
                 case TB_KEY_DELETE:
                     if (dx == n)
                         break;
@@ -503,20 +518,6 @@ dialog(const char *prompt, Interface interf, int refresh_sel)
                         dx--;
                         n--;
                     }
-                    break;
-                case TB_KEY_ARROW_UP:
-                case TB_KEY_ARROW_DOWN:
-                    strcpy(interf, (ev.key == TB_KEY_ARROW_UP) ? previous : "");
-                    for (k = i = 0; interf[k]; i++, k += tb_utf8_char_length(interf[k]));
-                    dx = n = i;
-                    break;
-                case TB_KEY_ARROW_LEFT:
-                case TB_KEY_ARROW_RIGHT:
-                    dx = CONSTRAIN(0, dx + ((ev.key == TB_KEY_ARROW_LEFT) ? (-1) : 1), n);
-                    break;
-                case TB_KEY_CTRL_A:
-                case TB_KEY_CTRL_E:
-                    dx = (ev.key == TB_KEY_CTRL_A) ? 0 : n;
                     break;
                 case TB_KEY_ENTER:
                     return 1;
@@ -913,9 +914,9 @@ is_word_boundary(const char *chars, int k)
     int i, is_word;
 
     is_word = is_word_char(chars[k]);
-    if (k == 0)
+    if (k == 0) {
         return is_word;
-    else {
+    } else {
         i = 1;
         decrement(chars, &i, &k, i - 1);
         return (is_word != is_word_char(chars[k]));
@@ -1003,7 +1004,7 @@ load_file(int first_line_on_screen_nb)
             first_line_on_screen = line;
         line_nb++;
     }
-    FILE_IO(fclose(src_file), EOF)
+    FILE_IO(fclose(src_file), EOF);
     free(buf);
     if (!first_line_on_screen)
         first_line_on_screen = last_line;
@@ -1301,20 +1302,14 @@ merge_sel(Selection *a, Selection *b)
     start = last = NULL;
     while (a || b) {
         if (a && b) {
-            if (is_inf(pos_of_sel(*a), pos_of_sel(*b))) {
-                to_add = a;
-                a = a->next;
-            } else {
-                to_add = b;
-                b = b->next;
-            }
-        } else if (a) {
-            to_add = a;
-            a = a->next;
-        } else {
-            to_add = b;
-            b = b->next;
-        }
+            if (is_inf(pos_of_sel(*a), pos_of_sel(*b)))
+                SET_TO_ADD(a)
+            else
+                SET_TO_ADD(b)
+        } else if (a)
+            SET_TO_ADD(a)
+        else
+            SET_TO_ADD(b)
         new = create_sel(to_add->l, to_add->x, to_add->n, NULL);
         if (!last)
             start = last = new;
@@ -1330,20 +1325,20 @@ int
 move(Line **l, int *dx, int e)
 {
     if (e > 0) {
-        if (*dx + 1 <= (*l)->dl)
+        if (*dx + 1 <= (*l)->dl) {
             (*dx)++;
-        else if (!((*l)->next))
+        } else if (!((*l)->next)) {
             return EXIT_FAILURE;
-        else {
+        } else {
             *l = (*l)->next;
             *dx = 0;
         }
     } else {
-        if (*dx > 0)
+        if (*dx > 0) {
             (*dx)--;
-        else if (!((*l)->prev))
+        } else if (!((*l)->prev)) {
             return EXIT_FAILURE;
-        else {
+        } else {
             *l = (*l)->prev;
             *dx = (*l)->dl;
         }
@@ -1409,7 +1404,7 @@ move_sel_end_of_line(Selection *a, int l, int dl, int e)
     }
     if (first_line_nb + y == l) {
         y -= 1*e;
-        x += dl*e; attribute_x = 1;
+        SET_X(x + dl*e);
     } else if (first_line_nb + y > l)
         y -= 1*e;
 }
@@ -1424,16 +1419,16 @@ move_to_clip(int starting_line_nb, int nb)
     ending = get_line(starting_line_nb + nb - 1 - first_line_nb);
     shift_line_nb(ending, ending->line_nb + 1, 0, -nb);
     nb_lines -= nb;
-    if (starting_line_nb > first_line_nb)
+    if (starting_line_nb > first_line_nb) {
         y = starting_line_nb - first_line_nb;
-    else {
-        if (!(ending->next))
+    } else {
+        if (!(ending->next)) {
             if (!(starting->prev)) {
                 first_line = first_line_on_screen = create_line(1, 1, 0);
                 nb_lines = 1;
             } else
                 first_line_on_screen = starting->prev;
-        else {
+        } else {
             first_line_on_screen = ending->next;
             if (!(starting->prev))
                 first_line = first_line_on_screen;
@@ -1530,7 +1525,7 @@ parse_range(const char *range)
     PARSE_LINE_IDENTIFIER(p, nb_lines, MIN, l2)
     if (l2 < l1)
         return EXIT_FAILURE;
-    SET_SEL_LIST(saved, range_lines_sel(l1, l2, NULL))
+    SET_SEL_LIST(saved, range_lines_sel(l1, l2, NULL));
     return EXIT_SUCCESS;
 }
 
@@ -1648,7 +1643,7 @@ print_line(const Line *l, Selection *s, int screen_line)
             if (r->start_of_line)
                 i = 0;
             for (j = 0; j < strlen(r->mark); j++, i++)
-                STORE_BUFFER(fg, i, r->color_mark)
+                STORE_BUFFER(fg, i, r->color_mark);
             k = i;
         }
 
@@ -1714,7 +1709,7 @@ print_line(const Line *l, Selection *s, int screen_line)
                     color = r->color_end_of_line;
 
                 for (j = 0; j < nb_to_color; j++, i++)
-                    STORE_BUFFER(fg, i, color)
+                    STORE_BUFFER(fg, i, color);
             }
         } else if (*(r->mark))
             while (i < nb_displayed)
@@ -1726,14 +1721,14 @@ print_line(const Line *l, Selection *s, int screen_line)
         for (; s && s->l < l->line_nb; s = s->next);
         for (; s && s->l == l->line_nb; s = s->next)
             for (i = 0; i < s->n; i++)
-                STORE_BUFFER(bg, s->x + i, COLOR_BG_SELECTIONS)
+                STORE_BUFFER(bg, s->x + i, COLOR_BG_SELECTIONS);
     }
 #ifdef HIGHLIGHT_MATCHING_BRACKET
     if (is_bracket) {
         if (l->line_nb == first_line_nb + y)
-            STORE_BUFFER(bg, x, COLOR_BG_MATCHING)
+            STORE_BUFFER(bg, x, COLOR_BG_MATCHING);
         if (l->line_nb == matching_bracket.l)
-            STORE_BUFFER(bg, matching_bracket.x, COLOR_BG_MATCHING)
+            STORE_BUFFER(bg, matching_bracket.x, COLOR_BG_MATCHING);
     }
 #endif // HIGHLIGHT_MATCHING_BRACKET
 
@@ -1896,7 +1891,7 @@ replace_chars(Line *l, Selection *a, int start, int n, int new_n, int nb_bytes)
         else
             a->x += new_n - n;
     if (l->line_nb == first_line_nb + y && start <= x)
-        ATTRIBUTE_X((x < start + n) ? (start + new_n) : (x + new_n - n));
+        SET_X((x < start + n) ? (start + new_n) : (x + new_n - n));
     if (anchored && l->line_nb == anchor.l && start <= anchor.x)
         anchor.x = (anchor.x < start + n) ? start : (anchor.x + new_n - n);
     return k1;
@@ -1905,7 +1900,7 @@ replace_chars(Line *l, Selection *a, int start, int n, int new_n, int nb_bytes)
 void
 reset_selections(void)
 {
-    SET_SEL_LIST(saved, NULL)
+    SET_SEL_LIST(saved, NULL);
     anchored = 0;
 }
 
@@ -2032,7 +2027,7 @@ void
 unwrap_pos(Pos p)
 {
     y = p.l - first_line_nb;
-    ATTRIBUTE_X(p.x);
+    SET_X(p.x);
 }
 
 void
@@ -2054,7 +2049,7 @@ write_file(const char *file_name)
     char *chars;
     int k, nb_bytes;
 
-    FILE_IO(dest_file = fopen(file_name, "w"), NULL)
+    FILE_IO(dest_file = fopen(file_name, "w"), NULL);
     for (l = first_line; l; l = l->next) {
         chars = l->chars;
         nb_bytes = l->ml - 1;
@@ -2064,15 +2059,15 @@ write_file(const char *file_name)
 #endif // IGNORE_TRAILING_SPACES
         if (lang && lang->flags & CONVERT_LEADING_SPACES)
             while (!strncmp(chars, "        ", settings.tab_width)) {
-                FILE_IO(putc('\t', dest_file), EOF)
+                FILE_IO(putc('\t', dest_file), EOF);
                 chars += settings.tab_width;
                 nb_bytes -= settings.tab_width;
             }
         for (k = 0; k < nb_bytes; k++)
-            FILE_IO(putc(*chars++, dest_file), EOF)
-        FILE_IO(putc('\n', dest_file), EOF)
+            FILE_IO(putc(*chars++, dest_file), EOF);
+        FILE_IO(putc('\n', dest_file), EOF);
     }
-    FILE_IO(fclose(dest_file), EOF)
+    FILE_IO(fclose(dest_file), EOF);
 }
 
 int
@@ -2100,7 +2095,7 @@ main(int argc, char *argv[])
             die(EXIT_FAILURE, ERR_TERM_TOO_SMALL);
         }
         move_to_cursor();
-        SET_SEL_LIST(running, compute_running_sel())
+        SET_SEL_LIST(running, compute_running_sel());
         SET_SEL_LIST(displayed, merge_sel(running, saved));
         if (in_insert_mode)
             echo(INSERT_MODE_MESSAGE);
@@ -2121,7 +2116,7 @@ main(int argc, char *argv[])
             echo("");
             if (m == 0)
                 m = 1;
-            if (ev.ch) {
+            if (ev.ch)
                 switch (ev.ch) {
                 case KB_HELP:
                     echo(HELP_MESSAGE);
@@ -2133,11 +2128,25 @@ main(int argc, char *argv[])
                     else
                         die(EXIT_SUCCESS, NULL);
                     break;
+                case KB_CHANGE_SETTING:
+                    if (dialog(CHANGE_SETTING_PROMPT, settings_int, 0))
+                        if (parse_assign(settings_int))
+                            echo(INVALID_ASSIGNMENT_MESSAGE);
+                    break;
+                case KB_RUN_MAKE:
+                case KB_RUN_SHELL_COMMAND:
+                    if (ev.ch == KB_RUN_MAKE || dialog(COMMAND_PROMPT, command_int, 0)) {
+                        tb_shutdown();
+                        system((ev.ch == KB_RUN_MAKE) ? "make" : command_int);
+                        getchar();
+                        init_termbox();
+                    }
+                    break;
                 case KB_WRITE:
                 case KB_WRITE_AS:
-                    if (ev.ch == KB_WRITE && !has_been_changes)
+                    if (ev.ch == KB_WRITE && !has_been_changes) {
                         echo(NOTHING_TO_WRITE_MESSAGE);
-                    else if (ev.ch == KB_WRITE || dialog(SAVE_AS_PROMPT, file_name_int, 0)) {
+                    } else if (ev.ch == KB_WRITE || dialog(SAVE_AS_PROMPT, file_name_int, 0)) {
                         write_file(file_name_int);
                         if (ev.ch == KB_WRITE_AS)
                             parse_lang(file_name_int);
@@ -2154,20 +2163,6 @@ main(int argc, char *argv[])
                     } else
                         echo(NOTHING_TO_REVERT_MESSAGE);
                     break;
-                case KB_CHANGE_SETTING:
-                    if (dialog(CHANGE_SETTING_PROMPT, settings_int, 0))
-                        if (parse_assign(settings_int))
-                            echo(INVALID_ASSIGNMENT_MESSAGE);
-                    break;
-                case KB_RUN_MAKE:
-                case KB_RUN_SHELL_COMMAND:
-                    if (ev.ch == KB_RUN_MAKE || dialog(COMMAND_PROMPT, command_int, 0)) {
-                        tb_shutdown();
-                        system((ev.ch == KB_RUN_MAKE) ? "make" : command_int);
-                        getchar();
-                        init_termbox();
-                    }
-                    break;
                 case KB_INSERT_START_LINE:
                 case KB_INSERT_END_LINE:
                 case KB_INSERT_LINE_BELOW:
@@ -2177,22 +2172,18 @@ main(int argc, char *argv[])
                         y += (ev.ch == KB_INSERT_LINE_BELOW) ? 1 : 0;
                         insert_line(first_line_nb + y, 1, 0);
                     }
-                    ATTRIBUTE_X((ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0);
+                    SET_X((ev.ch == KB_INSERT_END_LINE) ? get_line(y)->dl : 0);
                     // fall-through
                 case KB_INSERT_MODE:
                     in_insert_mode = 1;
                     break;
-                case KB_MOVE_MATCHING:
-                    unwrap_pos(find_matching_bracket());
+                case KB_MOVE_NEXT_CHAR:
+                case KB_MOVE_PREV_CHAR:
+                    SET_X(x + way(ev.ch == KB_MOVE_NEXT_CHAR));
                     break;
-                case KB_MOVE_START_LINE:
-                    ATTRIBUTE_X(0);
-                    break;
-                case KB_MOVE_NON_BLANK:
-                    ATTRIBUTE_X(find_first_non_blank(get_line(y)));
-                    break;
-                case KB_MOVE_END_LINE:
-                    ATTRIBUTE_X(get_line(y)->dl);
+                case KB_MOVE_NEXT_LINE:
+                case KB_MOVE_PREV_LINE:
+                    y += way(ev.ch == KB_MOVE_NEXT_LINE);
                     break;
                 case KB_MOVE_END_FILE:
                     m = nb_lines;
@@ -2200,13 +2191,17 @@ main(int argc, char *argv[])
                 case KB_MOVE_SPECIFIC_LINE:
                     y = m - first_line_nb;
                     break;
-                case KB_MOVE_NEXT_CHAR:
-                case KB_MOVE_PREV_CHAR:
-                    ATTRIBUTE_X(x + way(ev.ch == KB_MOVE_NEXT_CHAR));
+                case KB_MOVE_MATCHING:
+                    unwrap_pos(find_matching_bracket());
                     break;
-                case KB_MOVE_NEXT_LINE:
-                case KB_MOVE_PREV_LINE:
-                    y += way(ev.ch == KB_MOVE_NEXT_LINE);
+                case KB_MOVE_START_LINE:
+                    SET_X(0);
+                    break;
+                case KB_MOVE_NON_BLANK:
+                    SET_X(find_first_non_blank(get_line(y)));
+                    break;
+                case KB_MOVE_END_LINE:
+                    SET_X(get_line(y)->dl);
                     break;
                 case KB_MOVE_NEXT_WORD:
                 case KB_MOVE_PREV_WORD:
@@ -2225,7 +2220,7 @@ main(int argc, char *argv[])
                         echo((ev.ch == KB_MOVE_NEXT_SEL) ? NO_SEL_DOWN_MESSAGE : NO_SEL_UP_MESSAGE);
                     break;
                 case KB_MOVE_JUMP_TO_NEXT:
-                    MOVE_SEL_LIST(saved, running)
+                    MOVE_SEL_LIST(saved, running);
                     saved = range_lines_sel(first_line_nb + y, nb_lines, NULL);
                     if (dialog(SEARCH_PATTERN_PROMPT, search_pattern, 1)) {
                         MOVE_SEL_LIST(displayed, saved);
@@ -2234,12 +2229,22 @@ main(int argc, char *argv[])
                         else
                             echo(NO_SEL_DOWN_MESSAGE);
                     }
-                    MOVE_SEL_LIST(running, saved)
+                    MOVE_SEL_LIST(running, saved);
+                    break;
+                case KB_SEL_DISPLAY_COUNT:
+                    echof(SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
                     break;
                 case KB_SEL_ANCHOR:
-                    if (!anchored)
-                        anchor = pos_of_cursor();
-                    anchored = 1 - anchored;
+                    anchor = pos_of_cursor();
+                    anchored = !anchored;
+                    break;
+                case KB_SEL_APPEND:
+                case KB_SEL_FIND:
+                case KB_SEL_SEARCH:
+                    if (ev.ch == KB_SEL_APPEND)
+                        anchored = 0;
+                    if (ev.ch == KB_SEL_APPEND || dialog(SEARCH_PATTERN_PROMPT, search_pattern, 1))
+                        MOVE_SEL_LIST(displayed, saved);
                     break;
                 case KB_SEL_COLUMN:
                     if (anchored && anchor.l != first_line_nb + y)
@@ -2247,43 +2252,28 @@ main(int argc, char *argv[])
                     else
                         y += column_sel(m);
                     break;
-                case KB_SEL_DISPLAY_COUNT:
-                    echof(SELECTIONS_MESSAGE_PATTERN, nb_sel(saved));
-                    break;
                 case KB_SEL_CURSOR_LINE:
                 case KB_SEL_ALL_LINES:
                 case KB_SEL_LINES_BLOCK:
-                    if (ev.ch == KB_SEL_CURSOR_LINE)
+                    if (ev.ch == KB_SEL_CURSOR_LINE) {
                         l1 = l2 = first_line_nb + y;
-                    else if (ev.ch == KB_SEL_ALL_LINES) {
+                    } else if (ev.ch == KB_SEL_ALL_LINES) {
                         l1 = 1;
                         l2 = nb_lines;
                     } else {
                         l1 = find_block_delim(first_line_nb + y, -1);
                         l2 = find_block_delim(l1, m);
                     }
-                    SET_SEL_LIST(saved, range_lines_sel(l1, l2, NULL))
+                    SET_SEL_LIST(saved, range_lines_sel(l1, l2, NULL));
                     break;
                 case KB_SEL_CUSTOM_RANGE:
                     if (dialog(RANGE_PROMPT, range_int, 0))
                         if (parse_range(range_int))
                             echo(INVALID_RANGE_MESSAGE);
                     break;
-                case KB_SEL_FIND:
-                case KB_SEL_SEARCH:
-                case KB_SEL_APPEND:
-                    if (ev.ch == KB_SEL_APPEND)
-                        anchored = 0;
-                    if (ev.ch == KB_SEL_APPEND || dialog(SEARCH_PATTERN_PROMPT, search_pattern, 1))
-                        MOVE_SEL_LIST(displayed, saved);
-                    break;
                 case KB_SEL_CURSOR_WORD:
                     if (search_word_under_cursor())
                         echo(NO_WORD_CURSOR_MESSAGE);
-                    break;
-                case KB_ACT_SUPPRESS:
-                    asked_remove = m;
-                    act(suppress, 0);
                     break;
                 case KB_ACT_LOWERCASE:
                     act(lower, 0);
@@ -2291,14 +2281,18 @@ main(int argc, char *argv[])
                 case KB_ACT_UPPERCASE:
                     act(upper, 0);
                     break;
+                case KB_ACT_COMMENT:
+                    if (lang && !(lang->flags & ONLY_RULES))
+                        act(comment, 1);
+                    break;
                 case KB_ACT_INCREASE_INDENT:
                 case KB_ACT_DECREASE_INDENT:
                     asked_indent = way(ev.ch == KB_ACT_INCREASE_INDENT);
                     act(indent, 1);
                     break;
-                case KB_ACT_COMMENT:
-                    if (lang && !(lang->flags & ONLY_RULES))
-                        act(comment, 1);
+                case KB_ACT_SUPPRESS:
+                    asked_remove = m;
+                    act(suppress, 0);
                     break;
                 case KB_ACT_REPLACE:
                     if (dialog(REPLACE_PATTERN_PROMPT, replace_pattern, 0))
@@ -2308,9 +2302,9 @@ main(int argc, char *argv[])
                 case KB_CLIP_YANK_BLOCK:
                 case KB_CLIP_DELETE_LINE:
                 case KB_CLIP_DELETE_BLOCK:
-                    if (ev.ch == KB_CLIP_YANK_LINE || ev.ch == KB_CLIP_DELETE_LINE)
+                    if (ev.ch == KB_CLIP_YANK_LINE || ev.ch == KB_CLIP_DELETE_LINE) {
                         l1 = first_line_nb + y;
-                    else {
+                    } else {
                         l1 = find_block_delim(first_line_nb + y, -1);
                         m = find_block_delim(l1, m) - l1 + 1;
                     }
@@ -2325,7 +2319,7 @@ main(int argc, char *argv[])
                         insert_clip(get_line(y), ev.ch == KB_CLIP_PASTE_AFTER);
                     break;
                 }
-            } else if (ev.key) {
+            else if (ev.key)
                 switch (ev.key) {
                 case TB_KEY_ENTER:
                     if (in_insert_mode)
@@ -2333,12 +2327,12 @@ main(int argc, char *argv[])
                     else
                         y += m;
                     break;
-                case TB_KEY_ARROW_RIGHT:
                 case TB_KEY_ARROW_LEFT:
-                    x += way(ev.key == TB_KEY_ARROW_RIGHT); attribute_x = 1;
+                case TB_KEY_ARROW_RIGHT:
+                    SET_X(x + way(ev.key == TB_KEY_ARROW_RIGHT));
                     break;
-                case TB_KEY_ARROW_DOWN:
                 case TB_KEY_ARROW_UP:
+                case TB_KEY_ARROW_DOWN:
                     if (ev.mod == TB_MOD_SHIFT)
                         move_line(way(ev.key == TB_KEY_ARROW_DOWN));
                     else
@@ -2351,16 +2345,16 @@ main(int argc, char *argv[])
                         reset_selections();
                     echo("");
                     break;
-                case TB_KEY_BACKSPACE:
-                case TB_KEY_BACKSPACE2:
-                case TB_KEY_DELETE:
-                    asked_remove = way(ev.key == TB_KEY_DELETE);
-                    act(suppress, 0);
-                    break;
                 case TB_KEY_TAB:
                 case TB_KEY_BACK_TAB:
                     asked_indent = way(ev.key == TB_KEY_TAB);
                     act(indent, 1);
+                    break;
+                case TB_KEY_DELETE:
+                case TB_KEY_BACKSPACE:
+                case TB_KEY_BACKSPACE2:
+                    asked_remove = way(ev.key == TB_KEY_DELETE);
+                    act(suppress, 0);
                     break;
 #ifdef ENABLE_AUTOCOMPLETE
                 case KB_ACT_AUTOCOMPLETE_KEY:
@@ -2368,7 +2362,6 @@ main(int argc, char *argv[])
                     break;
 #endif // ENABLE_AUTOCOMPLETE
                 }
-            }
             m = 0;
             break;
 #ifdef MOUSE_SUPPORT
@@ -2377,18 +2370,16 @@ main(int argc, char *argv[])
             case TB_KEY_MOUSE_LEFT:
                 if (ev.y < screen_height - 1) {
                     y = ev.y;
-                    ATTRIBUTE_X(ev.x - LINE_NUMBERS_WIDTH);
+                    SET_X(ev.x - LINE_NUMBERS_WIDTH);
                 }
                 break;
             case TB_KEY_MOUSE_WHEEL_UP:
-                old_line_nb = first_line_nb + y;
-                first_line_on_screen = get_line(-SCROLL_LINE_NUMBER);
-                y = MIN(old_line_nb - first_line_nb, screen_height - 2 - scroll_offset);
-                break;
             case TB_KEY_MOUSE_WHEEL_DOWN:
                 old_line_nb = first_line_nb + y;
-                first_line_on_screen = get_line(SCROLL_LINE_NUMBER);
-                y = MAX(old_line_nb - first_line_nb, scroll_offset);
+                first_line_on_screen = get_line(SCROLL_LINE_NUMBER *
+                    ((ev.key == TB_KEY_MOUSE_WHEEL_DOWN) ? 1 : (-1)));
+                y = CONSTRAIN(scroll_offset, old_line_nb - first_line_nb,
+                    screen_height - 2 - scroll_offset);
                 break;
             }
             break;

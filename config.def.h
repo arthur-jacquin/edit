@@ -2,6 +2,7 @@
 
 // compile-time parameters
 #define BACKUP_FILE_NAME            "edit_backup_file"
+#define HORIZONTAL_PADDING          8
 #define INTERFACE_WIDTH             128
 #define LINE_NUMBERS_WIDTH          4
 #define MIN_WIDTH                   30

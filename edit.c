@@ -53,7 +53,6 @@
     {(S).st = (ST); (S).mst = (MST); (S).n = (N); (S).mn = (MN);}
 #define SET_TO_ADD(S)               {to_add = (S); (S) = (S)->next;}
 #define SET_X(X)                    {x = (X); attribute_x = 1;}
-#define STORE_BUFFER(B, I, V)       if ((I) < nb_displayed) (B)[I] = (V);
 #define echo(MESSAGE)               strcpy(message, MESSAGE)
 #define echof(PATTERN, INTEGER)     sprintf(message, PATTERN, INTEGER)
 #define first_line_nb               (first_line_on_screen->line_nb)
@@ -154,6 +153,7 @@ static void reset_selections(void);
 static int resize(int width, int height);
 static Selection *search(Selection *a, const char *pattern);
 static int search_word_under_cursor(void);
+static void set_attr_buffer(uintattr_t *buf, int start, int nb, uintattr_t value);
 static void shift_line_nb(Line *l, int min, int max, int delta);
 static void shift_sel_line_nb(Selection *a, int min, int max, int delta);
 static void split(Line *l, Selection *s);
@@ -172,7 +172,7 @@ static int nb_lines, y, x;
 static int anchored, in_insert_mode, attribute_x, is_bracket;
 static int has_been_changes, has_been_invalid_resizing;
 static int asked_indent, asked_remove;
-static int screen_height, screen_width, vertical_padding;
+static int screen_height, screen_width, horizontal_offset, vertical_padding;
 static uint32_t *ch, to_insert;
 static uintattr_t *fg, *bg;
 static struct {
@@ -1452,7 +1452,7 @@ void
 move_to_cursor(void)
 {
     static int saved_x;
-    int nl, max_x, delta;
+    int nl, delta;
 
     nl = CONSTRAIN(1, first_line_nb + y, nb_lines);
     if ((delta = nl - first_line_nb) < vertical_padding)
@@ -1466,8 +1466,10 @@ move_to_cursor(void)
     x = saved_x;
 #endif // REMEMBER_CURSOR_COLUMN
     attribute_x = 0;
-    max_x = MIN(get_line(y)->dl, screen_width - 1 - LINE_NUMBERS_WIDTH);
-    x = CONSTRAIN(0, x, max_x);
+    x = CONSTRAIN(0, x, get_line(y)->dl);
+    horizontal_offset = (x < HORIZONTAL_PADDING) ? 0 : CONSTRAIN(
+        x - (screen_width - LINE_NUMBERS_WIDTH) + 1 + HORIZONTAL_PADDING,
+        horizontal_offset, x - HORIZONTAL_PADDING);
 }
 
 int
@@ -1585,10 +1587,10 @@ print_all(void)
         matching_bracket = find_matching_bracket();
 #endif // HIGHLIGHT_MATCHING_BRACKET
     tb_clear();
-    s = displayed;
+    for (s = displayed; s && s->l < first_line_nb; s = s->next);
     for (i = 0, l = first_line_on_screen; l && i < screen_height - 1; i++, l = l->next)
         s = print_line(l, s, i);
-    tb_set_cursor(x + LINE_NUMBERS_WIDTH, y);
+    tb_set_cursor(LINE_NUMBERS_WIDTH + x - horizontal_offset, y);
     print_dialog_ruler();
 }
 
@@ -1616,13 +1618,13 @@ print_line(const Line *l, Selection *s, int screen_line)
     int nb_displayed, j, dk, len, color, nb_to_color, underline;
     const struct rule *r;
 
-    // characters, attributes initialisation
-    nb_displayed = MIN(l->dl, screen_width - LINE_NUMBERS_WIDTH);
-    for (i = k = 0; i < nb_displayed; i++, k += len) {
-        len = tb_utf8_char_to_unicode(ch + i, l->chars + k);
-        fg[i] = COLOR_DEFAULT;
-        bg[i] = COLOR_BG_DEFAULT;
-    }
+    // characters, attributes initialization
+    nb_displayed = CONSTRAIN(0, l->dl - horizontal_offset, screen_width - LINE_NUMBERS_WIDTH);
+    if (nb_displayed)
+        for (j = 0, k = get_str_index(l->chars, horizontal_offset); j < nb_displayed; j++, k += len)
+            len = tb_utf8_char_to_unicode(ch + j, l->chars + k);
+    set_attr_buffer(fg, 0, l->dl, COLOR_DEFAULT);
+    set_attr_buffer(bg, 0, l->dl, COLOR_BG_DEFAULT);
 #ifdef UNDERLINE_CURSOR_LINE
     underline = (screen_line == y) ? TB_UNDERLINE : 0;
 #else
@@ -1630,7 +1632,7 @@ print_line(const Line *l, Selection *s, int screen_line)
 #endif // UNDERLINE_CURSOR_LINE
 
     // foreground
-    if (settings.syntax_highlight && lang) {
+    if (nb_displayed && settings.syntax_highlight && lang) {
         i = k = find_first_non_blank(l);
 
         // detect a matching rule
@@ -1642,14 +1644,14 @@ print_line(const Line *l, Selection *s, int screen_line)
         if (*(r->mark)) {
             if (r->start_of_line)
                 i = 0;
-            for (j = 0; j < strlen(r->mark); j++, i++)
-                STORE_BUFFER(fg, i, r->color_mark);
+            set_attr_buffer(fg, i, strlen(r->mark), r->color_mark);
+            i += strlen(r->mark);
             k = i;
         }
 
         // rest of the line
         if (!(lang->flags & ONLY_RULES)) {
-            while (i < nb_displayed) {
+            while (i < horizontal_offset + nb_displayed) {
                 // word
                 if (is_word_char(c = l->chars[k])) {
                     for (j = dk = 0; is_word_char(nc = l->chars[k + dk]) ||
@@ -1708,27 +1710,23 @@ print_line(const Line *l, Selection *s, int screen_line)
                 if (*(r->mark) && color != COLOR_COMMENT)
                     color = r->color_end_of_line;
 
-                for (j = 0; j < nb_to_color; j++, i++)
-                    STORE_BUFFER(fg, i, color);
+                set_attr_buffer(fg, i, nb_to_color, color);
+                i += nb_to_color;
             }
         } else if (*(r->mark))
-            while (i < nb_displayed)
-                fg[i++] = r->color_end_of_line;
+            set_attr_buffer(fg, i, horizontal_offset + nb_displayed - i, r->color_end_of_line);
     }
 
     // background
-    if (settings.highlight_selections) {
-        for (; s && s->l < l->line_nb; s = s->next);
+    if (settings.highlight_selections)
         for (; s && s->l == l->line_nb; s = s->next)
-            for (i = 0; i < s->n; i++)
-                STORE_BUFFER(bg, s->x + i, COLOR_BG_SELECTIONS);
-    }
+            set_attr_buffer(bg, s->x, s->n, COLOR_BG_SELECTIONS);
 #ifdef HIGHLIGHT_MATCHING_BRACKET
     if (is_bracket) {
         if (l->line_nb == first_line_nb + y)
-            STORE_BUFFER(bg, x, COLOR_BG_MATCHING);
+            set_attr_buffer(bg, x, 1, COLOR_BG_MATCHING);
         if (l->line_nb == matching_bracket.l)
-            STORE_BUFFER(bg, matching_bracket.x, COLOR_BG_MATCHING);
+            set_attr_buffer(bg, matching_bracket.x, 1, COLOR_BG_MATCHING);
     }
 #endif // HIGHLIGHT_MATCHING_BRACKET
 
@@ -1736,15 +1734,12 @@ print_line(const Line *l, Selection *s, int screen_line)
     if (LINE_NUMBERS_WIDTH > 0)
         tb_printf(0, screen_line, COLOR_LINE_NUMBERS, COLOR_BG_DEFAULT,
             "%*d ", LINE_NUMBERS_WIDTH - 1, (l->line_nb)%LINE_NUMBERS_MODULUS);
-    for (i = 0; i < nb_displayed; i++)
-        tb_set_cell(i + LINE_NUMBERS_WIDTH, screen_line, ch[i], fg[i] | underline, bg[i]);
-    for (i += LINE_NUMBERS_WIDTH; i < screen_width; i++)
-        tb_set_cell(i, screen_line, ' ', COLOR_DEFAULT, COLOR_BG_DEFAULT);
+    for (j = 0; j < nb_displayed; j++)
+        tb_set_cell(LINE_NUMBERS_WIDTH + j, screen_line, ch[j], fg[j] | underline, bg[j]);
 #ifdef VISUAL_COLUMN
-    tb_set_cell(VISUAL_COLUMN + LINE_NUMBERS_WIDTH, screen_line,
-        (VISUAL_COLUMN < nb_displayed) ? (ch[VISUAL_COLUMN]) : ' ',
-        (VISUAL_COLUMN < nb_displayed) ? (fg[VISUAL_COLUMN] | underline) :
-            COLOR_DEFAULT, COLOR_BG_COLUMN);
+    if ((j = VISUAL_COLUMN - horizontal_offset) >= 0)
+        tb_set_cell(LINE_NUMBERS_WIDTH + j, screen_line, (j < nb_displayed) ? (ch[j]) : ' ',
+            (j < nb_displayed) ? (fg[j] | underline) : COLOR_DEFAULT, COLOR_BG_COLUMN);
 #endif // VISUAL_COLUMN
 
     return s;
@@ -1967,6 +1962,17 @@ search_word_under_cursor(void)
     tmp = search(saved, pattern);
     SET_SEL_LIST(saved, tmp);
     return EXIT_SUCCESS;
+}
+
+void
+set_attr_buffer(uintattr_t *buf, int start, int nb, uintattr_t value)
+{
+    int min, max, i;
+
+    min = MAX(0, start - horizontal_offset);
+    max = MIN(start + nb - horizontal_offset, screen_width - LINE_NUMBERS_WIDTH);
+    for (i = min; i < max; i++)
+        buf[i] = value;
 }
 
 void
@@ -2327,12 +2333,12 @@ main(int argc, char *argv[])
                     else
                         y += m;
                     break;
-                case TB_KEY_ARROW_LEFT:
                 case TB_KEY_ARROW_RIGHT:
+                case TB_KEY_ARROW_LEFT:
                     SET_X(x + way(ev.key == TB_KEY_ARROW_RIGHT));
                     break;
-                case TB_KEY_ARROW_UP:
                 case TB_KEY_ARROW_DOWN:
+                case TB_KEY_ARROW_UP:
                     if (ev.mod == TB_MOD_SHIFT)
                         move_line(way(ev.key == TB_KEY_ARROW_DOWN));
                     else
@@ -2370,11 +2376,11 @@ main(int argc, char *argv[])
             case TB_KEY_MOUSE_LEFT:
                 if (ev.y < screen_height - 1) {
                     y = ev.y;
-                    SET_X(ev.x - LINE_NUMBERS_WIDTH);
+                    SET_X(ev.x - LINE_NUMBERS_WIDTH + horizontal_offset);
                 }
                 break;
-            case TB_KEY_MOUSE_WHEEL_UP:
             case TB_KEY_MOUSE_WHEEL_DOWN:
+            case TB_KEY_MOUSE_WHEEL_UP:
                 old_line_nb = first_line_nb + y;
                 first_line_on_screen = get_line(SCROLL_LINE_NUMBER *
                     ((ev.key == TB_KEY_MOUSE_WHEEL_DOWN) ? 1 : (-1)));

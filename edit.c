@@ -172,7 +172,7 @@ static int nb_lines, y, x;
 static int anchored, in_insert_mode, attribute_x, is_bracket;
 static int has_been_changes, has_been_invalid_resizing;
 static int asked_indent, asked_remove;
-static int screen_height, screen_width, scroll_offset;
+static int screen_height, screen_width, vertical_padding;
 static uint32_t *ch, to_insert;
 static uintattr_t *fg, *bg;
 static struct {
@@ -1455,10 +1455,10 @@ move_to_cursor(void)
     int nl, max_x, delta;
 
     nl = CONSTRAIN(1, first_line_nb + y, nb_lines);
-    if ((delta = nl - first_line_nb) < scroll_offset)
-        y = MIN(scroll_offset, nl - 1);
+    if ((delta = nl - first_line_nb) < vertical_padding)
+        y = MIN(vertical_padding, nl - 1);
     else
-        y = MIN(delta, screen_height - 2 - scroll_offset);
+        y = MIN(delta, screen_height - 2 - vertical_padding);
     first_line_on_screen = get_line(delta - y);
 #ifdef REMEMBER_CURSOR_COLUMN
     if (attribute_x)
@@ -1909,7 +1909,7 @@ resize(int width, int height)
 {
     if ((screen_width = width) < MIN_WIDTH || (screen_height = height) < MIN_HEIGHT)
         return EXIT_FAILURE;
-    scroll_offset = MIN(SCROLL_OFFSET, (screen_height >> 1) - 1);
+    vertical_padding = MIN(VERTICAL_PADDING, (screen_height >> 1) - 1);
     free(ch); ch = emalloc((width - LINE_NUMBERS_WIDTH)*sizeof(uint32_t));
     free(fg); fg = emalloc((width - LINE_NUMBERS_WIDTH)*sizeof(uintattr_t));
     free(bg); bg = emalloc((width - LINE_NUMBERS_WIDTH)*sizeof(uintattr_t));
@@ -2378,8 +2378,8 @@ main(int argc, char *argv[])
                 old_line_nb = first_line_nb + y;
                 first_line_on_screen = get_line(SCROLL_LINE_NUMBER *
                     ((ev.key == TB_KEY_MOUSE_WHEEL_DOWN) ? 1 : (-1)));
-                y = CONSTRAIN(scroll_offset, old_line_nb - first_line_nb,
-                    screen_height - 2 - scroll_offset);
+                y = CONSTRAIN(vertical_padding, old_line_nb - first_line_nb,
+                    screen_height - 2 - vertical_padding);
                 break;
             }
             break;

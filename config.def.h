@@ -7,7 +7,7 @@
 #define MIN_WIDTH                   30
 #define RULER_WIDTH                 8
 #define SCROLL_LINE_NUMBER          3
-#define SCROLL_OFFSET               3
+#define VERTICAL_PADDING            3
 
 #define ENABLE_AUTOCOMPLETE
 #define HIGHLIGHT_MATCHING_BRACKET

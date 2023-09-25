@@ -1711,10 +1711,6 @@ print_line(const Line *l, Selection *s, int screen_line)
                 } else {
                     color = COLOR_DEFAULT;
                     nb_to_color = 1;
-                    if (l->chars[k] == '\\') {
-                        nb_to_color++;
-                        k++;
-                    }
                     k += tb_utf8_char_length(l->chars[k]);
                 }
 

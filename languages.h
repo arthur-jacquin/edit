@@ -4,11 +4,12 @@
 #define NULL_RULE                   {""}
 #define CONVERT_LEADING_SPACES      (1 << 0)
 #define DEFINED                     (1 << 1)
-#define ONLY_RULES                  (1 << 2)
-#define LANG(L, F) \
-    {F | DEFINED, L##_names, L##_rules, L##_cm, L##_kw, L##_fc, L##_bi}
-#define ONLY_RULES_LANG(L, F) \
-    {F | DEFINED | ONLY_RULES, L##_names, L##_rules}
+#define HIGHLIGHT_CONSTANTS         (1 << 2)
+#define HIGHLIGHT_SYNTAX            (1 << 3)
+#define SYNTAX_LANG(L, F) \
+    {DEFINED | HIGHLIGHT_SYNTAX | F, L##_names, L##_rules, L##_cm, L##_kw, L##_fc, L##_bi}
+#define NO_SYNTAX_LANG(L, F) \
+    {DEFINED | F, L##_names, L##_rules}
 
 // types
 struct rule {
@@ -373,25 +374,25 @@ static const struct rule md_rules[] = {
 
 static const struct lang languages[] = {
 #ifdef C
-    LANG(c, 0),
+    SYNTAX_LANG(c, HIGHLIGHT_CONSTANTS),
 #endif
 #ifdef C99_FULL
-    LANG(c99_full, 0),
+    SYNTAX_LANG(c99_full, HIGHLIGHT_CONSTANTS),
 #endif
 #ifdef DIFF
-    ONLY_RULES_LANG(diff, 0),
+    NO_SYNTAX_LANG(diff, 0),
 #endif
 #ifdef GEMTEXT
-    ONLY_RULES_LANG(gemtext, 0),
+    NO_SYNTAX_LANG(gemtext, 0),
 #endif
 #ifdef MAKEFILE
-    LANG(mk, CONVERT_LEADING_SPACES),
+    SYNTAX_LANG(mk, CONVERT_LEADING_SPACES),
 #endif
 #ifdef MANPAGE
-    ONLY_RULES_LANG(mp, 0),
+    NO_SYNTAX_LANG(mp, 0),
 #endif
 #ifdef MARKDOWN
-    ONLY_RULES_LANG(md, 0),
+    NO_SYNTAX_LANG(md, 0),
 #endif
     {0}
 };

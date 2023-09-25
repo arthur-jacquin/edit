@@ -1614,7 +1614,7 @@ print_dialog_ruler(void)
 Selection *
 print_line(const Line *l, Selection *s, int screen_line)
 {
-    char c, nc;
+    char c;
     int i, k;                       // indexes (characters, bytes) in l->chars
     int nb_displayed, j, dk, len, color, nb_to_color, underline;
     const struct rule *r;
@@ -1651,12 +1651,17 @@ print_line(const Line *l, Selection *s, int screen_line)
         }
 
         // rest of the line
-        if (!(lang->flags & ONLY_RULES)) {
+        if (lang->flags & (HIGHLIGHT_CONSTANTS | HIGHLIGHT_SYNTAX)) {
             while (i < horizontal_offset + nb_displayed) {
-                // word
-                if (is_word_char(c = l->chars[k])) {
-                    for (j = dk = 0; is_word_char(nc = l->chars[k + dk]) ||
-                        isdigit(nc); j++, dk += tb_utf8_char_length(nc));
+                // comment
+                if ((lang->flags & HIGHLIGHT_SYNTAX) && is_type(comment, strlen(lang->comment) - 1)) {
+                    set_attr_buffer(fg, i, l->dl - i, COLOR_COMMENT);
+                    break;
+
+                // special word
+                } else if ((lang->flags & HIGHLIGHT_SYNTAX) && is_word_char(l->chars[k])) {
+                    for (j = dk = 0; is_word_char(c = l->chars[k + dk]) || isdigit(c);
+                        j++, dk += tb_utf8_char_length(c));
                     color = COLOR_DEFAULT;
                     if (j != dk) {
                         // non-ASCII character, do not look for match
@@ -1670,7 +1675,7 @@ print_line(const Line *l, Selection *s, int screen_line)
                     k += dk;
 
                 // number
-                } else if ((j = mark_subpatterns(
+                } else if ((lang->flags & HIGHLIGHT_CONSTANTS) && (j = mark_subpatterns(
                     "(0b[01]+)|(0x[0-9a-fA-F]+)|(-?\\d+\\.?\\d*)|(-?\\.\\d+)",
                     l->chars, l->dl, i, i, l->dl - i + 1))) {
                     color = COLOR_NUMBER;
@@ -1678,39 +1683,30 @@ print_line(const Line *l, Selection *s, int screen_line)
                     k += j;
 
                 // string
-                } else if (c == '"' || c == '\'') {
-                    k++; j = 1;
-                    while (1) {
-                        if (l->chars[k] == c) {
-                            k += tb_utf8_char_length(l->chars[k]); j++;
-                            break;
-                        } else if (l->chars[k] == '\\') {
+                } else if ((lang->flags & HIGHLIGHT_CONSTANTS) &&
+                    ((c = l->chars[k]) == '"' || c == '\'')) {
+                    for (k++, j = 1; l->chars[k] && l->chars[k] != c;
+                        k += tb_utf8_char_length(l->chars[k]), j++)
+                        if (l->chars[k] == '\\') {
                             k++; j++;
                         }
-                        if (l->chars[k] == '\0')
-                            break;
-                        k += tb_utf8_char_length(l->chars[k]); j++;
-                    }
+                    k++; j++;
                     color = COLOR_STRING;
                     nb_to_color = j;
-
-                // comment
-                } else if (is_type(comment, strlen(lang->comment) - 1)) {
-                    color = COLOR_COMMENT;
-                    nb_to_color = l->dl - i;
-                    k = l->ml;
 
                 // something else
                 } else {
                     color = COLOR_DEFAULT;
                     nb_to_color = 1;
-                    k += tb_utf8_char_length(c);
+                    if (l->chars[k] == '\\') {
+                        nb_to_color++;
+                        k++;
+                    }
+                    k += tb_utf8_char_length(l->chars[k]);
                 }
 
-                // color override if a rule matched
-                if (*(r->mark) && color != COLOR_COMMENT)
+                if (*(r->mark))
                     color = r->color_end_of_line;
-
                 set_attr_buffer(fg, i, nb_to_color, color);
                 i += nb_to_color;
             }
@@ -2299,7 +2295,7 @@ main(int argc, char *argv[])
                     act(upper, 0);
                     break;
                 case KB_ACT_COMMENT:
-                    if (lang && !(lang->flags & ONLY_RULES))
+                    if (lang && (lang->flags & HIGHLIGHT_SYNTAX))
                         act(comment, 1);
                     break;
                 case KB_ACT_INCREASE_INDENT:

@@ -151,6 +151,7 @@ static void replace(Line *l, Selection *s);
 static int replace_chars(Line *l, Selection *a, int start, int n, int new_n, int nb_bytes);
 static void reset_selections(void);
 static int resize(int width, int height);
+static void run_command(const char *command, int background_process, int wait_for_confirmation, int potential_changes);
 static Selection *search(Selection *a, const char *pattern);
 static int search_word_under_cursor(void);
 static void set_attr_buffer(uintattr_t *buf, int start, int nb, uintattr_t value);
@@ -1911,6 +1912,20 @@ resize(int width, int height)
     return EXIT_SUCCESS;
 }
 
+void
+run_command(const char *command, int background_process, int wait_for_confirmation, int potential_changes)
+{
+    if (!background_process) {
+        tb_shutdown();
+        system(command);
+        if (wait_for_confirmation)
+            getchar();
+        init_termbox();
+    } else
+        system(command);
+    has_been_changes |= potential_changes;
+}
+
 Selection *
 search(Selection *a, const char *pattern)
 {
@@ -2141,12 +2156,8 @@ main(int argc, char *argv[])
                     break;
                 case KB_RUN_MAKE:
                 case KB_RUN_SHELL_COMMAND:
-                    if (ev.ch == KB_RUN_MAKE || dialog(COMMAND_PROMPT, command_int, 0)) {
-                        tb_shutdown();
-                        system((ev.ch == KB_RUN_MAKE) ? MAKE_COMMAND : command_int);
-                        getchar();
-                        init_termbox();
-                    }
+                    if (ev.ch == KB_RUN_MAKE || dialog(COMMAND_PROMPT, command_int, 0))
+                        run_command((ev.ch == KB_RUN_MAKE) ? MAKE_COMMAND : command_int, 0, 1, 1);
                     break;
                 case KB_WRITE:
                 case KB_WRITE_AS:

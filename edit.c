@@ -43,9 +43,9 @@
 #define MIN(A, B)                   (((A) < (B)) ? (A) : (B))
 #define MOVE_SEL_LIST(A, B)         {forget_sel_list(B); (B) = (A); (A) = NULL;}
 #define PARSE_LINE_IDENTIFIER(S, DEFAULT, OPERATOR, VAR) \
-    if (!strcmp(S, "")) VAR = DEFAULT; \
-    else if (!strcmp(S, ".")) VAR = first_line_nb + y; \
-    else if (sscanf(S, "%d", &VAR) == 1) VAR = OPERATOR(VAR, DEFAULT); \
+    if (!strcmp(S, "")) *VAR = DEFAULT; \
+    else if (!strcmp(S, ".")) *VAR = first_line_nb + y; \
+    else if (sscanf(S, "%d", VAR) == 1) *VAR = OPERATOR(*VAR, DEFAULT); \
     else return EXIT_FAILURE;
 #define FILE_IO(A, E)               if ((A) == (E)) die(EXIT_FAILURE, ERR_FILE_IO);
 #define SET_SEL_LIST(A, B)          {forget_sel_list(A); (A) = (B);}
@@ -138,7 +138,7 @@ static void move_to_cursor(void);
 static int nb_sel(Selection *a);
 static int parse_assign(const char *assign);
 static int parse_lang(const char *file_name);
-static int parse_range(const char *range);
+static int parse_range(const char *range, int *l1, int *l2);
 static int parse_repeater(const char *sp, int *j, int *l, int *min, int *max);
 static Pos pos_of(int l, int x);
 static void print_all(void);
@@ -1515,10 +1515,9 @@ parse_lang(const char *file_name)
 }
 
 int
-parse_range(const char *range)
+parse_range(const char *range, int *l1, int *l2)
 {
     char *p;
-    int l1, l2;
 
     if (!(p = strchr(range, ',')))
         return EXIT_FAILURE;
@@ -1526,10 +1525,7 @@ parse_range(const char *range)
     PARSE_LINE_IDENTIFIER(range, 1, MAX, l1)
     *p++ = ',';
     PARSE_LINE_IDENTIFIER(p, nb_lines, MIN, l2)
-    if (l2 < l1)
-        return EXIT_FAILURE;
-    SET_SEL_LIST(saved, range_lines_sel(l1, l2, NULL));
-    return EXIT_SUCCESS;
+    return (*l1 <= *l2) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 int
@@ -2268,21 +2264,24 @@ main(int argc, char *argv[])
                 case KB_SEL_CURSOR_LINE:
                 case KB_SEL_ALL_LINES:
                 case KB_SEL_LINES_BLOCK:
+                case KB_SEL_CUSTOM_RANGE:
                     if (ev.ch == KB_SEL_CURSOR_LINE) {
                         l1 = l2 = first_line_nb + y;
                     } else if (ev.ch == KB_SEL_ALL_LINES) {
                         l1 = 1;
                         l2 = nb_lines;
-                    } else {
+                    } else if (ev.ch == KB_SEL_LINES_BLOCK) {
                         l1 = find_block_delim(first_line_nb + y, -1);
                         l2 = find_block_delim(l1, m);
+                    } else {
+                        if (!dialog(RANGE_PROMPT, range_int, 0))
+                            break;
+                        if (parse_range(range_int, &l1, &l2)) {
+                            echo(INVALID_RANGE_MESSAGE);
+                            break;
+                        }
                     }
                     SET_SEL_LIST(saved, range_lines_sel(l1, l2, NULL));
-                    break;
-                case KB_SEL_CUSTOM_RANGE:
-                    if (dialog(RANGE_PROMPT, range_int, 0))
-                        if (parse_range(range_int))
-                            echo(INVALID_RANGE_MESSAGE);
                     break;
                 case KB_SEL_CURSOR_WORD:
                     if (search_word_under_cursor())

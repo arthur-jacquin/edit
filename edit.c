@@ -45,7 +45,7 @@
 #define PARSE_LINE_IDENTIFIER(S, DEFAULT, OPERATOR, VAR) \
     if (!strcmp(S, "")) *VAR = DEFAULT; \
     else if (!strcmp(S, ".")) *VAR = first_line_nb + y; \
-    else if (sscanf(S, "%d", VAR) == 1) *VAR = OPERATOR(*VAR, DEFAULT); \
+    else if (sscanf(S, "%d", VAR) == 1) *VAR = (DEFAULT) ? OPERATOR(*VAR, DEFAULT) : 0; \
     else return EXIT_FAILURE;
 #define FILE_IO(A, E)               if ((A) == (E)) die(EXIT_FAILURE, ERR_FILE_IO);
 #define SET_SEL_LIST(A, B)          {forget_sel_list(A); (A) = (B);}
@@ -118,8 +118,9 @@ static void indent(Line *l, Selection *s);
 static int index_closest_after_cursor(Selection *a);
 static void init_termbox(void);
 static void insert(Line *l, Selection *s);
-static void insert_clip(Line *starting_line, int below);
+static void insert_clip(int below);
 static void insert_line(int line_nb, int ml, int dl);
+static void insert_lines(Line *to_insert, int nb, int below);
 static int is_in(const char *list, const char *chars, int length);
 static int is_inf(Pos p1, Pos p2);
 static int is_word_boundary(const char *chars, int k);
@@ -137,8 +138,9 @@ static void move_to_clip(int starting_line_nb, int nb);
 static void move_to_cursor(void);
 static int nb_sel(Selection *a);
 static int parse_assign(const char *assign);
+static int parse_file(Line **dest, Line *next, const char *file_name, int min, int max, int starting);
 static int parse_lang(const char *file_name);
-static int parse_range(const char *range, int *l1, int *l2);
+static int parse_range(const char *range, int *l1, int *l2, int min, int max);
 static int parse_repeater(const char *sp, int *j, int *l, int *min, int *max);
 static Pos pos_of(int l, int x);
 static void print_all(void);
@@ -836,33 +838,14 @@ insert(Line *l, Selection *s)
 }
 
 void
-insert_clip(Line *starting_line, int below)
+insert_clip(int below)
 {
-    Line *l, *before, *after;
-    int i, first_inserted_line_nb;
+    int first_inserted_line_nb;
 
-    if (!(clipboard.start))
-        return;
-    first_inserted_line_nb = starting_line->line_nb + ((below) ? 1 : 0);
-    shift_line_nb(clipboard.start, 0, 0, first_inserted_line_nb);
-    shift_line_nb(starting_line, first_inserted_line_nb, 0, clipboard.nb_lines);
-    shift_sel_line_nb(saved, first_inserted_line_nb, 0, clipboard.nb_lines);
-    for (i = 1, l = clipboard.start; i < clipboard.nb_lines; i++, l = l->next);
-    before = (below) ? starting_line : starting_line->prev;
-    after = (below) ? starting_line->next : starting_line;
-    link_lines(before, clipboard.start);
-    link_lines(l, after);
-    if (!before)
-        first_line = clipboard.start;
-    nb_lines += clipboard.nb_lines;
-    has_been_changes = 1;
+    first_inserted_line_nb = first_line_nb + y + ((below) ? 1 : 0);
+    insert_lines(clipboard.start, clipboard.nb_lines, below);
     clipboard.start = NULL;
     copy_to_clip(first_inserted_line_nb, clipboard.nb_lines);
-    if (!below) {
-        if (y == 0)
-            first_line_on_screen = get_line(-clipboard.nb_lines);
-        y += clipboard.nb_lines;
-    }
 }
 
 void
@@ -887,6 +870,35 @@ insert_line(int line_nb, int ml, int dl)
     }
     nb_lines++;
     has_been_changes = 1;
+}
+
+void
+insert_lines(Line *to_insert, int nb, int below)
+{
+    Line *starting_line, *l, *before, *after;
+    int i, first_inserted_line_nb;
+
+    if (!to_insert)
+        return;
+    starting_line = get_line(y);
+    first_inserted_line_nb = starting_line->line_nb + ((below) ? 1 : 0);
+    shift_line_nb(to_insert, 0, 0, first_inserted_line_nb - to_insert->line_nb);
+    shift_line_nb(starting_line, first_inserted_line_nb, 0, nb);
+    shift_sel_line_nb(saved, first_inserted_line_nb, 0, nb);
+    for (i = 1, l = to_insert; i < nb; i++, l = l->next);
+    before = (below) ? starting_line : starting_line->prev;
+    after = (below) ? starting_line->next : starting_line;
+    link_lines(before, to_insert);
+    link_lines(l, after);
+    if (!before)
+        first_line = to_insert;
+    nb_lines += nb;
+    has_been_changes = 1;
+    if (!below) {
+        if (y == 0)
+            first_line_on_screen = get_line(-clipboard.nb_lines);
+        y += clipboard.nb_lines;
+    }
 }
 
 int
@@ -942,76 +954,17 @@ link_lines(Line *l1, Line *l2)
 void
 load_file(int first_line_on_screen_nb)
 {
-    Line *line, *last_line;
-    FILE *src_file;
-    char *buf, *new_buf;
-    int reached_EOF, buf_size, line_nb, c, ml, dl, l, k;
+    int nb;
 
     forget_lines(first_line);
     reset_selections();
-    if (!(src_file = fopen(file_name_int, "r"))) {
+    if ((nb = parse_file(&first_line, NULL, file_name_int, 1, 0, 1))) {
+        first_line_on_screen = first_line;
+        first_line_on_screen = get_line(first_line_on_screen_nb - 1);
+    } else
         first_line = first_line_on_screen = create_line(1, 1, 0);
-        nb_lines = 1;
-        has_been_changes = 1;
-        parse_lang(file_name_int);
-        return;
-    }
-    line_nb = 1;
-    first_line = last_line = first_line_on_screen = NULL;
-    buf = (char *) emalloc(buf_size = DEFAULT_BUF_SIZE);
-    reached_EOF = 0;
-    while (!reached_EOF) {
-        ml = dl = 0;
-        while (1) {
-            reached_EOF = ((c = getc(src_file)) == EOF);
-            if (c == EOF || c == '\n')
-                break;
-            if (c == '\t')
-                for (l = 1; (dl + l)%(settings.tab_width); l++);
-            else
-                l = tb_utf8_char_length(c);
-            if (ml + l > buf_size) {
-                while (ml + l > buf_size)
-                    buf_size <<= 1;
-                new_buf = (char *) emalloc(buf_size);
-                strncpy(new_buf, buf, ml);
-                free(buf);
-                buf = new_buf;
-            }
-            if (c == '\t') {
-                memset(buf + ml, ' ', l);
-                ml += l; dl += l;
-            } else {
-                buf[ml] = (char) c;
-                for (k = 1; k < l; k++) {
-                    if (((c = getc(src_file)) == EOF) ||
-                        (((char) c & (char) 0xc0) != (char) 0x80))
-                        die(EXIT_FAILURE, ERR_UTF8_ENCODING);
-                    buf[ml + k] = (char) c;
-                }
-                ml += l; dl++;
-            }
-        }
-        if (reached_EOF && ml == 0 && line_nb > 1)
-            break;
-        line = create_line(line_nb, ml + 1, dl);
-        if (first_line) {
-            link_lines(last_line, line);
-            last_line = line;
-        } else
-            first_line = last_line = line;
-        strncpy(line->chars, buf, ml);
-        if (line_nb == first_line_on_screen_nb)
-            first_line_on_screen = line;
-        line_nb++;
-    }
-    FILE_IO(fclose(src_file), EOF);
-    free(buf);
-    if (!first_line_on_screen)
-        first_line_on_screen = last_line;
-    last_line->next = NULL;
-    nb_lines = line_nb - 1;
-    has_been_changes = 0;
+    nb_lines = (nb) ? nb : 1;
+    has_been_changes = (nb) ? 0 : 1;
     parse_lang(file_name_int);
 }
 
@@ -1501,6 +1454,70 @@ parse_assign(const char *assign)
 }
 
 int
+parse_file(Line **dest, Line *next, const char *file_name, int min, int max, int starting)
+{
+    FILE *src_file;
+    Line *line, *prev;
+    char *buf, *new_buf;
+    int reached_EOF, buf_size, line_nb, c, ml, dl, l, k;
+
+    if (!(src_file = fopen(file_name, "r")))
+        return 0;
+    prev = NULL;
+    buf = (char *) emalloc(buf_size = DEFAULT_BUF_SIZE);
+    reached_EOF = 0;
+    for (line_nb = 1; !reached_EOF && (!max || line_nb <= max); line_nb++) {
+        ml = dl = 0;
+        while (1) {
+            reached_EOF = ((c = getc(src_file)) == EOF);
+            if (c == EOF || c == '\n')
+                break;
+            if (c == '\t')
+                for (l = 1; (dl + l)%(settings.tab_width); l++);
+            else
+                l = tb_utf8_char_length(c);
+            if (ml + l > buf_size) {
+                while (ml + l > buf_size)
+                    buf_size <<= 1;
+                new_buf = (char *) emalloc(buf_size);
+                strncpy(new_buf, buf, ml);
+                free(buf);
+                buf = new_buf;
+            }
+            if (c == '\t') {
+                memset(buf + ml, ' ', l);
+                ml += l; dl += l;
+            } else {
+                buf[ml] = (char) c;
+                for (k = 1; k < l; k++) {
+                    if (((c = getc(src_file)) == EOF) ||
+                        (((char) c & (char) 0xc0) != (char) 0x80))
+                        die(EXIT_FAILURE, ERR_UTF8_ENCODING);
+                    buf[ml + k] = (char) c;
+                }
+                ml += l; dl++;
+            }
+        }
+        if (reached_EOF && ml == 0 && line_nb > min)
+            break;
+        if (line_nb < min)
+            continue;
+        line = create_line(starting++, ml + 1, dl);
+        if (line_nb > min) {
+            link_lines(prev, line);
+            prev = line;
+        } else
+            *dest = prev = line;
+        strncpy(line->chars, buf, ml);
+    }
+    FILE_IO(fclose(src_file), EOF);
+    free(buf);
+    if (prev)
+        prev->next = next;
+    return MAX(0, line_nb - min);
+}
+
+int
 parse_lang(const char *file_name)
 {
     char *p;
@@ -1515,17 +1532,17 @@ parse_lang(const char *file_name)
 }
 
 int
-parse_range(const char *range, int *l1, int *l2)
+parse_range(const char *range, int *l1, int *l2, int min, int max)
 {
     char *p;
 
     if (!(p = strchr(range, ',')))
         return EXIT_FAILURE;
     *p = '\0';
-    PARSE_LINE_IDENTIFIER(range, 1, MAX, l1)
+    PARSE_LINE_IDENTIFIER(range, min, MAX, l1)
     *p++ = ',';
-    PARSE_LINE_IDENTIFIER(p, nb_lines, MIN, l2)
-    return (*l1 <= *l2) ? EXIT_SUCCESS : EXIT_FAILURE;
+    PARSE_LINE_IDENTIFIER(p, max, MIN, l2)
+    return (!(*l2) || *l1 <= *l2) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 int
@@ -1752,14 +1769,14 @@ range_lines_sel(int start, int end, Selection *next)
 void
 remove_sel_line_range(int min, int max)
 {
-    Selection *old, *next, *a;
+    Selection *prev, *next, *a;
 
     if (!(a = saved))
         return;
     if (a->l < min) {
-        for (; a && a->l < min; old = a, a = a->next);
+        for (; a && a->l < min; prev = a, a = a->next);
         for (; a && a->l <= max; next = a->next, free(a), a = next);
-        old->next = a;
+        prev->next = a;
     } else {
         for (; a && a->l <= max; next = a->next, free(a), a = next);
         saved = a;
@@ -2057,8 +2074,8 @@ upper(Line *l, Selection *s)
 void
 write_file(const char *file_name)
 {
-    Line *l;
     FILE *dest_file;
+    Line *l;
     char *chars;
     int k, nb_bytes;
 
@@ -2142,9 +2159,8 @@ main(int argc, char *argv[])
                         die(EXIT_SUCCESS, NULL);
                     break;
                 case KB_CHANGE_SETTING:
-                    if (dialog(CHANGE_SETTING_PROMPT, settings_int, 0))
-                        if (parse_assign(settings_int))
-                            echo(INVALID_ASSIGNMENT_MESSAGE);
+                    if (dialog(CHANGE_SETTING_PROMPT, settings_int, 0) && parse_assign(settings_int))
+                        echo(INVALID_ASSIGNMENT_MESSAGE);
                     break;
                 case KB_RUN_MAKE:
                 case KB_RUN_SHELL_COMMAND:
@@ -2276,7 +2292,7 @@ main(int argc, char *argv[])
                     } else {
                         if (!dialog(RANGE_PROMPT, range_int, 0))
                             break;
-                        if (parse_range(range_int, &l1, &l2)) {
+                        if (parse_range(range_int, &l1, &l2, 1, nb_lines)) {
                             echo(INVALID_RANGE_MESSAGE);
                             break;
                         }
@@ -2328,7 +2344,7 @@ main(int argc, char *argv[])
                 case KB_CLIP_PASTE_AFTER:
                 case KB_CLIP_PASTE_BEFORE:
                     while (m--)
-                        insert_clip(get_line(y), ev.ch == KB_CLIP_PASTE_AFTER);
+                        insert_clip(ev.ch == KB_CLIP_PASTE_AFTER);
                     break;
                 }
             else if (ev.key)

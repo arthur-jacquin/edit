@@ -2143,7 +2143,7 @@ main(int argc, char *argv[])
                 case KB_RUN_SHELL_COMMAND:
                     if (ev.ch == KB_RUN_MAKE || dialog(COMMAND_PROMPT, command_int, 0)) {
                         tb_shutdown();
-                        system((ev.ch == KB_RUN_MAKE) ? "make" : command_int);
+                        system((ev.ch == KB_RUN_MAKE) ? MAKE_COMMAND : command_int);
                         getchar();
                         init_termbox();
                     }

@@ -2,9 +2,10 @@
 
 // compile-time parameters
 #define BACKUP_FILE_NAME            "edit_backup_file"
-#define HORIZONTAL_PADDING          8
+#define HORIZONTAL_PADDING          0
 #define INTERFACE_WIDTH             128
 #define LINE_NUMBERS_WIDTH          4
+#define MAKE_COMMAND                "make"
 #define MIN_WIDTH                   30
 #define RULER_WIDTH                 8
 #define SCROLL_LINE_NUMBER          3
@@ -147,6 +148,6 @@
 
 // languages
 #define C
+#define GEMTEXT
 #define MAKEFILE
 #define MANPAGE
-#define GEMTEXT

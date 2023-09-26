@@ -295,20 +295,14 @@ column_sel(int n)
     Line *l;
     Selection *last, *tmp;
     Pos cursor;
-    int i, delta, wx, wn;
+    int i, wx, wn;
 
     cursor = pos_of_cursor();
     if (anchored && anchor.l != cursor.l)
         return 0;
     n = MIN(n, nb_lines - cursor.l + 1);
-    if (anchored) {
-        delta = cursor.x - anchor.x;
-        wx = (delta > 0) ? anchor.x : cursor.x;
-        wn = (delta > 0) ? delta : -delta;
-    } else {
-        wx = x;
-        wn = 0;
-    }
+    wx = (anchored) ? MIN(cursor.x, anchor.x) : x;
+    wn = (anchored) ? ABS(cursor.x - anchor.x) : 0;
     last = NULL;
     for (i = 0, l = get_line(y + n - 1); i < n; i++, l = l->prev)
         if (l->dl >= wx)
@@ -351,8 +345,7 @@ compare_chars(const char *s1, int k1, const char *s2, int k2)
             if ((delta = s2[k2 + k] - s1[k1 + k])) {
                 if (!(settings.case_sensitive) && k == l1 - 1 && ABS(delta) == (1 << 5))
                     return 0;
-                else
-                    return delta;
+                return delta;
             }
     return 0;
 }
@@ -364,19 +357,15 @@ compute_running_sel(void)
     Pos cursor, begin, end;
 
     cursor = pos_of_cursor();
-    if (anchored) {
-        if (cursor.l != anchor.l) {
-            begin = (cursor.l > anchor.l) ? anchor : cursor;
-            end = (cursor.l > anchor.l) ? cursor : anchor;
-            end_sel = create_sel(end.l, 0, end.x, NULL);
-            medium_sel = (begin.l + 1 > end.l - 1) ? end_sel :
-                range_lines_sel(begin.l + 1, end.l - 1, end_sel);
-            return create_sel(begin.l, begin.x,
-                get_line(begin.l - first_line_nb)->dl - begin.x, medium_sel);
-        } else
-            return create_sel(cursor.l, MIN(cursor.x, anchor.x), ABS(cursor.x - anchor.x), NULL);
-    } else
+    if (!anchored)
         return create_sel(cursor.l, cursor.x, 0, NULL);
+    if (cursor.l == anchor.l)
+        return create_sel(cursor.l, MIN(cursor.x, anchor.x), ABS(cursor.x - anchor.x), NULL);
+    begin = (cursor.l > anchor.l) ? anchor : cursor;
+    end = (cursor.l > anchor.l) ? cursor : anchor;
+    end_sel = create_sel(end.l, 0, end.x, NULL);
+    medium_sel = (begin.l + 1 > end.l - 1) ? end_sel : range_lines_sel(begin.l + 1, end.l - 1, end_sel);
+    return create_sel(begin.l, begin.x, get_line(begin.l - first_line_nb)->dl - begin.x, medium_sel);
 }
 
 void
@@ -495,7 +484,7 @@ dialog(const char *prompt, Interface interf, int refresh_sel)
                 switch (ev.key) {
                 case TB_KEY_ARROW_LEFT:
                 case TB_KEY_ARROW_RIGHT:
-                    dx = CONSTRAIN(0, dx + ((ev.key == TB_KEY_ARROW_LEFT) ? (-1) : 1), n);
+                    dx = CONSTRAIN(0, dx + ((ev.key == TB_KEY_ARROW_LEFT) ? -1 : 1), n);
                     break;
                 case TB_KEY_CTRL_A:
                 case TB_KEY_CTRL_E:
@@ -514,13 +503,13 @@ dialog(const char *prompt, Interface interf, int refresh_sel)
                     // fall-through
                 case TB_KEY_BACKSPACE:
                 case TB_KEY_BACKSPACE2:
-                    if (dx > 0) {
-                        k = get_str_index(interf, dx - 1);
-                        len = tb_utf8_char_length(interf[k]);
-                        memmove(interf + k, interf + k + len, strlen(interf + k + len) + 1);
-                        dx--;
-                        n--;
-                    }
+                    if (dx == 0)
+                        break;
+                    k = get_str_index(interf, dx - 1);
+                    len = tb_utf8_char_length(interf[k]);
+                    memmove(interf + k, interf + k + len, strlen(interf + k + len) + 1);
+                    dx--;
+                    n--;
                     break;
                 case TB_KEY_ENTER:
                     return 1;
@@ -927,13 +916,11 @@ is_word_boundary(const char *chars, int k)
     int i, is_word;
 
     is_word = is_word_char(chars[k]);
-    if (k == 0) {
+    if (k == 0)
         return is_word;
-    } else {
-        i = 1;
-        decrement(chars, &i, &k, i - 1);
-        return (is_word != is_word_char(chars[k]));
-    }
+    i = 1;
+    decrement(chars, &i, &k, i - 1);
+    return (is_word != is_word_char(chars[k]));
 }
 
 int
@@ -1793,12 +1780,8 @@ reorder_sel(int l, int nb, int new_l)
     incr[0] = 0;
     incr[1] = (l < new_l) ? (new_l - l) : nb;
     incr[2] = (l < new_l) ? (-nb) : (new_l - l);
-    if (anchored) { // anchor.l += incr[(l < new_l) ? 1 : 2] is sufficient if used by move_line
-        if (delim[0] <= anchor.l && anchor.l < delim[1])
-            anchor.l += incr[1];
-        else if (delim[1] <= anchor.l && anchor.l < delim[2])
-            anchor.l += incr[2];
-    }
+    if (anchored)
+        anchor.l += incr[(l < new_l) ? 1 : 2];
     for (i = 0; i < 3; i++)
         first[i] = last[i] = NULL;
     for (i = 0, s = prev = saved; i < 3 && s; i++)
@@ -2401,7 +2384,7 @@ main(int argc, char *argv[])
             case TB_KEY_MOUSE_WHEEL_UP:
                 old_line_nb = first_line_nb + y;
                 first_line_on_screen = get_line(SCROLL_LINE_NUMBER *
-                    ((ev.key == TB_KEY_MOUSE_WHEEL_DOWN) ? 1 : (-1)));
+                    ((ev.key == TB_KEY_MOUSE_WHEEL_DOWN) ? 1 : -1));
                 y = CONSTRAIN(vertical_padding, old_line_nb - first_line_nb,
                     screen_height - 2 - vertical_padding);
                 break;

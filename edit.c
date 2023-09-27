@@ -1601,7 +1601,7 @@ print_dialog_ruler(void)
     int i, k, len;
     uint32_t unicode_char;
 
-    for (i = k = 0; message[k]; i++, k += len) {
+    for (i = k = 0; message[k] && i < screen_width - RULER_WIDTH; i++, k += len) {
         len = tb_utf8_char_to_unicode(&unicode_char, message + k);
         tb_set_cell(i, screen_height - 1, unicode_char, COLOR_DIALOG, COLOR_BG_DEFAULT);
     }

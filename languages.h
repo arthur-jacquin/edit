@@ -28,6 +28,59 @@ struct lang {
 };
 
 // language definitions
+#ifdef ASM
+static const char asm_names[] = "asm ";
+static const struct rule asm_rules[] = {
+    {"%",   0,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    NULL_RULE
+};
+static const char asm_cm[] = "; ";
+// https://www.felixcloutier.com/x86
+static const char asm_kw[] = ""
+    "add and andn bt btc btr bts clac clc cld cli clts clui cmp cmps cpuid dec "
+    "div idiv imul in inc ins lahf lar lds lea les lfs lgdt lgs lidt lldt lmsw "
+    "lods lss ltr lzcnt mov movs mul neg nop not or out outs pop popa popad "
+    "popcnt popf popfd popfq push pusha pushad pushf pushfd pushfq rcl rcr "
+    "rdmsr rol ror sal sar sgdt shl shr sidt sldt smsw stac stc std sti stos "
+    "str stui sub test wrmsr xlat xor "
+    "bits bss data db dw dd dq dt ddq do equ extern global org section segment "
+    "text times ";
+static const char asm_fc[] = ""
+    "hlt call int ret iret iretq iretf uiret "
+    "ja jae jb jbe jc je jg jge jl jle jna jnae jnb jnbe jnc jne jng jnge jnl "
+    "jnle jno jnp  jns jnz jo jp jpe jpo js jz jcxz jmp loop loope loopne "
+    "syscall sysenter sysexit sysret ";
+static const char asm_bi[] = ""
+    "al ah ax eax rax cl ch cx ecx rcx dl dh dx edx rdx bl bh bx ebx rbx "
+    "spl sp esp rsp bpl bp ebp rbp sil si esi rsi dil di edi rdi "
+    "r8b r8w r8d r8 r9b r9w r9d r9 r10b r10w r10d r10 r11b r11w r11d r11 "
+    "r12b r12w r12d r12 r13b r13w r13d r13 r14b r14w r14d r14 r15b r15w r15d r15 "
+    "ss cs ds es fs gs ip eip rip flags eflags rflags gdtr ldtr idtr tr "
+    "cr0 cr1 cr2 cr3 cr4 cr5 cr6 cr7 cr8 cr9 cr10 cr11 cr12 cr13 cr14 cr15 ";
+#endif // ASM
+
+#ifdef AWK
+static const char awk_names[] = "awk nawk gawk mawk ";
+static const struct rule awk_rules[] = {
+    {"@",   0,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    NULL_RULE
+};
+static const char awk_cm[] = "# ";
+static const char awk_kw[] = ""
+    "ARGC ARGIND ARGV BEGIN BEGINFILE BINMODE CONVFMT END ENDFILE ENVIRON "
+    "ERRNO FIELDWIDTHS FILENAME FNR FPAT FS FUNCTAB IGNORECASE LINT NF NR OFMT "
+    "OFS ORS PREC PROCINFO RLENGTH ROUNDMODE RS RSTART RT SUBSEP SYMTAB "
+    "TEXTDOMAIN ";
+static const char awk_fc[] = ""
+    "break case continue default do else exit for if return switch while ";
+static const char awk_bi[] = ""
+    "and asort asorti atan2 bindtextdomain close compl cos dcgettext dcngetext "
+    "delete exp fflush func function gensub getline gsub index int isarray "
+    "length log lshift match mktime next nextfile or patsplit print printf "
+    "rand rshift sin split sprintf sqrt srand strftime strtonum sub substr "
+    "system systime tolower toupper typeof xor ";
+#endif // AWK
+
 #ifdef C
 static const char c_names[] = "c h ";
 static const struct rule c_rules[] = {
@@ -308,6 +361,52 @@ static const struct rule gemtext_rules[] = {
 };
 #endif // GEMTEXT
 
+#ifdef HTML
+static const char html_names[] = "htm html ";
+static const struct rule html_rules[] = {NULL_RULE};
+static const char html_cm[] = "<!-- ";
+static const char html_kw[] = ""
+    "DOCTYPE a abbr address area article aside audio b base bdi bdo blockquote "
+    "body br button canvas caption cite code col colgroup data datalist dd del "
+    "details dfn dialog div dl dt em embed fieldset figcaption figure footer "
+    "form h1 h2 h3 h4 h5 h6 head header hr html i iframe img input ins kbd "
+    "label legend li link main map mark meta meter nav noscript object ol "
+    "optgroup option output p param picture pre progress q rp rt ruby s samp "
+    "script section select small source span strong style sub summary sup svg "
+    "table tbody td template textarea tfoot th thead time title tr track u ul "
+    "var video wbr ";
+static const char html_fc[] = "";
+static const char html_bi[] = "";
+#endif // HTML
+
+#ifdef LATEX
+static const char latex_names[] = "tex cls ";
+static const struct rule latex_rules[] = {NULL_RULE};
+static const char latex_cm[] = "% ";
+static const char latex_kw[] = ""
+    "NeedsTeXFormat ProvidesClass LoadClass documentclass usepackage "
+    "def newcommand renewcommand setcounter "
+    "part chapter section subsection subsubsection paragraph subparagraph ";
+static const char latex_fc[] = ""
+    "input begin end footnote item "
+    "includegraphics lstinputlisting addbibresource includepdf ";
+static const char latex_bi[] = ""
+    // "article report book memoir "
+    "title author date addcontentsline "
+    "ref pageref cite nocite label caption "
+    "textwidth textheight linewidth lineheight "
+    "document abstract minipage figure subfigure table tabular equation "
+    "lstlisting itemize enumerate description quote "
+    "flushleft center flushright "
+    "listoffigures listoftables lstlistoflistings printbibliography "
+    "tableofcontents maketitle clearpage phantomsection "
+    "appendix frontmatter mainmatter backmatter "
+    "rule toprule midrule bottomrule "
+    "textit textsc textbf textmd emph textsc textsf texttt "
+    "tiny scriptsize footnotesize small normalsize large Large LARGE huge Huge "
+    "centering hspace hfill smallskip medskip bigskip vspace vfill ";
+#endif // LATEX
+
 #ifdef MAKEFILE
 static const char mk_names[] = "Makefile makefile mk ";
 static const struct rule mk_rules[] = {NULL_RULE};
@@ -372,7 +471,104 @@ static const struct rule md_rules[] = {
 };
 #endif // MARKDOWN
 
+#ifdef PYTHON
+static const char py_names[] = "py ";
+struct rule py_rules[] = {NULL_RULE};
+static const char py_cm[] = "# ";
+static const char py_kw[] = ""
+    "False None True and in is not or as assert del global ";
+static const char py_fc[] = ""
+    "while for if else elif try except finally with break continue pass return "
+    "yield lambda class def import from raise async await ";
+static const char py_bi[] = ""
+    "abs all any ascii bin bool breakpoint bytearray bytes callable chr "
+    "classmethod compile complex delattr dict dir divmod enumerate eval exec "
+    "filter float format frozenset getattr globals hasattr hash help hex id "
+    "input int isinstance issubclass iter len list locals map max memoryview "
+    "min next object oct open ord pow print property range repr reversed round "
+    "set setattr slice sorted staticmethod str sum super tuple type vars zip "
+    "__import__ ";
+#endif // PYTHON
+
+#ifdef OCAML
+static const char ml_names[] = "ml mli mll mly ";
+static const struct rule ml_rules[] = {
+    {"#",   1,  COLOR_KEYWORD,      COLOR_KEYWORD},
+    NULL_RULE
+};
+static const char ml_cm[] = "(* ";
+static const char ml_kw[] = ""
+    "as assert asr class constraint external false fun function functor "
+    "inherit include inherit initializer land lazy lor lsl lsr lxor method mod "
+    "module mutable new nonrec object of open or private rec sig struct true "
+    "type val virtual array bool char exn float format format4 int int32 int64 "
+    "lazy_t list nativeint option bytes string unit ";
+static const char ml_fc[] = ""
+    "and begin do done downto else end exception for if in let match then to "
+    "try when while with ";
+static const char ml_bi[] = "";
+#endif // OCAML
+
+#ifdef SH
+static const char sh_names[] = "sh ";
+static const struct rule sh_rules[] = {NULL_RULE};
+static const char sh_cm[] = "# ";
+static const char sh_kw[] = "";
+static const char sh_fc[] = ""
+    "case do done elif else esac fi for if in then until while ";
+static const char sh_bi[] = ""
+    "break cd continue echo eval exec exit export getopts hash newgrp pwd read "
+    "readonly return set shift times test trap type ulimit umask unset wait ";
+#endif // SH
+
+#ifdef SQLITE
+static const char sql_names[] = "sql sqlite ";
+static const struct rule sql_rules[] = {NULL_RULE};
+static const char sql_cm[] = "-- ";
+static const char sql_kw[] = ""
+    "ABORT ACTION ADD AFTER ALL ALTER ALWAYS ANALYZE AND AS ASC ATTACH "
+    "AUTOINCREMENT BEFORE BEGIN BETWEEN BY CASCADE CASE CAST CHECK COLLATE "
+    "COLUMN COMMIT CONFLICT CONSTRAINT CREATE CROSS CURRENT CURRENT_DATE "
+    "CURRENT_TIME CURRENT_TIMESTAMP DATABASE DEFAULT DEFERRABLE DEFERRED "
+    "DELETE DESC DETACH DISTINCT DO DROP EACH ELSE END ESCAPE EXCEPT EXCLUDE "
+    "EXCLUSIVE EXISTS EXPLAIN FAIL FILTER FIRST FOLLOWING FOR FOREIGN FROM "
+    "FULL GENERATED GLOB GROUP GROUPS HAVING IF IGNORE IMMEDIATE IN INDEX "
+    "INDEXED INITIALLY INNER INSERT INSTEAD INTERSECT INTO IS ISNULL JOIN KEY "
+    "LAST LEFT LIKE LIMIT MATCH MATERIALIZED NATURAL NO NOT NOTHING NOTNULL "
+    "NULL NULLS OF OFFSET ON OR ORDER OTHERS OUTER OVER PARTITION PLAN PRAGMA "
+    "PRECEDING PRIMARY QUERY RAISE RANGE RECURSIVE REFERENCES REGEXP REINDEX "
+    "RELEASE RENAME REPLACE RESTRICT RETURNING RIGHT ROLLBACK ROW ROWS "
+    "SAVEPOINT SELECT SET TABLE TEMP TEMPORARY THEN TIES TO TRANSACTION "
+    "TRIGGER UNBOUNDED UNION UNIQUE UPDATE USING VACUUM VALUES VIEW VIRTUAL "
+    "WHEN WHERE WINDOW WITH WITHOUT ";
+static const char sql_fc[] = "";
+static const char sql_bi[] = ""
+    "AVG COUNT GROUP_CONCAT MAX MIN SUM TOTAL "
+    "date time datetime julianday unixepoch strftime timediff "
+    "analysis_limit application_id auto_vacuum automatic_index busy_timeout "
+    "cache_size cache_spill case_sensitive_like cell_size_check "
+    "checkpoint_fullfsync collation_list compile_options data_version "
+    "database_list defer_foreign_keys encoding foreign_key_check "
+    "foreign_key_list foreign_keys freelist_count fullfsync function_list "
+    "hard_heap_limit ignore_check_constraints incremental_vacuum index_info "
+    "index_list index_xinfo integrity_check journal_mode journal_size_limit "
+    "legacy_alter_table legacy_file_format locking_mode max_page_count "
+    "mmap_size module_list optimize page_count page_size parser_trace "
+    "pragma_list query_only quick_check read_uncommitted recursive_triggers "
+    "reverse_unordered_selects schema_version secure_delete shrink_memory "
+    "soft_heap_limit stats synchronous table_info table_list table_xinfo "
+    "temp_store threads trusted_schema user_version vdbe_addoptrace vdbe_debug "
+    "vdbe_listing vdbe_trace wal_autocheckpoint wal_checkpoint "
+    "writable_schema ";
+#endif // SQLITE
+
 static const struct lang languages[] = {
+#ifdef ASM
+    SYNTAX_LANG(asm, HIGHLIGHT_CONSTANTS),
+#endif
+#ifdef AWK
+    SYNTAX_LANG(awk, HIGHLIGHT_CONSTANTS),
+#endif
 #ifdef C
     SYNTAX_LANG(c, HIGHLIGHT_CONSTANTS),
 #endif
@@ -385,6 +581,12 @@ static const struct lang languages[] = {
 #ifdef GEMTEXT
     NO_SYNTAX_LANG(gemtext, 0),
 #endif
+#ifdef HTML
+    SYNTAX_LANG(html, HIGHLIGHT_CONSTANTS),
+#endif
+#ifdef LATEX
+    SYNTAX_LANG(latex, 0),
+#endif
 #ifdef MAKEFILE
     SYNTAX_LANG(mk, CONVERT_LEADING_SPACES),
 #endif
@@ -393,6 +595,18 @@ static const struct lang languages[] = {
 #endif
 #ifdef MARKDOWN
     NO_SYNTAX_LANG(md, 0),
+#endif
+#ifdef PYTHON
+    SYNTAX_LANG(py, HIGHLIGHT_CONSTANTS),
+#endif
+#ifdef OCAML
+    SYNTAX_LANG(ml, HIGHLIGHT_CONSTANTS),
+#endif
+#ifdef SH
+    SYNTAX_LANG(sh, HIGHLIGHT_CONSTANTS),
+#endif
+#ifdef SQLITE
+    SYNTAX_LANG(sql, HIGHLIGHT_CONSTANTS),
 #endif
     {0}
 };

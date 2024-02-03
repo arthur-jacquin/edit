@@ -101,7 +101,7 @@ static void decrement(const char *chars, int *i, int *k, int goal);
 static int dialog(const char *prompt, Interface interf, int refresh_sel);
 static void die(int exit_status, const char *msg);
 static int eat_pattern_atom(const char *sp, int *j, int *l);
-static int eat_pattern_block(const char *sp, int *j, int *l);
+static int eat_pattern_block(const char *sp, int *j, int *l, int *nb_subpatterns);
 static int eat_pattern_character(const char *sp, int *j, int *l);
 static void *emalloc(size_t size);
 static int find_block_delim(int starting_line_nb, int nb);
@@ -565,11 +565,12 @@ eat_pattern_atom(const char *sp, int *j, int *l)
 }
 
 int
-eat_pattern_block(const char *sp, int *j, int *l)
+eat_pattern_block(const char *sp, int *j, int *l, int *nb_subpatterns)
 {
     int min, max;
 
     if (sp[*l] == '(') {
+        (*nb_subpatterns)++;
         while (sp[*l] != ')') {
             if (!(sp[*l]) || eat_pattern_atom(sp, j, l))
                 return EXIT_FAILURE;
@@ -1075,7 +1076,7 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
         if (is_block_ok) {
             while (sp[l] == '|') { // eat following ORed blocks
                 j++; l++;
-                if (sp[l] == '\0' || eat_pattern_block(sp, &j, &l))
+                if (sp[l] == '\0' || eat_pattern_block(sp, &j, &l, &s))
                     return 0; // invalid syntax
             }
             state = READ_PATTERN;

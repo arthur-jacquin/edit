@@ -1236,6 +1236,7 @@ mark_subpatterns(const char *sp, const char *chars, int dl, int ss, int sx, int 
     }
 }
 
+// TODO: add in_place as parameter ?
 Selection *
 merge_sel(Selection *a, Selection *b)
 {
@@ -1255,7 +1256,7 @@ merge_sel(Selection *a, Selection *b)
         new = create_sel(to_add->l, to_add->x, to_add->n, NULL);
         if (!last)
             start = last = new;
-        else if (new->l == last->l && last->x + last->n > new->x)
+        else if (new->l == last->l && (last->x == new->x || last->x + last->n > new->x))
             free(new); // covering detected
         else
             last = last->next = new;
@@ -2087,6 +2088,7 @@ main(int argc, char *argv[])
 {
     Interface command_int, range_int, settings_int;
     Pos p;
+    Selection *tmp;
     int m = 0, l1, l2, old_line_nb;
     struct tb_event ev;
 
@@ -2107,6 +2109,8 @@ main(int argc, char *argv[])
             die(EXIT_FAILURE, ERR_TERM_TOO_SMALL);
         }
         move_to_cursor();
+        tmp = merge_sel(saved, NULL);
+        SET_SEL_LIST(saved, tmp);
         SET_SEL_LIST(running, compute_running_sel());
         SET_SEL_LIST(displayed, merge_sel(running, saved));
         if (in_insert_mode)

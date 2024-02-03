@@ -1356,6 +1356,8 @@ move_to_clip(int starting_line_nb, int nb)
     Line *starting, *ending;
 
     nb = MIN(nb, nb_lines + 1 - starting_line_nb);
+    if (nb <= 0)
+        return;
     starting = get_line(starting_line_nb - first_line_nb);
     ending = get_line(starting_line_nb + nb - 1 - first_line_nb);
     shift_line_nb(ending, ending->line_nb + 1, 0, -nb);

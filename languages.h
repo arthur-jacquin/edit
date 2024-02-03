@@ -379,6 +379,21 @@ static const char html_fc[] = "";
 static const char html_bi[] = "";
 #endif // HTML
 
+#ifdef JAVA
+static const char java_names[] = "java ";
+static const struct rule java_rules[] = {NULL_RULE};
+static const char java_cm[] = "// ";
+static const char java_kw[] = ""
+    "abstract boolean byte char class const double enum extends final float "
+    "implements import instanceof int interface long native new package "
+    "private protected public short static strictfp super synchronized "
+    "this throws transient void volatile ";
+static const char java_fc[] = ""
+    "assert break case catch continue default do else finally for goto if "
+    "return switch throw try while ";
+static const char java_bi[] = "";
+#endif // JAVA
+
 #ifdef LATEX
 static const char latex_names[] = "tex cls ";
 static const struct rule latex_rules[] = {NULL_RULE};
@@ -562,6 +577,40 @@ static const char sql_bi[] = ""
     "writable_schema ";
 #endif // SQLITE
 
+#ifdef VHDL
+static const char vhdl_names[] = "vhd vhdl ";
+static const struct rule vhdl_rules[] = {NULL_RULE};
+static const char vhdl_cm[] = "-- ";
+static const char vhdl_kw[] = ""
+    // keywords
+    "access after alias all architecture array attribute assert assume block "
+    "body buffer bus component configuration constant context cover disconnect "
+    "downto entity file fairness force generate generic group guarded impure "
+    "in inertial inout label library linkage literal map new null of on open "
+    "out package port postponed procedure process pure parameter property "
+    "protected private range record register reject report release restrict "
+    "select severity signal shared subtype sequence strong to transport type "
+    "unaffected units until use variable view vpkg vmode vprop vunit wait with "
+    "true false "
+    // types
+    "bit boolean natural positive integer real time bit_vector boolean_vector "
+    "integer_vector real_vector time_vector character string std_ulogic "
+    "std_logic std_ulogic_vector std_logic_vector unresolved_signed "
+    "unresolved_unsigned u_signed u_unsigned signed unsigned line text side "
+    "width ";
+static const char vhdl_fc[] = ""
+    "begin case else elsif end exit for function if is loop next others return "
+    "then when while ";
+static const char vhdl_bi[] = ""
+    // atttributes
+    "high left length low range reverse_range right ascending simple_name "
+    "instance_name path_name foreign active delayed event last_active "
+    "last_event last_value quiet stable transaction driving driving_value base "
+    "subtype element leftof pos pred rightof succ val image value converse "
+    // operators
+    "and nand or nor xor xnor rol ror sla sll sra srl mod rem abs not ";
+#endif // VHDL
+
 static const struct lang languages[] = {
 #ifdef ASM
     SYNTAX_LANG(asm, HIGHLIGHT_CONSTANTS),
@@ -583,6 +632,9 @@ static const struct lang languages[] = {
 #endif
 #ifdef HTML
     SYNTAX_LANG(html, HIGHLIGHT_CONSTANTS),
+#endif
+#ifdef JAVA
+    SYNTAX_LANG(java, HIGHLIGHT_CONSTANTS),
 #endif
 #ifdef LATEX
     SYNTAX_LANG(latex, 0),
@@ -607,6 +659,9 @@ static const struct lang languages[] = {
 #endif
 #ifdef SQLITE
     SYNTAX_LANG(sql, HIGHLIGHT_CONSTANTS),
+#endif
+#ifdef VHDL
+    SYNTAX_LANG(vhdl, HIGHLIGHT_CONSTANTS),
 #endif
     {0}
 };
